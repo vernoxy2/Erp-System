@@ -2,27 +2,27 @@
 // Based on your Excel file with 21 categories
 
 export const stockCategories = [
-  { id: 1, name: "CHANNEL", productCount: 6, lowStockCount: 2, criticalCount: 1, icon: "📐" },
-  { id: 2, name: "FRP", productCount: 28, lowStockCount: 5, criticalCount: 2, icon: "🧪" },
-  { id: 3, name: "FRP MATERIAL", productCount: 20, lowStockCount: 3, criticalCount: 0, icon: "🔬" },
-  { id: 4, name: "GRIDER & CLAMP ITEM", productCount: 59, lowStockCount: 8, criticalCount: 3, icon: "🔩" },
-  { id: 5, name: "HARDWARE ITEM", productCount: 94, lowStockCount: 12, criticalCount: 5, icon: "🔧" },
-  { id: 6, name: "HDPE", productCount: 160, lowStockCount: 15, criticalCount: 6, icon: "🔘" },
-  { id: 7, name: "INSULATION", productCount: 13, lowStockCount: 3, criticalCount: 1, icon: "🧱" },
-  { id: 8, name: "MACHINE", productCount: 22, lowStockCount: 2, criticalCount: 0, icon: "⚙️" },
-  { id: 9, name: "M.S FLANGES", productCount: 19, lowStockCount: 4, criticalCount: 1, icon: "⭕" },
-  { id: 10, name: "OTHER ITEMS", productCount: 28, lowStockCount: 6, criticalCount: 2, icon: "📦" },
-  { id: 11, name: "PPCH FITTINGS", productCount: 153, lowStockCount: 18, criticalCount: 8, icon: "🔗" },
-  { id: 12, name: "PPCH PIPES", productCount: 24, lowStockCount: 5, criticalCount: 2, icon: "🚰" },
+  { id: 1, name: "CHANNEL", productCount: 6, lowStockCount: 2, criticalCount: 1, icon: "" },
+  { id: 2, name: "FRP", productCount: 28, lowStockCount: 5, criticalCount: 2, icon: "" },
+  { id: 3, name: "FRP MATERIAL", productCount: 20, lowStockCount: 3, criticalCount: 0, icon: "" },
+  { id: 4, name: "GRIDER & CLAMP ITEM", productCount: 59, lowStockCount: 8, criticalCount: 3, icon: "" },
+  { id: 5, name: "HARDWARE ITEM", productCount: 94, lowStockCount: 12, criticalCount: 5, icon: "" },
+  { id: 6, name: "HDPE", productCount: 160, lowStockCount: 15, criticalCount: 6, icon: "" },
+  { id: 7, name: "INSULATION", productCount: 13, lowStockCount: 3, criticalCount: 1, icon: "" },
+  { id: 8, name: "MACHINE", productCount: 22, lowStockCount: 2, criticalCount: 0, icon: "" },
+  { id: 9, name: "M.S FLANGES", productCount: 19, lowStockCount: 4, criticalCount: 1, icon: "" },
+  { id: 10, name: "OTHER ITEMS", productCount: 28, lowStockCount: 6, criticalCount: 2, icon: "" },
+  { id: 11, name: "PPCH FITTINGS", productCount: 153, lowStockCount: 18, criticalCount: 8, icon: "" },
+  { id: 12, name: "PPCH PIPES", productCount: 24, lowStockCount: 5, criticalCount: 2, icon: "" },
   { id: 13, name: "PP FITTINGS", productCount: 65, lowStockCount: 7, criticalCount: 3, icon: "🔌" },
-  { id: 14, name: "PPH PIPE", productCount: 6, lowStockCount: 1, criticalCount: 0, icon: "🚿" },
-  { id: 15, name: "PP PIPES", productCount: 16, lowStockCount: 2, criticalCount: 1, icon: "🚰" },
-  { id: 16, name: "PPRCT FITTINGS", productCount: 304, lowStockCount: 25, criticalCount: 10, icon: "🔗" },
-  { id: 17, name: "PPRCT PIPES", productCount: 40, lowStockCount: 8, criticalCount: 4, icon: "🚰" },
-  { id: 18, name: "PPRC VALVES", productCount: 9, lowStockCount: 1, criticalCount: 0, icon: "🎚️" },
-  { id: 19, name: "THERMAL PIPES", productCount: 12, lowStockCount: 3, criticalCount: 1, icon: "🌡️" },
-  { id: 20, name: "UPVC & PVC MATERIAL", productCount: 44, lowStockCount: 6, criticalCount: 2, icon: "🔷" },
-  { id: 21, name: "VALVES", productCount: 139, lowStockCount: 14, criticalCount: 6, icon: "🎚️" }
+  { id: 14, name: "PPH PIPE", productCount: 6, lowStockCount: 1, criticalCount: 0, icon: "" },
+  { id: 15, name: "PP PIPES", productCount: 16, lowStockCount: 2, criticalCount: 1, icon: "" },
+  { id: 16, name: "PPRCT FITTINGS", productCount: 304, lowStockCount: 25, criticalCount: 10, icon: "" },
+  { id: 17, name: "PPRCT PIPES", productCount: 40, lowStockCount: 8, criticalCount: 4, icon: "" },
+  { id: 18, name: "PPRC VALVES", productCount: 9, lowStockCount: 1, criticalCount: 0, icon: "" },
+  { id: 19, name: "THERMAL PIPES", productCount: 12, lowStockCount: 3, criticalCount: 1, icon: "" },
+  { id: 20, name: "UPVC & PVC MATERIAL", productCount: 44, lowStockCount: 6, criticalCount: 2, icon: "" },
+  { id: 21, name: "VALVES", productCount: 139, lowStockCount: 14, criticalCount: 6, icon: "" }
 ];
 
 export const lowStockProducts = [

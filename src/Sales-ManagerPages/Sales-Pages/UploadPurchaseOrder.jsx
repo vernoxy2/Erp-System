@@ -345,10 +345,10 @@ export default function UploadPurchaseOrder() {
 
       {/* ── STEP 1: Upload ── */}
       {step === 1 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader title="Purchase Order Details" />
-            <div className="p-6 space-y-4">
+        <div className="grid grid-cols-1  gap-6">
+          {/* <Card> */}
+            {/* <CardHeader title="Purchase Order Details" /> */}
+            {/* <div className="p-6 space-y-4">
               <Input
                 label="PO Number"
                 value={workOrder.woNumber}
@@ -415,8 +415,8 @@ export default function UploadPurchaseOrder() {
                 }
                 placeholder="Any special instructions..."
               />
-            </div>
-          </Card>
+            </div> */}
+          {/* </Card> */}
 
           <Card>
             <CardHeader

@@ -43,13 +43,13 @@ export default function LowStockManagement() {
             <FiDownload size={16} />
             Export
           </button>
-          <button 
+          {/* <button 
             onClick={() => navigate('/sales/purchase-orders/create')}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center gap-2"
           >
             <FiShoppingCart size={16} />
             Create PO
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export default function LowStockManagement() {
                     <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Low Level</th>
                     <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Reorder Level</th>
                     <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Action</th>
+                    {/* <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Action</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -139,14 +139,14 @@ export default function LowStockManagement() {
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        {/* <td className="px-6 py-4 text-center">
                           <button 
                             onClick={() => navigate('/sales/purchase-orders/create', { state: { product } })}
                             className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded hover:bg-indigo-100"
                           >
                             Order
                           </button>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })}

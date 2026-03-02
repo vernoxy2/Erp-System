@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./Sales-ManagerPages/authntication/Login";
 import SalesLayout from "./Sales-ManagerPages/SalesComponent/layout/Layout";
 import Dashboard from "./Sales-ManagerPages/Sales-Pages/Dashboard";
 import LowStockManagement from "./Sales-ManagerPages/Sales-Pages/LowStockManagement";
@@ -21,7 +22,7 @@ import ItemsMaster from "./Sales-ManagerPages/Sales-Pages/ItemsMaster";
 import StockAlerts from "./Sales-ManagerPages/Sales-Pages/StockAlerts";
 import ReportsAnalytics from "./Sales-ManagerPages/Sales-Pages/ReportsAnalytics";
 import UploadSalesOrder from "./Sales-ManagerPages/Sales-Pages/UploadSalesOrder";
-import ViewExcelSheetData from "./Sales-ManagerPages/Sales-Pages/ViewExcelSheetData";
+// import ViewExcelSheetData from "./Sales-ManagerPages/Sales-Pages/ViewExcelSheetData";
 import UploadPurchaseOrder from "./Sales-ManagerPages/Sales-Pages/UploadPurchaseOrder";
 import CreateSalesOrder from "./Sales-ManagerPages/Sales-Pages/CreateSalesOrder";
 import SalesOrderList from "./Sales-ManagerPages/Sales-Pages/SalesOrderList";
@@ -31,14 +32,15 @@ import POCompleteDetails from "./Sales-ManagerPages/Sales-Pages/POCompleteDetail
 import SOCompleteDetails from "./Sales-ManagerPages/Sales-Pages/SOCompleteDetails";
 import UploadSalesInvoice from "./Sales-ManagerPages/Sales-Pages/UploadSalesInvoice";
 import ReadyToDispatchDeatils from "./Sales-ManagerPages/Sales-Pages/ReadyToDispatchDeatils";
-import DispatchOnChallanList from "./Sales-ManagerPages/Sales-Pages/Dispatchonchallanlist"
+import DispatchOnChallanList from "./Sales-ManagerPages/Sales-Pages/Dispatchonchallanlist";
 
 const App = () => {
   return (
     <Routes>
-      {/* ✅ Yahan /sales/* add kiya */}
+      <Route path="/" element={<Navigate to="/Login" replace />} />
+      <Route path="/Login" element={<Login />} />
       <Route path="/sales/*" element={<SalesLayout />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
+        {/* <Route index element={<Navigate to="dashboard" replace />} /> */}
         {/* Dashboard */}
         <Route path="dashboard" element={<Dashboard />} />
         {/* STOCK MANAGEMENT */}
@@ -50,7 +52,7 @@ const App = () => {
         {/* SALES ORDERS */}
         <Route path="sales-orders" element={<SalesOrders />} />
         <Route path="sales-orders/upload" element={<UploadSalesOrder />} />
-        <Route path="viewExcelSheet" element={<ViewExcelSheetData />} />
+        {/* <Route path="viewExcelSheet" element={<ViewExcelSheetData />} /> */}
         <Route path="ready-to-dispatch" element={<ReadyToDispatch />} />
         <Route path="sales-orders/create" element={<CreateSalesOrder />} />
         <Route path="sales-orders/list" element={<SalesOrderList />} />
@@ -67,9 +69,15 @@ const App = () => {
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />
-        <Route path="dispatch-on-challan-list" element={<DispatchOnChallanList />} />
+        <Route
+          path="dispatch-on-challan-list"
+          element={<DispatchOnChallanList />}
+        />
         <Route path="dispatch-on-invoice" element={<DispatchOnInvoice />} />
-    <Route path="dispatch-detail/:soId" element={<ReadyToDispatchDeatils />} />
+        <Route
+          path="dispatch-detail/:soId"
+          element={<ReadyToDispatchDeatils />}
+        />
 
         {/* INVOICING */}
         <Route path="unbilled-challans" element={<UnbilledChallans />} />
@@ -100,14 +108,13 @@ const App = () => {
 
         {/* REPORTS */}
         <Route path="reports" element={<ReportsAnalytics />} />
-
+        <Route path="*" element={<Navigate to="/Login" replace />} />
         {/* Catch all */}
-        <Route path="*" element={<Navigate to="/sales/dashboard" replace />} />
+        {/* <Route path="*" element={<Navigate to="/sales/dashboard" replace />} /> */}
       </Route>
 
       {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/sales/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/sales/dashboard" replace />} />
+      {/* <Route path="/" element={<Navigate to="/sales/dashboard" replace />} /> */}
     </Routes>
   );
 };
