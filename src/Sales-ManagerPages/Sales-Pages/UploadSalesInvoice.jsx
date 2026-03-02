@@ -139,7 +139,10 @@ function calcSoStatus(items) {
   if (statuses.some((s) => s === "excess")) return "excess";
   if (statuses.every((s) => s === "ready" || s === "complete"))
     return "complete";
-  if (statuses.some((s) => s === "partial" || s === "ready")) return "partial";
+  if (
+    statuses.some((s) => s === "partial" || s === "ready" || s === "complete")
+  )
+    return "partial";
   return "reserved";
 }
 
@@ -337,7 +340,7 @@ export default function UploadSalesInvoice() {
         const sos = all.filter((doc) => {
           if (doc.type !== "SALES_ORDER") return false;
           if (doc.soStatus === "complete") return false;
-        //    if (doc.soStatus === "excess") return false;
+          //    if (doc.soStatus === "excess") return false;
           return true;
         });
         const mapped = sos.map((so) => ({
@@ -397,7 +400,7 @@ export default function UploadSalesInvoice() {
         setLinkedInvoices(
           snap.docs
             .map((d) => ({ id: d.id, ...d.data() }))
-            .filter(d => d.type === "SALES_INVOICE") 
+            .filter((d) => d.type === "SALES_INVOICE")
             .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
         );
       } catch (err) {
@@ -851,15 +854,15 @@ export default function UploadSalesInvoice() {
   const getTotalNewInvoiced = () =>
     invoicedItems.reduce((sum, item) => sum + (item.newInvoiced || 0), 0);
 
- const liveSoStatus = (() => {
-  const computed = calcSoStatus(
-    invoicedItems.map((i) => ({
-      orderedQty:       i.orderedQty || 0,
-      totalInvoicedQty: (i.alreadyInvoiced || 0) + (i.newInvoiced || 0),
-    })),
-  );
-  return computed; 
-})();
+  const liveSoStatus = (() => {
+    const computed = calcSoStatus(
+      invoicedItems.map((i) => ({
+        orderedQty: i.orderedQty || 0,
+        totalInvoicedQty: (i.alreadyInvoiced || 0) + (i.newInvoiced || 0),
+      })),
+    );
+    return computed;
+  })();
   const steps = [
     { num: 1, label: "Select SO" },
     { num: 2, label: "Upload Invoice" },

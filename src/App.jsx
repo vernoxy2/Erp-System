@@ -31,7 +31,7 @@ import POCompleteDetails from "./Sales-ManagerPages/Sales-Pages/POCompleteDetail
 import SOCompleteDetails from "./Sales-ManagerPages/Sales-Pages/SOCompleteDetails";
 import UploadSalesInvoice from "./Sales-ManagerPages/Sales-Pages/UploadSalesInvoice";
 import ReadyToDispatchDeatils from "./Sales-ManagerPages/Sales-Pages/ReadyToDispatchDeatils";
-
+import DispatchOnChallanList from "./Sales-ManagerPages/Sales-Pages/Dispatchonchallanlist"
 
 const App = () => {
   return (
@@ -65,7 +65,9 @@ const App = () => {
         />
 
         {/* DISPATCH */}
+        {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />
+        <Route path="dispatch-on-challan-list" element={<DispatchOnChallanList />} />
         <Route path="dispatch-on-invoice" element={<DispatchOnInvoice />} />
     <Route path="dispatch-detail/:soId" element={<ReadyToDispatchDeatils />} />
 

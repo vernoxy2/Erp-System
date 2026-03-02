@@ -1804,13 +1804,10 @@ function POHistoryTimeline({ selectedPO, linkedInvoices, loadingHistory }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function UploadVendorInvoice() {
   const navigate = useNavigate();
-
   const urlParams = new URLSearchParams(window.location.search);
   const urlPoId = urlParams.get("poId");
-
   const [step, setStep] = useState(urlPoId ? 2 : 1);
   const [selectedPO, setSelectedPO] = useState(null);
-
   const [invoiceExcelFile, setInvoiceExcelFile] = useState(null);
   const [invoiceHeader, setInvoiceHeader] = useState(null);
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -1819,14 +1816,12 @@ export default function UploadVendorInvoice() {
   );
   const [parsingExcel, setParsingExcel] = useState(false);
   const [excelParsed, setExcelParsed] = useState(false);
-
   const [receivedItems, setReceivedItems] = useState([]);
   const [qualityCheck, setQualityCheck] = useState("passed");
   const [remarks, setRemarks] = useState("");
   const [uploading, setUploading] = useState(false);
   const [pendingPOs, setPendingPOs] = useState([]);
   const [loadingPOs, setLoadingPOs] = useState(true);
-
   // ── NEW: Linked invoices for history timeline ─────────────────────────────
   const [linkedInvoices, setLinkedInvoices] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);

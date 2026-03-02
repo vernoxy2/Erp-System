@@ -334,7 +334,7 @@ export default function ReadyToDispatchDeatils() {
       </Section>
 
       {/* ── Section 4: Invoice History ── */}
-      <Section title={`Invoice History (${invoices.length})`} icon="🕐" color="bg-slate-700">
+      {/* <Section title={`Invoice History (${invoices.length})`} icon="🕐" color="bg-slate-700">
         {invoices.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-4">No invoices uploaded yet</p>
         ) : (
@@ -401,7 +401,7 @@ export default function ReadyToDispatchDeatils() {
             })}
           </div>
         )}
-      </Section>
+      </Section> */}
 
       {/* ── Bottom Action ── */}
       <div className="flex items-center justify-between pt-2">

@@ -27,6 +27,7 @@ export default function Sidebar() {
         {to:"/sales/upload-sales-invoice", icon:FiUpload, label:"Upload Sales Invoice"},
         { to: "/sales/ready-to-dispatch", icon: FiBell, label: "Ready to Dispatch", badge: 2, badgeColor: "emerald" },
         { to: "/sales/dispatch-on-challan", icon: FiTruck, label: "Dispatch on Challan" },
+        { to: "/sales/unbilled-challans", icon: FiClock, label: "Unbilled Challans", badge: 5, badgeColor: "red" },
       ]
     },
     // {
@@ -38,7 +39,6 @@ export default function Sidebar() {
     {
       title: "INVOICING",
       items: [
-        { to: "/sales/unbilled-challans", icon: FiClock, label: "Unbilled Challans", badge: 5, badgeColor: "red" },
         { to: "/sales/invoice-history", icon: FiArchive, label: "Invoice History" }
       ]
     },
@@ -46,6 +46,7 @@ export default function Sidebar() {
       title: "Inward",
       items: [
         { to: "/sales/purchase-orders", icon: FiShoppingCart, label: "Purchase Orders", badge: "2d", badgeColor: "orange" },
+        {to: "/sales/purchase-orders/List", icon: FiFileText, label: "Purchase Orders List"},
         { to: "/sales/upload-vendor-invoice", icon: FiUpload, label: "Upload Vendor Invoice" },
         { to: "/sales/debit-credit-notes", icon: FiFile, label: "Debit/Credit Notes", badge: 2, badgeColor: "amber" },
         { to: "/sales/vendor-invoice-history", icon: FiArchive, label: "Vendor Invoice History" }
