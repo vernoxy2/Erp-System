@@ -578,7 +578,7 @@ export default function UploadPurchaseOrder() {
           <div className="flex justify-end gap-3">
             <BtnSecondary onClick={() => setStep(1)}>← Back</BtnSecondary>
             <BtnPrimary onClick={handleSubmit} disabled={uploading}>
-              {uploading ? "Saving to Firebase..." : "Create Sales Order →"}
+              {uploading ? "Saving to Firebase..." : "Create Purchase Order →"}
             </BtnPrimary>
           </div>
         </div>

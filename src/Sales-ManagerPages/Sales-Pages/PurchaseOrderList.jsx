@@ -348,6 +348,7 @@ export default function PurchaseOrderList() {
                     <FiX size={12} />
                   </button>
                 )}
+                
               </div>
 
               {/* Status Filter */}

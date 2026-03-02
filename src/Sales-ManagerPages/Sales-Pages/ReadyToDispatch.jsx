@@ -199,12 +199,12 @@ export default function ReadyToDispatch() {
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200">
                               📝 Draft
                             </span>
-                            <button
+                            {/* <button
                               onClick={() => navigate(`/sales/dispatch-on-challan?soId=${order.id}`)}
                               className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
                             >
                               🚚 Create Challan
-                            </button>
+                            </button> */}
                           </>
                         )}
                       </div>
