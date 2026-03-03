@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiPackage, FiTruck, FiFileText, FiShoppingCart, FiAlertTriangle, FiClock, FiBell } from "react-icons/fi";
-import { KPICard, Card, CardHeader, Alert, StatusBadge, NotificationBadge, Table } from "../SalesComponent/ui/index";
+import { KPICard, Card, CardHeader, Alert, StatusBadge, NotificationBadge } from "../SalesComponent/ui/index";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 
@@ -27,7 +27,7 @@ function getDaysFromToday(dateStr) {
 }
 
 function derivePoStatus(deliveryDateRaw, poStatus) {
-  // If already marked complete in Firestore, respect that
+  // ✅ Complete POs still show as complete (not hidden)
   if (poStatus === "complete") return "complete";
   const days = getDaysFromToday(deliveryDateRaw);
   if (days === null) return "pending";
@@ -52,17 +52,29 @@ function timeAgo(timestamp) {
   return `${Math.floor(diffHrs / 24)} days ago`;
 }
 
+// ✅ Flexible type matchers
+function isPO(type) {
+  if (!type) return false;
+  const t = type.trim().toLowerCase().replace(/[\s_\-\.]/g, "");
+  return ["po", "purchaseorder", "purchase"].includes(t);
+}
+
+function isSalesOrder(type) {
+  if (!type) return false;
+  const t = type.trim().toLowerCase().replace(/[\s_\-\.]/g, "");
+  return ["salesorder", "so", "workorder", "wo", "sales", "sales_order"].includes(t);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SalesOrder() {
   const navigate = useNavigate();
   const [showAlerts, setShowAlerts] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [workOrders, setWorkOrders] = useState([]);       // type: SALES_ORDER
-  const [purchaseOrders, setPurchaseOrders] = useState([]); // type: PO
+  const [workOrders, setWorkOrders] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [challans, setChallans] = useState([]);
 
-  // ─── Fetch from Firebase ──────────────────────────────────────────────────
   useEffect(() => {
     async function fetchData() {
       try {
@@ -78,17 +90,17 @@ export default function SalesOrder() {
 
         const allDocs = ordersSnap.docs.map((doc) => {
           const d = doc.data();
-          const header = d.excelHeader || {};
-          const deliveryRaw = d.deliveryDate || header.dated || "";
+          const header = d.excelHeader || d.invoiceHeader || {};
+          const deliveryRaw = d.deliveryDate || header.dated || d.eta || "";
 
           return {
             id: doc.id,
-            type: d.type || "",                          // "SALES_ORDER" | "PO" | "INVOICE"
-            soStatus: d.soStatus || "",                  // "complete" | ""
-            poStatus: d.poStatus || "",                  // "complete" | "pending" | ""
+            type: d.type || "",
+            soStatus: d.soStatus || "",
+            poStatus: d.poStatus || "",
 
             // SO fields
-            woNumber: header.reference || d.invoiceNo || `SO-${doc.id.slice(0, 8).toUpperCase()}`,
+            woNumber: header.reference || d.invoiceNo || d.woNumber || `SO-${doc.id.slice(0, 8).toUpperCase()}`,
             customer: d.customer || header.consignee || "",
             deliveryDate: formatDate(deliveryRaw),
             _deliveryDateRaw: deliveryRaw,
@@ -97,23 +109,23 @@ export default function SalesOrder() {
             createdAt: d.createdAt || null,
 
             // PO fields
-            poNumber: d.invoiceNo || header.reference || `PO-${doc.id.slice(0, 8).toUpperCase()}`,
-            vendor: header.buyer || d.vendor || header.companyName || "—",
+            poNumber: d.invoiceNo || header.reference || d.poNumber || d.wonumber || `PO-${doc.id.slice(0, 8).toUpperCase()}`,
+            vendor: header.buyer || d.vendor || header.companyName || header.consignee || "—",
             grandTotal: d.totalValue || d.grandTotal || 0,
             eta: formatDate(deliveryRaw),
           };
         });
 
-        // ✅ Filter by type
         const salesOrders = allDocs
-          .filter((d) => d.type === "SALES_ORDER")
+          .filter((d) => isSalesOrder(d.type))
           .map((so) => ({
             ...so,
             status: so.soStatus === "complete" ? "complete" : "active",
           }));
 
+        // ✅ ALL POs — including complete ones — are now included
         const poOrders = allDocs
-          .filter((d) => d.type === "PO")
+          .filter((d) => isPO(d.type))
           .map((po) => ({
             ...po,
             status: derivePoStatus(po._deliveryDateRaw, po.poStatus),
@@ -136,11 +148,13 @@ export default function SalesOrder() {
   // ─── Derived Data ─────────────────────────────────────────────────────────
 
   const recentWorkOrders = workOrders.slice(0, 3);
+
+  // ✅ Show ALL POs in the panel (complete + active + overdue)
+  const recentPOs = purchaseOrders.slice(0, 5);
   const urgentPOs = purchaseOrders.filter(
     (po) => po.status === "overdue" || po.status === "warning"
   );
 
-  // Auto-generate notifications
   const notifications = [
     ...purchaseOrders
       .filter((po) => po.status === "overdue")
@@ -183,14 +197,16 @@ export default function SalesOrder() {
   const stats = {
     activeWorkOrders: workOrders.filter((wo) => wo.soStatus !== "complete").length,
     pendingChallans: challans.filter((ch) => !ch.invoiceUrl && !ch.invoiceNumber).length,
-    activePOs: purchaseOrders.filter((po) => po.poStatus !== "complete").length,
+    // ✅ Fixed: Total POs (not just non-complete)
+    totalPOs: purchaseOrders.length,
+    activePOs: purchaseOrders.filter((po) => po.status !== "complete").length,
     overduePOs: purchaseOrders.filter((po) => po.status === "overdue").length,
     warningPOs: purchaseOrders.filter((po) => po.status === "warning").length,
+    completedPOs: purchaseOrders.filter((po) => po.status === "complete").length,
     pendingInvoices: challans.filter((ch) => !ch.invoiceUrl && !ch.invoiceNumber).length,
     unreadNotifications: notifications.length,
   };
 
-  // ─── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -202,20 +218,26 @@ export default function SalesOrder() {
     );
   }
 
-  // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-slate-800">Sales Dashboard</h2>
           <p className="text-xs text-slate-400 mt-0.5">Real-time overview of sales operations</p>
         </div>
-        <div className="flex gap-7">
-          <button onClick={() => navigate("/sales/sales-orders/create")} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors">
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/sales/sales-orders/create")}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors"
+          >
             <FiFileText size={14} /> Create Sales Order
           </button>
-          <button onClick={() => navigate("/sales/sales-orders/upload")} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors">
+          <button
+            onClick={() => navigate("/sales/sales-orders/upload")}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors"
+          >
             <FiFileText size={14} /> Upload Sales Order
           </button>
         </div>
@@ -235,10 +257,35 @@ export default function SalesOrder() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Active Work Orders" value={stats.activeWorkOrders} icon={FiPackage} color="blue" onClick={() => navigate("/sales/sales-orders/list")} />
-        <KPICard label="Pending Challans" value={stats.pendingChallans} icon={FiTruck} color="purple" onClick={() => navigate("/sales/unbilled-challans")} />
-        <KPICard label="Active Purchase Orders" value={stats.activePOs} icon={FiShoppingCart} color="indigo" onClick={() => navigate("/sales/purchase-orders")} />
-        <KPICard label="Overdue POs" value={stats.overduePOs} icon={FiAlertTriangle} color="red" onClick={() => navigate("/sales/purchase-orders")} />
+        <KPICard
+          label="Active Work Orders"
+          value={stats.activeWorkOrders}
+          icon={FiPackage}
+          color="blue"
+          onClick={() => navigate("/sales/sales-orders/list")}
+        />
+        <KPICard
+          label="Pending Challans"
+          value={stats.pendingChallans}
+          icon={FiTruck}
+          color="purple"
+          onClick={() => navigate("/sales/unbilled-challans")}
+        />
+        {/* ✅ Now shows TOTAL POs, not just non-complete */}
+        <KPICard
+          label="Total Purchase Orders"
+          value={stats.totalPOs}
+          icon={FiShoppingCart}
+          color="indigo"
+          onClick={() => navigate("/sales/purchase-orders")}
+        />
+        <KPICard
+          label="Overdue POs"
+          value={stats.overduePOs}
+          icon={FiAlertTriangle}
+          color="red"
+          onClick={() => navigate("/sales/purchase-orders")}
+        />
       </div>
 
       {/* Two Column Layout */}
@@ -261,8 +308,12 @@ export default function SalesOrder() {
                 <p className="text-sm text-slate-400">No sales orders found.</p>
               </div>
             ) : (
-              recentWorkOrders.map(wo => (
-                <div key={wo.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate("/sales/sales-orders/list")}>
+              recentWorkOrders.map((wo) => (
+                <div
+                  key={wo.id}
+                  className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => navigate("/sales/sales-orders/list")}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -283,11 +334,11 @@ export default function SalesOrder() {
           </div>
         </Card>
 
-        {/* Purchase Order Alerts */}
+        {/* ✅ Purchase Orders — shows ALL POs including complete */}
         <Card>
           <CardHeader
-            title="Purchase Order Alerts"
-            subtitle={`${urgentPOs.length} requiring attention`}
+            title="Purchase Orders"
+            subtitle={`${stats.totalPOs} total · ${stats.completedPOs} completed`}
             action={
               <button onClick={() => navigate("/sales/purchase-orders")} className="text-xs text-indigo-600 font-bold hover:text-indigo-700">
                 View All →
@@ -295,13 +346,25 @@ export default function SalesOrder() {
             }
           />
           <div className="divide-y divide-slate-50">
-            {urgentPOs.length === 0 ? (
+            {recentPOs.length === 0 ? (
               <div className="px-6 py-8 text-center">
-                <p className="text-sm text-slate-400">All purchase orders are on track! ✅</p>
+                <p className="text-sm text-slate-400">No purchase orders found.</p>
               </div>
             ) : (
-              urgentPOs.map(po => (
-                <div key={po.id} className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${po.status === "overdue" ? "bg-red-50" : "bg-orange-50"}`} onClick={() => navigate("/sales/purchase-orders")}>
+              recentPOs.map((po) => (
+                <div
+                  key={po.id}
+                  className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${
+                    po.status === "overdue"
+                      ? "bg-red-50"
+                      : po.status === "warning"
+                      ? "bg-orange-50"
+                      : po.status === "complete"
+                      ? "bg-green-50"
+                      : ""
+                  }`}
+                  onClick={() => navigate("/sales/purchase-orders")}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -312,15 +375,19 @@ export default function SalesOrder() {
                       <div className="flex items-center gap-1 mt-1">
                         <FiClock size={10} className="text-slate-400" />
                         <p className="text-xs text-slate-400">
-                          {po.status === "overdue"
+                          {po.status === "complete"
+                            ? "Completed ✓"
+                            : po.status === "overdue"
                             ? `Overdue by ${Math.abs(po.remainingDays)} days`
-                            : `${po.remainingDays} days remaining`}
+                            : po.remainingDays !== null
+                            ? `${po.remainingDays} days remaining`
+                            : "ETA not set"}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-slate-800">₹{(po.grandTotal / 1000).toFixed(0)}K</p>
-                      <p className="text-xs text-slate-400">ETA: {po.eta}</p>
+                      <p className="text-xs text-slate-400">ETA: {po.eta || "—"}</p>
                     </div>
                   </div>
                 </div>
@@ -344,9 +411,9 @@ export default function SalesOrder() {
         />
         <div className="p-6 space-y-3">
           {unreadNotifications.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center">No new notifications.</p>
+            <p className="text-sm text-slate-400 text-center">No new notifications. All caught up! ✅</p>
           ) : (
-            unreadNotifications.map(notification => (
+            unreadNotifications.map((notification) => (
               <NotificationBadge
                 key={notification.id}
                 type={notification.type}
@@ -364,19 +431,31 @@ export default function SalesOrder() {
       <Card>
         <CardHeader title="Quick Actions" />
         <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button onClick={() => navigate("/sales/sales-orders/upload")} className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all text-center">
+          <button
+            onClick={() => navigate("/sales/sales-orders/upload")}
+            className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all text-center"
+          >
             <FiPackage className="mx-auto mb-2 text-indigo-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Upload Sales Order</p>
           </button>
-          <button onClick={() => navigate("/sales/dispatch-on-challan")} className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all text-center">
+          <button
+            onClick={() => navigate("/sales/dispatch-on-challan")}
+            className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all text-center"
+          >
             <FiTruck className="mx-auto mb-2 text-purple-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Dispatch on Challan</p>
           </button>
-          <button onClick={() => navigate("/sales/purchase-orders/create")} className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-all text-center">
+          <button
+            onClick={() => navigate("/sales/purchase-orders/create")}
+            className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-all text-center"
+          >
             <FiShoppingCart className="mx-auto mb-2 text-emerald-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Create PO</p>
           </button>
-          <button onClick={() => navigate("/sales/upload-sales-invoice")} className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-amber-300 hover:bg-amber-50 transition-all text-center">
+          <button
+            onClick={() => navigate("/sales/upload-sales-invoice")}
+            className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-amber-300 hover:bg-amber-50 transition-all text-center"
+          >
             <FiFileText className="mx-auto mb-2 text-amber-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Upload Invoice</p>
           </button>
