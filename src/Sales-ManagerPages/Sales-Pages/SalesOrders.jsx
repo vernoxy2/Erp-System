@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPackage, FiTruck, FiFileText, FiShoppingCart, FiAlertTriangle, FiClock, FiBell } from "react-icons/fi";
-import { KPICard, Card, CardHeader, Alert, StatusBadge, NotificationBadge } from "../SalesComponent/ui/index";
+import {
+  FiPackage, FiTruck, FiFileText, FiShoppingCart,
+  FiAlertTriangle, FiClock
+} from "react-icons/fi";
+import { KPICard, Card, CardHeader, Alert, StatusBadge } from "../SalesComponent/ui/index";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 
@@ -27,7 +30,6 @@ function getDaysFromToday(dateStr) {
 }
 
 function derivePoStatus(deliveryDateRaw, poStatus) {
-  // ✅ Complete POs still show as complete (not hidden)
   if (poStatus === "complete") return "complete";
   const days = getDaysFromToday(deliveryDateRaw);
   if (days === null) return "pending";
@@ -42,17 +44,6 @@ function formatDate(dateStr) {
   return date.toISOString().split("T")[0];
 }
 
-function timeAgo(timestamp) {
-  if (!timestamp) return "recently";
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const diffMins = Math.floor((Date.now() - date) / 60000);
-  if (diffMins < 60) return `${diffMins} minutes ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs} hours ago`;
-  return `${Math.floor(diffHrs / 24)} days ago`;
-}
-
-// ✅ Flexible type matchers
 function isPO(type) {
   if (!type) return false;
   const t = type.trim().toLowerCase().replace(/[\s_\-\.]/g, "");
@@ -98,8 +89,6 @@ export default function SalesOrder() {
             type: d.type || "",
             soStatus: d.soStatus || "",
             poStatus: d.poStatus || "",
-
-            // SO fields
             woNumber: header.reference || d.invoiceNo || d.woNumber || `SO-${doc.id.slice(0, 8).toUpperCase()}`,
             customer: d.customer || header.consignee || "",
             deliveryDate: formatDate(deliveryRaw),
@@ -107,8 +96,6 @@ export default function SalesOrder() {
             totalValue: d.totalValue || d.grandTotal || 0,
             items: d.items || [],
             createdAt: d.createdAt || null,
-
-            // PO fields
             poNumber: d.invoiceNo || header.reference || d.poNumber || d.wonumber || `PO-${doc.id.slice(0, 8).toUpperCase()}`,
             vendor: header.buyer || d.vendor || header.companyName || header.consignee || "—",
             grandTotal: d.totalValue || d.grandTotal || 0,
@@ -118,12 +105,8 @@ export default function SalesOrder() {
 
         const salesOrders = allDocs
           .filter((d) => isSalesOrder(d.type))
-          .map((so) => ({
-            ...so,
-            status: so.soStatus === "complete" ? "complete" : "active",
-          }));
+          .map((so) => ({ ...so, status: so.soStatus === "complete" ? "complete" : "active" }));
 
-        // ✅ ALL POs — including complete ones — are now included
         const poOrders = allDocs
           .filter((d) => isPO(d.type))
           .map((po) => ({
@@ -141,70 +124,22 @@ export default function SalesOrder() {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
-  // ─── Derived Data ─────────────────────────────────────────────────────────
+  // ─── Derived ─────────────────────────────────────────────────────────────
 
   const recentWorkOrders = workOrders.slice(0, 3);
-
-  // ✅ Show ALL POs in the panel (complete + active + overdue)
   const recentPOs = purchaseOrders.slice(0, 5);
-  const urgentPOs = purchaseOrders.filter(
-    (po) => po.status === "overdue" || po.status === "warning"
-  );
 
-  const notifications = [
-    ...purchaseOrders
-      .filter((po) => po.status === "overdue")
-      .map((po) => ({
-        id: `overdue-${po.id}`,
-        type: "error",
-        title: "PO Overdue",
-        message: `${po.poNumber} from ${po.vendor} is overdue by ${Math.abs(po.remainingDays)} day(s).`,
-        time: timeAgo(po.createdAt),
-        read: false,
-        action: `/sales/purchase-orders`,
-      })),
-    ...purchaseOrders
-      .filter((po) => po.status === "warning")
-      .map((po) => ({
-        id: `warning-${po.id}`,
-        type: "warning",
-        title: "PO Material Arriving Soon",
-        message: `${po.poNumber} from ${po.vendor} is due in ${po.remainingDays} day(s).`,
-        time: timeAgo(po.createdAt),
-        read: false,
-        action: `/sales/purchase-orders`,
-      })),
-    ...challans
-      .filter((ch) => !ch.invoiceUrl && !ch.invoiceNumber)
-      .map((ch) => ({
-        id: `invoice-${ch.id}`,
-        type: "info",
-        title: "Invoice Pending Upload",
-        message: `Challan for ${ch.customer || ch.id} is missing an invoice.`,
-        time: timeAgo(ch.createdAt),
-        read: false,
-        action: `/sales/unbilled-challans`,
-      })),
-  ];
-
-  const unreadNotifications = notifications.slice(0, 4);
-
-  // ─── Stats ────────────────────────────────────────────────────────────────
   const stats = {
     activeWorkOrders: workOrders.filter((wo) => wo.soStatus !== "complete").length,
     pendingChallans: challans.filter((ch) => !ch.invoiceUrl && !ch.invoiceNumber).length,
-    // ✅ Fixed: Total POs (not just non-complete)
     totalPOs: purchaseOrders.length,
-    activePOs: purchaseOrders.filter((po) => po.status !== "complete").length,
     overduePOs: purchaseOrders.filter((po) => po.status === "overdue").length,
     warningPOs: purchaseOrders.filter((po) => po.status === "warning").length,
     completedPOs: purchaseOrders.filter((po) => po.status === "complete").length,
     pendingInvoices: challans.filter((ch) => !ch.invoiceUrl && !ch.invoiceNumber).length,
-    unreadNotifications: notifications.length,
   };
 
   if (loading) {
@@ -243,7 +178,7 @@ export default function SalesOrder() {
         </div>
       </div>
 
-      {/* Critical Alerts */}
+      {/* Critical Alerts Banner */}
       {showAlerts && (stats.overduePOs > 0 || stats.warningPOs > 0) && (
         <Alert type="warning" onClose={() => setShowAlerts(false)}>
           <div className="space-y-1">
@@ -271,7 +206,6 @@ export default function SalesOrder() {
           color="purple"
           onClick={() => navigate("/sales/unbilled-challans")}
         />
-        {/* ✅ Now shows TOTAL POs, not just non-complete */}
         <KPICard
           label="Total Purchase Orders"
           value={stats.totalPOs}
@@ -334,7 +268,7 @@ export default function SalesOrder() {
           </div>
         </Card>
 
-        {/* ✅ Purchase Orders — shows ALL POs including complete */}
+        {/* Purchase Orders */}
         <Card>
           <CardHeader
             title="Purchase Orders"
@@ -355,13 +289,10 @@ export default function SalesOrder() {
                 <div
                   key={po.id}
                   className={`px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer ${
-                    po.status === "overdue"
-                      ? "bg-red-50"
-                      : po.status === "warning"
-                      ? "bg-orange-50"
-                      : po.status === "complete"
-                      ? "bg-green-50"
-                      : ""
+                    po.status === "overdue" ? "bg-red-50"
+                    : po.status === "warning" ? "bg-orange-50"
+                    : po.status === "complete" ? "bg-green-50"
+                    : ""
                   }`}
                   onClick={() => navigate("/sales/purchase-orders")}
                 >
@@ -396,36 +327,6 @@ export default function SalesOrder() {
           </div>
         </Card>
       </div>
-
-      {/* Notifications */}
-      <Card>
-        <CardHeader
-          title="Notifications"
-          subtitle={`${stats.unreadNotifications} unread`}
-          action={
-            <div className="flex items-center gap-2">
-              <FiBell size={14} className="text-slate-400" />
-              <span className="text-xs text-slate-400">{stats.unreadNotifications} new</span>
-            </div>
-          }
-        />
-        <div className="p-6 space-y-3">
-          {unreadNotifications.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center">No new notifications. All caught up! ✅</p>
-          ) : (
-            unreadNotifications.map((notification) => (
-              <NotificationBadge
-                key={notification.id}
-                type={notification.type}
-                title={notification.title}
-                message={notification.message}
-                time={notification.time}
-                onClick={() => navigate(notification.action)}
-              />
-            ))
-          )}
-        </div>
-      </Card>
 
       {/* Quick Actions */}
       <Card>
