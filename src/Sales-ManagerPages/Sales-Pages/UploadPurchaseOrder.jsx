@@ -25,7 +25,7 @@ function detectUnit(description, productCode) {
   if (desc.includes("cable") || desc.includes("wire")) return "mtr";
   if (desc.includes("rod") || desc.includes("bar")) return "mtr";
   if (desc.includes("sheet") || desc.includes("plate")) return "sqm";
-  return "pcs";
+  return "nos";
 }
 export default function UploadPurchaseOrder() {
   const navigate = useNavigate();

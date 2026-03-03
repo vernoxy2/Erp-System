@@ -1,22 +1,30 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  FiAlertTriangle, 
-  FiPackage, 
-  FiTrendingUp, 
-  FiShoppingCart, 
-  FiClock, 
+import {
+  FiAlertTriangle,
+  FiPackage,
+  FiTrendingUp,
+  FiShoppingCart,
+  FiClock,
   FiArrowRight,
-  FiDownload
+  FiDownload,
 } from "react-icons/fi";
 import { stockCategories, getCategoryAlert } from "../data/stockCategoriesData";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const totalLowStock = stockCategories.reduce((sum, cat) => sum + cat.lowStockCount, 0);
-  const totalCritical = stockCategories.reduce((sum, cat) => sum + cat.criticalCount, 0);
-  const criticalCategories = stockCategories.filter(cat => cat.criticalCount > 0);
+  const totalLowStock = stockCategories.reduce(
+    (sum, cat) => sum + cat.lowStockCount,
+    0,
+  );
+  const totalCritical = stockCategories.reduce(
+    (sum, cat) => sum + cat.criticalCount,
+    0,
+  );
+  const criticalCategories = stockCategories.filter(
+    (cat) => cat.criticalCount > 0,
+  );
 
   // ✅ EXPORT FUNCTION
   const handleExport = () => {
@@ -24,22 +32,22 @@ export default function Dashboard() {
       "Category Name",
       "Total Products",
       "Critical Items",
-      "Low Stock Items"
+      "Low Stock Items",
     ];
 
-    const rows = stockCategories.map(cat => [
+    const rows = stockCategories.map((cat) => [
       cat.name,
       cat.productCount,
       cat.criticalCount,
-      cat.lowStockCount
+      cat.lowStockCount,
     ]);
 
     const csvContent = [headers, ...rows]
-      .map(row => row.join(","))
+      .map((row) => row.join(","))
       .join("\n");
 
     const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;"
+      type: "text/csv;charset=utf-8;",
     });
 
     const url = window.URL.createObjectURL(blob);
@@ -53,11 +61,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-
       {/* Header + Export */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-slate-800">Sales Dashboard</h2>
+          <h2 className="text-2xl font-black text-slate-800">
+            Sales Dashboard
+          </h2>
           <p className="text-sm text-slate-500 mt-1">
             Overview of sales operations and stock alerts
           </p>
@@ -129,7 +138,10 @@ export default function Dashboard() {
                 Total Products
               </p>
               <p className="text-3xl font-black text-slate-800 mt-2">
-                {stockCategories.reduce((sum, cat) => sum + cat.productCount, 0)}
+                {stockCategories.reduce(
+                  (sum, cat) => sum + cat.productCount,
+                  0,
+                )}
               </p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center">
@@ -149,7 +161,8 @@ export default function Dashboard() {
                 Stock Alerts
               </h3>
               <p className="text-sm text-red-700 mt-1">
-                {criticalCategories.length} categories have critical stock levels
+                {criticalCategories.length} categories have critical stock
+                levels
               </p>
             </div>
 
@@ -182,22 +195,27 @@ export default function Dashboard() {
           </h3>
 
           <div className="flex gap-2">
-            <span className="text-xs font-bold text-slate-500">🔴 Critical</span>
-            <span className="text-xs font-bold text-slate-500">🟠 High Alert</span>
+            <span className="text-xs font-bold text-slate-500">
+              🔴 Critical
+            </span>
+            <span className="text-xs font-bold text-slate-500">
+              🟠 High Alert
+            </span>
             <span className="text-xs font-bold text-slate-500">🟡 Warning</span>
             <span className="text-xs font-bold text-slate-500">🟢 Normal</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {stockCategories.map((category) => {
             const alert = getCategoryAlert(category);
-
             return (
               <button
                 key={category.id}
                 onClick={() =>
-                  navigate(`/sales/low-stock-management?category=${category.id}`)
+                  navigate(
+                    `/sales/low-stock-management?category=${category.id}`,
+                  )
                 }
                 className={`${alert.bgColor} rounded-xl border-2 ${alert.borderColor} p-5 text-left hover:shadow-lg transition-all hover:scale-105`}
               >
@@ -206,15 +224,13 @@ export default function Dashboard() {
                   <div className="text-2xl">{alert.icon}</div>
                 </div>
 
-                <h4 className="font-black text-slate-800 text-sm mb-2 line-clamp-2 min-h-[2.5rem]">
+                <h4 className="font-black text-slate-800 text-sm mb-2 line-clamp-2 min-h-[1.0rem]">
                   {category.name}
                 </h4>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600">
-                      Total Products:
-                    </span>
+                    <span className="text-slate-600">Total Products:</span>
                     <span className="font-bold text-slate-800">
                       {category.productCount}
                     </span>
@@ -231,9 +247,7 @@ export default function Dashboard() {
 
                   {category.lowStockCount > 0 && (
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-600">
-                        ⚠️ Low Stock:
-                      </span>
+                      <span className="text-yellow-600">⚠️ Low Stock:</span>
                       <span className="font-bold text-yellow-700">
                         {category.lowStockCount}
                       </span>
@@ -258,7 +272,6 @@ export default function Dashboard() {
           })}
         </div>
       </div>
-
     </div>
   );
 }

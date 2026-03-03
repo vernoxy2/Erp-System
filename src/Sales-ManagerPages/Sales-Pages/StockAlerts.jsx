@@ -160,7 +160,7 @@ export default function SalesStock() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">{item.unit || "pcs"}</td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">{item.unit || "nos"}</td>
 
                       <td className="px-4 py-3.5 text-center">
                         {isShortage ? (

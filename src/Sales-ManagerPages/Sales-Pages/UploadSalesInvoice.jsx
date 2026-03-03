@@ -361,7 +361,7 @@ export default function UploadSalesInvoice() {
             ...item,
             orderedQty: item.orderedQty || item.quantity || 0,
             totalInvoicedQty: item.totalInvoicedQty || 0,
-            unit: item.unit || "pcs",
+            unit: item.unit || "nos",
           })),
         }));
         setPendingSOs(mapped);
@@ -676,7 +676,7 @@ export default function UploadSalesInvoice() {
           productCode: key,
           description: item.description || "",
           hsnSac: item.hsnSac || "",
-          unit: item.unit || "pcs",
+          unit: item.unit || "nos",
           available: 0,
           reserved: 0,
           backorder: qty,
@@ -820,7 +820,7 @@ export default function UploadSalesInvoice() {
           alreadyInvoiced: i.alreadyInvoiced || 0,
           itemStatus: i.itemStatus || "",
           shortage: i.shortage || 0,
-          unit: i.unit || "pcs",
+          unit: i.unit || "nos",
           hsnSac: i.hsnSac || "",
         })),
         soStatus,
@@ -1345,12 +1345,14 @@ export default function UploadSalesInvoice() {
                           type="number"
                           min="0"
                           value={thisInv}
-                          onChange={(e) =>
-                            updateInvoicedQty(
-                              idx,
-                              parseInt(e.target.value) || 0,
-                            )
-                          }
+                          // onChange={(e) =>
+                          //   updateInvoicedQty(
+                          //     idx,
+                          //     parseInt(e.target.value) || 0,
+                          //   )
+                          // }
+                          readOnly
+                          disabled
                           className="w-full border border-slate-200 rounded px-2 py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         />
                       </div>

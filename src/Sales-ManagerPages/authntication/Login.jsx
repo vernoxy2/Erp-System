@@ -6,9 +6,29 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.svg";
+import logotext from "../../assets/logotext.svg";
+import logocrown from "../../assets/logocrown.svg";
 import factoryImg from "../../assets/image.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+
+// Inject keyframes into the document head once
+const injectStyles = () => {
+  if (document.getElementById("login-animations")) return;
+  const style = document.createElement("style");
+  style.id = "login-animations";
+  style.textContent = `
+    @keyframes zoomInOut {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    @keyframes rotateCW {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+};
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -26,6 +46,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    injectStyles();
     setTimeout(() => setMounted(true), 80);
   }, []);
 
@@ -154,7 +175,7 @@ export default function Login() {
                     User ID
                   </label>
                   <input
-                    className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300  px-4 py-3 text-base focus:ring-1 focus:ring-orange-500 outline-none"
+                    className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-orange-500 outline-none"
                     type="email"
                     placeholder="user@fit2feb.com"
                     value={email}
@@ -205,24 +226,108 @@ export default function Login() {
                 </button>
               </>
             ) : (
-              /* Forgot password UI unchanged, styling auto-inherits */
-              <></>
+              /* ── Forgot Password Panel ── */
+              <div className="flex flex-col">
+                <button
+                  onClick={goBack}
+                  className="self-start text-sm text-gray-500 hover:text-gray-800 mb-8 flex items-center gap-1"
+                >
+                  ← Back to Login
+                </button>
+
+                {resetSent ? (
+                  <>
+                    <h2 className="text-[#311F85] font-extrabold text-4xl leading-tight">
+                      Email Sent!
+                    </h2>
+                    <p className="text-gray-500 mt-4">
+                      A password reset link has been sent to{" "}
+                      <strong>{resetEmail}</strong>. Check your inbox.
+                    </p>
+                    <button
+                      onClick={goBack}
+                      className="mt-8 w-full rounded-xl bg-[#311F85] text-white py-3 text-lg font-semibold hover:bg-indigo-700 transition"
+                    >
+                      Back to Login
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-[#311F85] font-extrabold text-4xl leading-tight">
+                      Reset Password
+                    </h2>
+                    <p className="text-gray-500 mt-3">
+                      Enter your registered email and we'll send you a reset
+                      link.
+                    </p>
+
+                    {resetError && (
+                      <div className="mt-6 rounded-lg bg-red-50 text-red-600 px-4 py-3 text-sm font-medium">
+                        ⚠ {resetError}
+                      </div>
+                    )}
+
+                    <div className="mt-8">
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        Email Address
+                      </label>
+                      <input
+                        className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-orange-500 outline-none"
+                        type="email"
+                        placeholder="user@fit2fab.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleReset()}
+                      />
+                    </div>
+
+                    <button
+                      className="mt-6 w-full rounded-xl bg-[#311F85] text-white py-3 text-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-70"
+                      onClick={handleReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? "Sending..." : "Send Reset Link"}
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
           {/* ══ RIGHT — Image Panel (7/12) ══ */}
-          <div className="col-span-7 relative bg-gradient-to-br flex flex-col">
-            {/* Logo */}
+          <div className="col-span-7 relative bg-gradient-to-br flex flex-col overflow-hidden">
+            {/* Logo — clockwise rotation, positioned at top-center */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
-              <img src={logo} alt="Fib2Fab" className="h-40 " />
+              <img
+             src={logocrown}
+                alt="Fib2Fab"
+                className="h-30"
+                style={{
+                  // animation: "rotateCW 8s linear infinite",
+                  transformOrigin: "center center",
+                }}
+              />
+              <img
+             src={logotext}
+                alt="Fib2Fab"
+                className="h-30 -mt-7"
+                style={{
+                  // animation: "rotateCW 8s linear infinite",
+                  transformOrigin: "center center",
+                }}
+              />
             </div>
 
-            {/* Image */}
-            <div className="mt-auto h-full">
+            {/* Factory Image — zoom in/out, clipped inside panel */}
+            <div className="mt-auto h-full overflow-hidden">
               <img
                 src={factoryImg}
                 alt="Industrial Factory"
-                className="w-full h-full object-cover "
+                className="w-full h-full object-cover"
+                style={{
+                  animation: "zoomInOut 15s ease-in-out infinite",
+                  transformOrigin: "center center",
+                }}
               />
             </div>
           </div>

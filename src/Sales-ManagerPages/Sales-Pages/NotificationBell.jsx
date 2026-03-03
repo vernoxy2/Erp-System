@@ -5,7 +5,7 @@ import {
   FiFileText, FiAlertTriangle, FiCheckCircle, FiClock,
   FiChevronRight, FiRefreshCw
 } from "react-icons/fi";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -55,14 +55,14 @@ function isSalesOrder(type) {
 // ─── Notification Config ───────────────────────────────────────────────────────
 
 const NOTIF_CONFIG = {
-  po_overdue:       { color: "bg-red-100 text-red-700 border-red-200",     dot: "bg-red-500",    icon: FiAlertTriangle, label: "PO Overdue"        },
-  po_warning:       { color: "bg-orange-100 text-orange-700 border-orange-200", dot: "bg-orange-400", icon: FiClock,        label: "Due Soon"          },
-  po_complete:      { color: "bg-green-100 text-green-700 border-green-200",  dot: "bg-green-500",  icon: FiCheckCircle,  label: "PO Complete"       },
-  po_created:       { color: "bg-blue-100 text-blue-700 border-blue-200",    dot: "bg-blue-400",   icon: FiShoppingCart, label: "PO Created"        },
-  so_created:       { color: "bg-indigo-100 text-indigo-700 border-indigo-200", dot: "bg-indigo-400", icon: FiPackage,    label: "SO Created"        },
-  so_complete:      { color: "bg-green-100 text-green-700 border-green-200",  dot: "bg-green-500",  icon: FiCheckCircle,  label: "SO Complete"       },
-  challan_pending:  { color: "bg-yellow-100 text-yellow-700 border-yellow-200", dot: "bg-yellow-400", icon: FiTruck,     label: "Invoice Pending"   },
-  invoice_uploaded: { color: "bg-teal-100 text-teal-700 border-teal-200",    dot: "bg-teal-500",   icon: FiFileText,     label: "Invoice Uploaded"  },
+  po_overdue:       { color: "bg-red-100 text-red-700 border-red-200",         dot: "bg-red-500",    icon: FiAlertTriangle, label: "PO Overdue"       },
+  po_warning:       { color: "bg-orange-100 text-orange-700 border-orange-200", dot: "bg-orange-400", icon: FiClock,         label: "Due Soon"         },
+  po_complete:      { color: "bg-green-100 text-green-700 border-green-200",    dot: "bg-green-500",  icon: FiCheckCircle,   label: "PO Complete"      },
+  po_created:       { color: "bg-blue-100 text-blue-700 border-blue-200",       dot: "bg-blue-400",   icon: FiShoppingCart,  label: "PO Created"       },
+  so_created:       { color: "bg-indigo-100 text-indigo-700 border-indigo-200", dot: "bg-indigo-400", icon: FiPackage,       label: "SO Created"       },
+  so_complete:      { color: "bg-green-100 text-green-700 border-green-200",    dot: "bg-green-500",  icon: FiCheckCircle,   label: "SO Complete"      },
+  challan_pending:  { color: "bg-yellow-100 text-yellow-700 border-yellow-200", dot: "bg-yellow-400", icon: FiTruck,         label: "Invoice Pending"  },
+  invoice_uploaded: { color: "bg-teal-100 text-teal-700 border-teal-200",       dot: "bg-teal-500",   icon: FiFileText,      label: "Invoice Uploaded" },
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -70,18 +70,23 @@ const NOTIF_CONFIG = {
 export default function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [lastFetched, setLastFetched] = useState(null);
+  const [cleared, setCleared] = useState(false);
   const dropdownRef = useRef(null);
+
+  // ─── Load dismissed IDs from localStorage ────────────────────────────────
+  const [dismissedIds, setDismissedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("dismissedNotifs") || "[]"); }
+    catch { return []; }
+  });
 
   // ─── Click outside close ─────────────────────────────────────────────────
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setOpen(false);
-        setShowAll(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -223,12 +228,21 @@ export default function NotificationBell() {
         }
       });
 
-      // ── Sort: urgent first, then by time ─────────────────────────────────
-      const PRIORITY = { po_overdue: 0, po_warning: 1, challan_pending: 2, po_created: 3, so_created: 4, po_complete: 5, so_complete: 6, invoice_uploaded: 7 };
+      // ── Sort: urgent first ────────────────────────────────────────────────
+      const PRIORITY = {
+        po_overdue: 0, po_warning: 1, challan_pending: 2,
+        po_created: 3, so_created: 4, po_complete: 5,
+        so_complete: 6, invoice_uploaded: 7,
+      };
       notifs.sort((a, b) => (PRIORITY[a.kind] ?? 9) - (PRIORITY[b.kind] ?? 9));
 
-      setNotifications(notifs);
+      // ── Filter out dismissed IDs ──────────────────────────────────────────
+      const savedDismissed = JSON.parse(localStorage.getItem("dismissedNotifs") || "[]");
+      const filtered = notifs.filter((n) => !savedDismissed.includes(n.id));
+
+      setNotifications(filtered);
       setLastFetched(new Date());
+      if (filtered.length > 0) setCleared(false);
     } catch (err) {
       console.error("Notification fetch error:", err);
     } finally {
@@ -250,15 +264,23 @@ export default function NotificationBell() {
     (n) => n.kind === "po_overdue" || n.kind === "po_warning" || n.kind === "challan_pending"
   ).length;
 
-  const previewList = notifications.slice(0, 6);
-  const displayList = showAll ? notifications : previewList;
+  // ─── Dismiss all ─────────────────────────────────────────────────────────
+  const handleDismissAll = () => {
+    const allIds = notifications.map((n) => n.id);
+    const existing = JSON.parse(localStorage.getItem("dismissedNotifs") || "[]");
+    const merged = [...new Set([...existing, ...allIds])];
+    localStorage.setItem("dismissedNotifs", JSON.stringify(merged));
+    setDismissedIds(merged);
+    setNotifications([]);
+    setCleared(true);
+  };
 
   // ─── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
-        onClick={() => { setOpen((v) => !v); setShowAll(false); }}
+        onClick={() => setOpen((v) => !v)}
         className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
         aria-label="Notifications"
       >
@@ -272,9 +294,10 @@ export default function NotificationBell() {
 
       {/* Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 top-11 w-[420px] bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
-          style={{ maxHeight: "80vh" }}>
-
+        <div
+          className="absolute right-0 top-11 w-[420px] bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
+          style={{ maxHeight: "80vh" }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
             <div className="flex items-center gap-2">
@@ -300,7 +323,7 @@ export default function NotificationBell() {
                 <FiRefreshCw size={13} className={`text-slate-500 ${loading ? "animate-spin" : ""}`} />
               </button>
               <button
-                onClick={() => { setOpen(false); setShowAll(false); }}
+                onClick={() => setOpen(false)}
                 className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
               >
                 <FiX size={13} className="text-slate-500" />
@@ -318,66 +341,22 @@ export default function NotificationBell() {
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 gap-2">
                 <FiCheckCircle size={32} className="text-green-400" />
-                <p className="text-sm font-medium text-slate-500">All caught up!</p>
+                <p className="text-sm font-medium text-slate-500">
+                  {cleared ? "Notifications cleared!" : "All caught up!"}
+                </p>
                 <p className="text-xs text-slate-400">No new notifications</p>
               </div>
-            ) : showAll ? (
-              /* ── Full Table View ── */
-              <div className="p-4">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left py-2 px-2 text-slate-400 font-semibold uppercase tracking-wide text-[10px]">Type</th>
-                      <th className="text-left py-2 px-2 text-slate-400 font-semibold uppercase tracking-wide text-[10px]">Activity</th>
-                      <th className="text-left py-2 px-2 text-slate-400 font-semibold uppercase tracking-wide text-[10px]">Ref</th>
-                      <th className="text-right py-2 px-2 text-slate-400 font-semibold uppercase tracking-wide text-[10px]">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {notifications.map((n) => {
-                      const cfg = NOTIF_CONFIG[n.kind] || NOTIF_CONFIG.so_created;
-                      const Icon = cfg.icon;
-                      return (
-                        <tr
-                          key={n.id}
-                          className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() => { navigate(n.action); setOpen(false); setShowAll(false); }}
-                        >
-                          <td className="py-2.5 px-2">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cfg.color}`}>
-                              <Icon size={9} />
-                              {cfg.label}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-2 text-slate-700 max-w-[160px]">
-                            <p className="font-semibold text-slate-800 text-[11px] leading-tight">{n.title}</p>
-                            <p className="text-slate-500 text-[10px] leading-tight truncate">{n.message}</p>
-                          </td>
-                          <td className="py-2.5 px-2">
-                            <span className="font-mono text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                              {n.tag}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-2 text-right text-slate-400 text-[10px] whitespace-nowrap">
-                            {timeAgo(n.time)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             ) : (
-              /* ── Preview Card List ── */
+              /* ── Card List ── */
               <div className="divide-y divide-slate-50">
-                {displayList.map((n) => {
+                {notifications.map((n) => {
                   const cfg = NOTIF_CONFIG[n.kind] || NOTIF_CONFIG.so_created;
                   const Icon = cfg.icon;
                   return (
                     <div
                       key={n.id}
                       className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
-                      onClick={() => { navigate(n.action); setOpen(false); setShowAll(false); }}
+                      onClick={() => { navigate(n.action); setOpen(false); }}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.color} border`}>
                         <Icon size={14} />
@@ -401,21 +380,19 @@ export default function NotificationBell() {
           </div>
 
           {/* Footer */}
-          {!loading && notifications.length > 0 && (
+          {!loading && (
             <div className="border-t border-slate-100 px-5 py-3 bg-slate-50 flex items-center justify-between">
               <span className="text-[10px] text-slate-400">
                 {lastFetched ? `Updated ${timeAgo(lastFetched)}` : ""}
               </span>
-              <button
-                onClick={() => setShowAll((v) => !v)}
-                className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
-              >
-                {showAll ? (
-                  <><FiX size={11} /> Show less</>
-                ) : (
-                  <><FiChevronRight size={11} /> See all {notifications.length} notifications</>
-                )}
-              </button>
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleDismissAll}
+                  className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                >
+                  <FiChevronRight size={11} /> See all {notifications.length} notifications
+                </button>
+              )}
             </div>
           )}
         </div>
