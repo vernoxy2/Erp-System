@@ -5,7 +5,7 @@ export default function ReportsAnalytics() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black text-slate-800">ReportsAnalytics</h2>
-        <p className="text-sm text-slate-500 mt-1">Module ready for implementation</p>
+        {/* <p className="text-sm text-slate-500 mt-1">Module ready for implementation</p> */}
       </div>
       
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
@@ -14,10 +14,12 @@ export default function ReportsAnalytics() {
             <span className="text-2xl">📋</span>
           </div>
           <h3 className="text-lg font-bold text-slate-800 mb-2">ReportsAnalytics Page</h3>
-          <p className="text-sm text-slate-600 mb-6">
-            This page is ready to be implemented with your business logic.
+         <p className="text-sm text-slate-600 leading-relaxed mt-5">
+            This ERP module is currently under development.
+            <br />
+            Please check back soon for updates.
           </p>
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 text-left">
+          {/* <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 text-left">
             <p className="text-xs font-bold text-blue-900 mb-2">Quick Start Guide:</p>
             <ul className="text-xs text-blue-700 space-y-1">
               <li>• Add your data fetching logic</li>
@@ -25,7 +27,7 @@ export default function ReportsAnalytics() {
               <li>• Add form handlers</li>
               <li>• Connect to backend API</li>
             </ul>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

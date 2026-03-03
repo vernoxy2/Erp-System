@@ -283,3 +283,30 @@
   .f2f-right { display: none; }
   .f2f-left  { padding: 40px 28px; }
 }
+
+@keyframes zoomInOutPause {
+  0% {
+    transform: scale(1);
+  }
+  /* Zoom in over 4s */
+  25% {
+    transform: scale(1.12);
+  }
+  /* Hold zoom-in for 4s */
+  50% {
+    transform: scale(1.12);
+  }
+  /* Zoom out over 4s */
+  75% {
+    transform: scale(1);
+  }
+  /* Hold zoom-out for 4s */
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-zoom-in-out {
+  animation: zoomInOutPause 16s ease-in-out infinite;
+  will-change: transform;
+}

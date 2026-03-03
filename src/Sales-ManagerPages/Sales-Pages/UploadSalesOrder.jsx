@@ -312,7 +312,7 @@ export default function UploadSalesOrder() {
   };
 
   const handleConfirm = () => {
-    navigate("/sales/viewExcelSheet");
+    navigate("/sales/sales-orders");
   };
 
   return (
@@ -365,7 +365,7 @@ export default function UploadSalesOrder() {
 
       {/* ── STEP 1: Upload ── */}
       {step === 1 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1">
           {/* <Card>
             <CardHeader title="Sales Order Details" />
             <div className="p-6 space-y-4">
@@ -383,7 +383,7 @@ export default function UploadSalesOrder() {
           <Card>
             <CardHeader
               title="Upload Excel File"
-              subtitle="Sales Order / Purchase Order Excel"
+              subtitle="Sales Order Excel"
             />
             <div className="p-6 space-y-4">
               <FileUpload

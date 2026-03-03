@@ -236,7 +236,7 @@ export default function UploadPurchaseOrder() {
   };
 
   const handleConfirm = () => {
-    navigate("/sales/viewExcelSheet");
+    navigate("/sales/purchase-orders");
   };
 
   // const addToStock = async (parsedItems, poNumber, vendor) => {
@@ -421,7 +421,7 @@ export default function UploadPurchaseOrder() {
           <Card>
             <CardHeader
               title="Upload Excel File"
-              subtitle="Sales Order / Purchase Order Excel"
+              subtitle="Purchase Order Excel"
             />
             <div className="p-6 space-y-4">
               <FileUpload
