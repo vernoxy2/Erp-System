@@ -2,12 +2,21 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FiCheck, FiRefreshCw } from "react-icons/fi";
 import {
-  Card, CardHeader, BtnPrimary, BtnSecondary,
-  Alert, FileUpload,
+  Card,
+  CardHeader,
+  BtnPrimary,
+  BtnSecondary,
+  Alert,
+  FileUpload,
 } from "../SalesComponent/ui/index";
 import { db } from "../../firebase";
 import {
-  collection, addDoc, doc, getDoc, updateDoc, arrayUnion,
+  collection,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
@@ -16,7 +25,7 @@ function detectUnit(description, productCode) {
   const part = (productCode || "").toLowerCase();
   if (desc.includes("pipe") || part.includes("pipe")) return "mtr";
   if (desc.includes("cable") || desc.includes("wire")) return "mtr";
-  if (desc.includes("rod")   || desc.includes("bar"))  return "mtr";
+  if (desc.includes("rod") || desc.includes("bar")) return "mtr";
   if (desc.includes("sheet") || desc.includes("plate")) return "sqm";
   return "nos";
 }
@@ -24,10 +33,10 @@ function detectUnit(description, productCode) {
 // ── Edit Mode Page ─────────────────────────────────────────────────────────────
 function EditPOPage({ poId, onDone }) {
   const navigate = useNavigate();
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [excelHeader, setExcelHeader] = useState(null);
-  const [items, setItems]             = useState([]);
+  const [items, setItems] = useState([]);
   const [originalItems, setOriginalItems] = useState([]);
 
   useEffect(() => {
@@ -46,7 +55,7 @@ function EditPOPage({ poId, onDone }) {
             (data.items || []).map((item) => ({
               productCode: item.productCode,
               originalQty: item.orderedQty ?? item.quantity ?? 0,
-            }))
+            })),
           );
         } else {
           alert("PO not found.");
@@ -64,18 +73,19 @@ function EditPOPage({ poId, onDone }) {
   const handleQtyChange = (idx, val) => {
     setItems((prev) =>
       prev.map((item, i) =>
-        i === idx ? { ...item, quantity: parseFloat(val) || 0 } : item
-      )
+        i === idx ? { ...item, quantity: parseFloat(val) || 0 } : item,
+      ),
     );
   };
 
   const handleUpdate = async () => {
     setSaving(true);
     try {
-      // Track which quantities changed
       const changes = items
         .map((item) => {
-          const orig = originalItems.find((o) => o.productCode === item.productCode);
+          const orig = originalItems.find(
+            (o) => o.productCode === item.productCode,
+          );
           const oldQty = orig ? orig.originalQty : item.quantity;
           const newQty = item.quantity;
           return oldQty !== newQty
@@ -110,8 +120,13 @@ function EditPOPage({ poId, onDone }) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiRefreshCw size={28} className="animate-spin mx-auto text-indigo-500 mb-3"/>
-          <p className="text-sm font-bold text-slate-500">Loading Purchase Order...</p>
+          <FiRefreshCw
+            size={28}
+            className="animate-spin mx-auto text-indigo-500 mb-3"
+          />
+          <p className="text-sm font-bold text-slate-500">
+            Loading Purchase Order...
+          </p>
         </div>
       </div>
     );
@@ -119,23 +134,27 @@ function EditPOPage({ poId, onDone }) {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-slate-800">Edit Purchase Order</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Only quantities can be modified</p>
+          <h2 className="text-xl font-black text-slate-800">
+            Edit Purchase Order
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Only quantities can be modified
+          </p>
         </div>
         <BtnSecondary onClick={() => navigate("/sales/purchase-orders")}>
           Cancel
         </BtnSecondary>
       </div>
 
-      {/* Header Information */}
       {excelHeader && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 bg-indigo-600">
             <h3 className="font-bold text-white text-base">PURCHASE ORDER</h3>
-            <p className="text-indigo-200 text-xs mt-0.5">{items.length} items</p>
+            <p className="text-indigo-200 text-xs mt-0.5">
+              {items.length} items
+            </p>
           </div>
           <div className="p-6">
             <p className="text-xs font-black text-slate-400 uppercase tracking-wide mb-4">
@@ -144,26 +163,29 @@ function EditPOPage({ poId, onDone }) {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "COMPANYNAME", val: excelHeader.companyName },
-                { label: "ADDRESS",     val: excelHeader.address },
-                { label: "GSTIN",       val: excelHeader.gstin },
-                { label: "STATE",       val: excelHeader.state },
-                { label: "EMAIL",       val: excelHeader.email },
-                { label: "VOUCHERNO",   val: excelHeader.voucherNo },
-                { label: "DATED",       val: excelHeader.dated },
-                { label: "PAYMENTTERMS",val: excelHeader.paymentTerms },
-                { label: "CONSIGNEE",   val: excelHeader.consignee },
-                { label: "REFERENCE",   val: excelHeader.reference },
+                { label: "ADDRESS", val: excelHeader.address },
+                { label: "GSTIN", val: excelHeader.gstin },
+                { label: "STATE", val: excelHeader.state },
+                { label: "EMAIL", val: excelHeader.email },
+                { label: "VOUCHERNO", val: excelHeader.voucherNo },
+                { label: "DATED", val: excelHeader.dated },
+                { label: "PAYMENTTERMS", val: excelHeader.paymentTerms },
+                { label: "CONSIGNEE", val: excelHeader.consignee },
+                { label: "REFERENCE", val: excelHeader.reference },
               ]
                 .filter((f) => f.val)
                 .map(({ label, val }) => (
-                  <div key={label} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <p className="text-xs text-slate-400 uppercase font-semibold mb-1">{label}</p>
+                  <div
+                    key={label}
+                    className="bg-slate-50 p-3 rounded-lg border border-slate-100"
+                  >
+                    <p className="text-xs text-slate-400 uppercase font-semibold mb-1">
+                      {label}
+                    </p>
                     <p className="text-sm font-medium text-slate-800">{val}</p>
                   </div>
                 ))}
             </div>
-
-            {/* Edit notice */}
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs font-bold text-amber-700">
                 ✏️ Edit Mode — Only quantities can be modified below
@@ -173,11 +195,12 @@ function EditPOPage({ poId, onDone }) {
         </div>
       )}
 
-      {/* Items Table — Quantity editable */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
           <p className="text-sm font-black text-slate-800">Items Preview</p>
-          <p className="text-xs text-slate-400 mt-0.5">{items.length} items — edit quantities below</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {items.length} items — edit quantities below
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -186,27 +209,36 @@ function EditPOPage({ poId, onDone }) {
                 <th className="px-4 py-3 text-left">Sl</th>
                 <th className="px-4 py-3 text-left">Part No.</th>
                 <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-center">HSN/SAC</th>
-                <th className="px-4 py-3 text-center">Quantity ✏️</th>
-                <th className="px-4 py-3 text-center">Unit</th>
+                <th className="px-4 py-3 text-left">HSN/SAC</th>
+                <th className="px-4 py-3 text-left">Quantity ✏️</th>
+                <th className="px-4 py-3 text-left">Unit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {items.map((item, idx) => {
-                const orig = originalItems.find((o) => o.productCode === item.productCode);
+                const orig = originalItems.find(
+                  (o) => o.productCode === item.productCode,
+                );
                 const changed = orig && orig.originalQty !== item.quantity;
                 return (
-                  <tr key={idx} className={`hover:bg-slate-50/60 transition-colors ${changed ? "bg-amber-50/30" : ""}`}>
+                  <tr
+                    key={idx}
+                    className={`hover:bg-slate-50/60 transition-colors ${changed ? "bg-amber-50/30" : ""}`}
+                  >
                     <td className="px-4 py-3 text-xs text-slate-400 font-semibold">
-                      {item.slNo || idx+1}
+                      {item.slNo || idx + 1}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs font-bold font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full">
                         {item.productCode || "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{item.description}</td>
-                    <td className="px-4 py-3 text-center text-xs text-slate-400 font-mono">{item.hsnSac}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {item.description}
+                    </td>
+                    <td className="px-4 py-3 text-center text-xs text-slate-400 font-mono">
+                      {item.hsnSac}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <input
@@ -214,7 +246,8 @@ function EditPOPage({ poId, onDone }) {
                           min="0"
                           value={item.quantity}
                           onChange={(e) => handleQtyChange(idx, e.target.value)}
-                          className="w-24 text-center border border-indigo-300 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-24 text-center border border-indigo-300 rounded-lg px-2 py-1.5 text-sm font-bold
+                           text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                         {changed && orig && (
                           <span className="text-[10px] text-amber-600 font-bold">
@@ -223,27 +256,30 @@ function EditPOPage({ poId, onDone }) {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center text-xs text-slate-400 uppercase">{item.unit}</td>
+                    <td className="px-4 py-3 text-slate-400 text-left uppercase text-xs">{item.unit}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-
-        {/* ── Bottom: Update PO button ── */}
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <p className="text-xs text-slate-400">
             {items.filter((item) => {
-              const orig = originalItems.find((o) => o.productCode === item.productCode);
+              const orig = originalItems.find(
+                (o) => o.productCode === item.productCode,
+              );
               return orig && orig.originalQty !== item.quantity;
             }).length > 0
-              ? `⚠️ ${items.filter((item) => {
-                  const orig = originalItems.find((o) => o.productCode === item.productCode);
-                  return orig && orig.originalQty !== item.quantity;
-                }).length} quantities changed`
-              : "No changes yet"
-            }
+              ? `⚠️ ${
+                  items.filter((item) => {
+                    const orig = originalItems.find(
+                      (o) => o.productCode === item.productCode,
+                    );
+                    return orig && orig.originalQty !== item.quantity;
+                  }).length
+                } quantities changed`
+              : "No changes yet"}
           </p>
           <div className="flex gap-3">
             <BtnSecondary onClick={() => navigate("/sales/purchase-orders")}>
@@ -264,21 +300,19 @@ export default function UploadPurchaseOrder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const poId       = searchParams.get("poId");
+  const poId = searchParams.get("poId");
   const isEditMode = searchParams.get("editMode") === "true";
 
-  // ── If edit mode → show EditPOPage directly ──
   if (isEditMode && poId) {
-    return <EditPOPage poId={poId}/>;
+    return <EditPOPage poId={poId} />;
   }
 
-  // ── Create mode ──
-  const [step, setStep]               = useState(1);
-  const [excelFile, setExcelFile]     = useState(null);
+  const [step, setStep] = useState(1);
+  const [excelFile, setExcelFile] = useState(null);
   const [excelHeader, setExcelHeader] = useState(null);
-  const [items, setItems]             = useState([]);
+  const [items, setItems] = useState([]);
   const [stockAlerts, setStockAlerts] = useState([]);
-  const [uploading, setUploading]     = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -289,92 +323,267 @@ export default function UploadPurchaseOrder() {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data     = new Uint8Array(event.target.result);
+        const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: "array" });
-        const sheet    = workbook.Sheets[workbook.SheetNames[0]];
-        const range    = XLSX.utils.decode_range(sheet["!ref"]);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const range = XLSX.utils.decode_range(sheet["!ref"]);
 
-        const findVal = (keywords) => {
-          for (let row = 0; row <= Math.min(40, range.e.r); row++) {
-            for (let col = 0; col <= range.e.c; col++) {
-              const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
-              if (cell && cell.v) {
-                const val = String(cell.v).toLowerCase();
-                for (const kw of keywords) {
-                  if (val.includes(kw.toLowerCase())) {
-                    const right = sheet[XLSX.utils.encode_cell({ r: row, c: col+1 })];
-                    const below = sheet[XLSX.utils.encode_cell({ r: row+1, c: col })];
-                    if (right && right.v) return String(right.v);
-                    if (below && below.v) return String(below.v);
-                  }
-                }
-              }
-            }
+        const getCellStr = (r, c) => {
+          const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+          return cell && cell.v ? String(cell.v).trim() : "";
+        };
+
+        // Build flat cell list for scanning
+        const allCells = [];
+        for (let r = 0; r <= Math.min(60, range.e.r); r++) {
+          for (let c = 0; c <= range.e.c; c++) {
+            const raw = getCellStr(r, c);
+            if (raw)
+              allCells.push({ row: r, col: c, raw, lower: raw.toLowerCase() });
+          }
+        }
+
+        // Find exact row of a keyword
+        const findRow = (keyword) => {
+          for (const { row, lower } of allCells) {
+            if (lower.includes(keyword.toLowerCase())) return row;
+          }
+          return -1;
+        };
+
+        // Find exact col of a keyword
+        const findCol = (keyword) => {
+          for (const { col, lower } of allCells) {
+            if (lower.includes(keyword.toLowerCase())) return col;
+          }
+          return -1;
+        };
+
+        // Extract value after ":" in same cell  e.g. "GSTIN/UIN: 24AAC..." → "24AAC..."
+        const afterColon = (raw) => {
+          const idx = raw.indexOf(":");
+          if (idx === -1) return "";
+          const v = raw.slice(idx + 1).trim();
+          return v.length > 1 ? v : "";
+        };
+
+        // Get value in next non-empty right cell from (row, col)
+        const rightVal = (row, col, skipWords = []) => {
+          for (let c = col + 1; c <= range.e.c; c++) {
+            const v = getCellStr(row, c);
+            if (
+              v &&
+              !skipWords.some((w) => v.toLowerCase().includes(w.toLowerCase()))
+            )
+              return v;
           }
           return "";
         };
 
-        const header = {
-          companyName:  findVal(["FIB 2 FAB","FIB2FAB","fib2fab"]),
-          address:      findVal(["FLOOR","TOWER","SURVEY"]),
-          gstin:        findVal(["GSTIN/UIN","GSTIN"]),
-          state:        findVal(["State Name","State"]),
-          email:        findVal(["E-Mail","Email"]),
-          voucherNo:    findVal(["Voucher No","Voucher"]),
-          dated:        findVal(["Dated","Date"]),
-          paymentTerms: findVal(["Mode/Terms","45 DAYS","DAYS","Payment"]),
-          destination:  findVal(["Destination"]),
-          consignee:    findVal(["Consignee","Ship to"]),
-          buyer:        findVal(["Buyer","Bill to"]),
-          reference:    findVal(["Reference","Order No","EVFN"]),
+        // Get value in next non-empty cell below (row, col)
+        const belowVal = (row, col) => {
+          for (let r = row + 1; r <= Math.min(row + 4, range.e.r); r++) {
+            const v = getCellStr(r, col);
+            if (v) return v;
+          }
+          return "";
         };
+
+        // ── Exact field extraction based on confirmed Excel layout ──
+        // Col A = labels/values (left section)
+        // Col F = right-section labels + values
+        // Col H = far-right labels + values
+
+        const invoiceToRow = findRow("Invoice To");
+        const voucherRow = findRow("Voucher No.");
+        const voucherCol = findCol("Voucher No.");
+        const datesRow = findRow("Dates");
+        const datesCol = findCol("Dates");
+        const modeRow = findRow("Mode/Terms of Payment");
+        const modeCol = findCol("Mode/Terms of Payment");
+        const refRow = findRow("Reference No. & Date");
+        const refCol = findCol("Reference No. & Date");
+        const consigneeRow = findRow("Consignee (Ship to)");
+        const consigneeCol = findCol("Consignee (Ship to)");
+        const supplierRow = findRow("Supplier (Bill from)");
+        const supplierCol = findCol("Supplier (Bill from)");
+        const gstin1Row = findRow("GSTIN/UIN: 24"); // first GSTIN (our company) - has value in same cell
+        const msmeRow = findRow("MSME NO:");
+
+        const header = {
+          // Row 3: "Invoice To" col A → Row 4 col A = "FIB 2 FAB"
+          companyName:
+            invoiceToRow >= 0
+              ? belowVal(invoiceToRow, findCol("Invoice To"))
+              : "",
+
+          // Rows 5+6 col A: "506, 4th FLOOR..." + "GIDC, VAPI-396195" → combine
+          // address: (() => {
+          //   const parts = [];
+          //   for (const { raw, lower } of allCells) {
+          //     if (lower.includes("floor") && lower.includes("tower")) parts.push(raw);
+          //     if (lower.includes("gidc") && lower.includes("vapi"))   parts.push(raw);
+          //   }
+          //   return parts.join(", ");
+          // })(),
+          address: (() => {
+            let floor = "",
+              gidc = "";
+            for (const { raw, lower } of allCells) {
+              if (!floor && lower.includes("floor") && lower.includes("tower"))
+                floor = raw;
+              if (!gidc && lower.includes("gidc") && lower.includes("vapi"))
+                gidc = raw;
+              if (floor && gidc) break;
+            }
+            return [floor, gidc].filter(Boolean).join(", ");
+          })(),
+
+          // Row 7 col A: "MSME NO: GJ25E0006706" → after ":"
+          msmeNo: (() => {
+            for (const { raw, lower } of allCells) {
+              if (lower.startsWith("msme no")) return afterColon(raw) || raw;
+            }
+            return "";
+          })(),
+
+          // Row 8 col A: "GSTIN/UIN: 24AACFF..." → after ":"
+          gstin: (() => {
+            for (const { raw, lower } of allCells) {
+              if (
+                lower.includes("gstin/uin:") ||
+                lower.includes("gstin/uin :")
+              ) {
+                const v = afterColon(raw);
+                if (v && v.length > 5) return v;
+              }
+            }
+            // fallback: label + adjacent col value
+            for (const { row, col, raw } of allCells) {
+              if (raw === "GSTIN/UIN:" || raw === "GSTIN/UIN :") {
+                return rightVal(row, col) || "";
+              }
+            }
+            return "";
+          })(),
+
+          // Row 9 col A: "State Name : Gujarat, Code : 24" → after ":"
+          state: (() => {
+            for (const { raw, lower } of allCells) {
+              if (lower.startsWith("state name")) {
+                const v = afterColon(raw);
+                if (v) return v;
+                const found = allCells.find((c) => c.raw === raw);
+                if (found) return rightVal(found.row, found.col) || "";
+              }
+            }
+            return "";
+          })(),
+
+          // Row 10 col A: "E-Mail : fib2fab..." → after ":"
+          email: (() => {
+            for (const { raw, lower } of allCells) {
+              if (lower.startsWith("e-mail") || lower.startsWith("e-mail")) {
+                const v = afterColon(raw);
+                if (v) return v;
+              }
+            }
+            return "";
+          })(),
+
+          // Row 3 col F: "Voucher No." → Row 4 col F = value (BELOW, not right)
+          voucherNo: voucherRow >= 0 ? belowVal(voucherRow, voucherCol) : "",
+
+          // Row 3 col H: "Dates" → Row 4 col H = value (BELOW)
+          dated: datesRow >= 0 ? belowVal(datesRow, datesCol) : "",
+
+          // Row 5 col H: "Mode/Terms of Payment" → Row 6 col H = "30 Days" (BELOW)
+          paymentTerms: modeRow >= 0 ? belowVal(modeRow, modeCol) : "",
+
+          // Row 7 col F: "Reference No. & Date." → Row 8 col F = "2389/25-26" (BELOW)
+          reference: refRow >= 0 ? belowVal(refRow, refCol) : "",
+
+          // "Consignee (Ship to)" → below = company name
+          consignee:
+            consigneeRow >= 0 ? belowVal(consigneeRow, consigneeCol) : "",
+
+          // "Supplier (Bill from)" → below = supplier name
+          supplier: supplierRow >= 0 ? belowVal(supplierRow, supplierCol) : "",
+        };
+
         setExcelHeader(header);
 
+        // ── Find table start row ──
         let tableStartRow = -1;
         for (let row = 0; row <= range.e.r; row++) {
           for (let col = 0; col <= range.e.c; col++) {
-            const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
-            if (cell && cell.v) {
-              const val = String(cell.v).toLowerCase();
-              if (val.includes("description of goods") || val==="sl" || val==="si" || val.includes("description")) {
-                tableStartRow = row; break;
-              }
+            const v = getCellStr(row, col).toLowerCase();
+            if (
+              v.includes("description of goods") ||
+              v === "sl" ||
+              v === "si" ||
+              v === "s.no" ||
+              (v.includes("description") && v.length < 30)
+            ) {
+              tableStartRow = row;
+              break;
             }
           }
           if (tableStartRow !== -1) break;
         }
 
         if (tableStartRow === -1) {
-          alert("Table header not found.");
+          alert("Table header not found. Please check the Excel format.");
           setUploading(false);
           return;
         }
 
-        let descCol=-1, hsnCol=-1, partCol=-1, qtyCol=-1;
+        // ── Detect columns ──
+        let descCol = -1,
+          hsnCol = -1,
+          partCol = -1,
+          qtyCol = -1,
+          slCol = 0;
         for (let col = 0; col <= range.e.c; col++) {
-          const cell = sheet[XLSX.utils.encode_cell({ r: tableStartRow, c: col })];
-          if (cell && cell.v) {
-            const val = String(cell.v).toLowerCase();
-            if (val.includes("description")) descCol = col;
-            if (val.includes("hsn"))         hsnCol  = col;
-            if (val.includes("part"))        partCol = col;
-            if (val.includes("quantity"))    qtyCol  = col;
-          }
+          const v = getCellStr(tableStartRow, col).toLowerCase();
+          if (v.includes("description")) descCol = col;
+          if (v.includes("hsn")) hsnCol = col;
+          if (v.includes("part") || v.includes("item code")) partCol = col;
+          if (v.includes("quantity") || v === "qty") qtyCol = col;
+          if (v === "sl" || v === "si" || v === "s.no") slCol = col;
         }
 
+        if (descCol === -1) {
+          alert("Description column not found.");
+          setUploading(false);
+          return;
+        }
+
+        // ── Parse items (skip 1 subheader row after header) ──
         const parsedItems = [];
-        for (let row = tableStartRow+2; row <= range.e.r; row++) {
-          const descCell = sheet[XLSX.utils.encode_cell({ r: row, c: descCol })];
-          if (!descCell || !descCell.v) break;
+        for (let row = tableStartRow + 2; row <= range.e.r; row++) {
+          const desc = getCellStr(row, descCol);
+          if (!desc) break;
+          // Skip total/subtotal rows
+          if (
+            desc.toLowerCase().includes("total") ||
+            desc.toLowerCase().includes("grand")
+          )
+            break;
+
           parsedItems.push({
-            slNo:        sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]?.v || parsedItems.length+1,
-            productCode: partCol>=0 ? sheet[XLSX.utils.encode_cell({ r: row, c: partCol })]?.v||"" : "",
-            description: String(descCell.v),
-            quantity:    qtyCol>=0 ? parseFloat(sheet[XLSX.utils.encode_cell({ r: row, c: qtyCol })]?.v||0) : 0,
-            unit:        detectUnit(String(descCell.v), partCol>=0 ? String(sheet[XLSX.utils.encode_cell({ r: row, c: partCol })]?.v||"") : ""),
-            hsnSac:      hsnCol>=0 ? sheet[XLSX.utils.encode_cell({ r: row, c: hsnCol })]?.v||"" : "",
-            available:   0,
-            status:      "ok",
+            slNo: getCellStr(row, slCol) || String(parsedItems.length + 1),
+            productCode: partCol >= 0 ? getCellStr(row, partCol) : "",
+            description: desc,
+            quantity:
+              qtyCol >= 0 ? parseFloat(getCellStr(row, qtyCol)) || 0 : 0,
+            unit: detectUnit(
+              desc,
+              partCol >= 0 ? getCellStr(row, partCol) : "",
+            ),
+            hsnSac: hsnCol >= 0 ? getCellStr(row, hsnCol) : "",
+            available: 0,
+            status: "ok",
           });
         }
 
@@ -385,7 +594,7 @@ export default function UploadPurchaseOrder() {
       } catch (err) {
         console.error("Excel parse error:", err);
         setUploading(false);
-        alert("Error parsing Excel file.");
+        alert("Error parsing Excel file: " + err.message);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -395,18 +604,18 @@ export default function UploadPurchaseOrder() {
     setUploading(true);
     try {
       await addDoc(collection(db, "excelupload"), {
-        excelHeader:  excelHeader || {},
-        stockAlerts:  stockAlerts,
-        totalItems:   items.length,
-        hasShortage:  stockAlerts.length > 0,
-        createdAt:    new Date().toISOString(),
-        type:         "PO",
-        poStatus:     "ordered",
+        excelHeader: excelHeader || {},
+        stockAlerts: stockAlerts,
+        totalItems: items.length,
+        hasShortage: stockAlerts.length > 0,
+        createdAt: new Date().toISOString(),
+        type: "PO",
+        poStatus: "ordered",
         items: items.map((item) => ({
           ...item,
-          orderedQty:       item.quantity,
+          orderedQty: item.quantity,
           totalReceivedQty: 0,
-          itemStatus:       "ordered",
+          itemStatus: "ordered",
         })),
       });
       setUploading(false);
@@ -423,28 +632,44 @@ export default function UploadPurchaseOrder() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-slate-800">Upload Purchase Order</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Upload Excel file to create purchase order</p>
+          <h2 className="text-xl font-black text-slate-800">
+            Upload Purchase Order
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Upload Excel file to create purchase order
+          </p>
         </div>
-        <BtnSecondary onClick={() => navigate("/sales/purchase-orders")}>Cancel</BtnSecondary>
+        <BtnSecondary onClick={() => navigate("/sales/purchase-orders")}>
+          Cancel
+        </BtnSecondary>
       </div>
 
       {/* Progress Steps */}
       <Card className="p-6">
         <div className="flex items-center justify-between max-w-3xl mx-auto">
           {[
-            { num:1, label:"Upload Excel" },
-            { num:2, label:"Review & Verify" },
-            { num:3, label:"Confirmation" },
+            { num: 1, label: "Upload Excel" },
+            { num: 2, label: "Review & Verify" },
+            { num: 3, label: "Confirmation" },
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div className="flex flex-col items-center gap-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${step>=s.num ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-400"}`}>
-                  {step>s.num ? <FiCheck size={20}/> : s.num}
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${step >= s.num ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-400"}`}
+                >
+                  {step > s.num ? <FiCheck size={20} /> : s.num}
                 </div>
-                <p className={`text-xs font-bold ${step>=s.num ? "text-slate-800" : "text-slate-400"}`}>{s.label}</p>
+                <p
+                  className={`text-xs font-bold ${step >= s.num ? "text-slate-800" : "text-slate-400"}`}
+                >
+                  {s.label}
+                </p>
               </div>
-              {idx<2 && <div className={`flex-1 h-0.5 ${step>s.num ? "bg-indigo-600" : "bg-slate-200"}`}/>}
+              {idx < 2 && (
+                <div
+                  className={`flex-1 h-0.5 ${step > s.num ? "bg-indigo-600" : "bg-slate-200"}`}
+                />
+              )}
             </React.Fragment>
           ))}
         </div>
@@ -453,20 +678,36 @@ export default function UploadPurchaseOrder() {
       {/* Step 1: Upload */}
       {step === 1 && (
         <Card>
-          <CardHeader title="Upload Excel File" subtitle="Purchase Order Excel"/>
+          <CardHeader
+            title="Upload Excel File"
+            subtitle="Purchase Order Excel"
+          />
           <div className="p-6 space-y-4">
-            <FileUpload label="Select Excel File" accept=".xlsx,.xls" file={excelFile} onChange={handleFileUpload}/>
+            <FileUpload
+              label="Select Excel File"
+              accept=".xlsx,.xls"
+              file={excelFile}
+              onChange={handleFileUpload}
+            />
             {uploading && (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-3"/>
-                <p className="text-sm font-bold text-slate-600">Parsing Excel file...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-3" />
+                <p className="text-sm font-bold text-slate-600">
+                  Parsing Excel file...
+                </p>
               </div>
             )}
             {!excelFile && (
               <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-xs font-bold text-blue-900 mb-2">📋 Supported Excel Format:</p>
-                <p className="text-xs text-blue-700 font-mono">Sales Order / Purchase Order / Tax Invoice</p>
-                <p className="text-xs text-blue-500 mt-1">Auto-detects: Header info + Item table</p>
+                <p className="text-xs font-bold text-blue-900 mb-2">
+                  📋 Supported Excel Format:
+                </p>
+                <p className="text-xs text-blue-700 font-mono">
+                  Sales Order / Purchase Order / Tax Invoice
+                </p>
+                <p className="text-xs text-blue-500 mt-1">
+                  Auto-detects: Header info + Item table
+                </p>
               </div>
             )}
           </div>
@@ -479,27 +720,49 @@ export default function UploadPurchaseOrder() {
           {excelHeader && (
             <Card>
               <div className="px-6 py-4 bg-indigo-600 rounded-t-xl">
-                <h3 className="font-bold text-white text-base">PURCHASE ORDER</h3>
-                <p className="text-indigo-200 text-xs">{items.length} items found</p>
+                <h3 className="font-bold text-white text-base">
+                  PURCHASE ORDER
+                </h3>
+                <p className="text-indigo-200 text-xs">
+                  {items.length} items found
+                </p>
               </div>
               <div className="p-6">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-wide mb-4">Header Information</p>
+                <p className="text-xs font-black text-slate-500 uppercase tracking-wide mb-4">
+                  Header Information
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label:"COMPANYNAME",  val: excelHeader.companyName },
-                    { label:"ADDRESS",      val: excelHeader.address },
-                    { label:"GSTIN",        val: excelHeader.gstin },
-                    { label:"STATE",        val: excelHeader.state },
-                    { label:"EMAIL",        val: excelHeader.email },
-                    { label:"DATED",        val: excelHeader.dated },
-                    { label:"CONSIGNEE",    val: excelHeader.consignee },
-                    { label:"REFERENCE",    val: excelHeader.reference },
-                  ].filter((f)=>f.val).map(({ label, val }) => (
-                    <div key={label} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <p className="text-xs text-slate-400 uppercase font-semibold mb-1">{label}</p>
-                      <p className="text-sm font-medium text-slate-800">{val}</p>
-                    </div>
-                  ))}
+                    {
+                      label: "COMPANY (Invoice To)",
+                      val: excelHeader.companyName,
+                    },
+                    { label: "ADDRESS", val: excelHeader.address },
+                    { label: "MSME NO", val: excelHeader.msmeNo },
+                    { label: "GSTIN", val: excelHeader.gstin },
+                    { label: "STATE", val: excelHeader.state },
+                    { label: "EMAIL", val: excelHeader.email },
+                    { label: "VOUCHER NO", val: excelHeader.voucherNo },
+                    { label: "DATED", val: excelHeader.dated },
+                    { label: "PAYMENT TERMS", val: excelHeader.paymentTerms },
+                    { label: "CONSIGNEE", val: excelHeader.consignee },
+                    { label: "REFERENCE", val: excelHeader.reference },
+                    { label: "SUPPLIER", val: excelHeader.supplier },
+                  ]
+                    .filter((f) => f.val)
+                    .map(({ label, val }) => (
+                      <div
+                        key={label}
+                        className="bg-slate-50 p-3 rounded-lg border border-slate-100"
+                      >
+                        <p className="text-xs text-slate-400 uppercase font-semibold mb-1">
+                          {label}
+                        </p>
+                        <p className="text-sm font-medium text-slate-800">
+                          {val}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               </div>
             </Card>
@@ -509,31 +772,60 @@ export default function UploadPurchaseOrder() {
             <Alert type="warning">
               <p className="font-bold">⚠️ Stock Shortage Detected:</p>
               {stockAlerts.map((a) => (
-                <p key={a.productCode}>• {a.productCode}: Need {a.needed}, Available {a.available}</p>
+                <p key={a.productCode}>
+                  • {a.productCode}: Need {a.needed}, Available {a.available}
+                </p>
               ))}
             </Alert>
           )}
 
           <Card>
-            <CardHeader title="Items Preview" subtitle={`${items.length} items parsed from Excel`}/>
+            <CardHeader
+              title="Items Preview"
+              subtitle={`${items.length} items parsed from Excel`}
+            />
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    {["Sl","Part No.","Description","HSN/SAC","Quantity","Unit"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    {[
+                      "Sl",
+                      "Part No.",
+                      "Description",
+                      "HSN/SAC",
+                      "Quantity",
+                      "Unit",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-start text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-400 text-xs">{item.slNo}</td>
-                      <td className="px-4 py-3 font-bold font-mono text-slate-800">{item.productCode}</td>
-                      <td className="px-4 py-3 text-slate-600">{item.description}</td>
-                      <td className="px-4 py-3 text-slate-500 font-mono text-xs">{item.hsnSac}</td>
-                      <td className="px-4 py-3 font-bold text-center">{item.quantity}</td>
-                      <td className="px-4 py-3 text-slate-400 text-center">{item.unit}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs text-center">
+                        {item.slNo}
+                      </td>
+                      <td className="px-4 py-3 font-bold font-mono text-slate-800  text-start">
+                        {item.productCode}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600  text-start ">
+                        {item.description}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500  font-mono text-xs">
+                        {item.hsnSac}
+                      </td>
+                      <td className="px-4 py-3 font-bold ">
+                        {item.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 text-center">
+                        {item.unit}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -555,19 +847,34 @@ export default function UploadPurchaseOrder() {
         <Card>
           <div className="p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-              <FiCheck size={32} className="text-emerald-600"/>
+              <FiCheck size={32} className="text-emerald-600" />
             </div>
-            <h3 className="text-lg font-black text-slate-800 mb-2">Purchase Order Created Successfully!</h3>
+            <h3 className="text-lg font-black text-slate-800 mb-2">
+              Purchase Order Created Successfully!
+            </h3>
             <div className="space-y-2 text-sm text-slate-600 mb-8">
               <p>✅ {items.length} items saved to Firebase</p>
               <p>✅ Header info saved</p>
-              {stockAlerts.length > 0 && <p className="text-amber-600">⚠️ {stockAlerts.length} items have shortage</p>}
+              {stockAlerts.length > 0 && (
+                <p className="text-amber-600">
+                  ⚠️ {stockAlerts.length} items have shortage
+                </p>
+              )}
             </div>
             <div className="flex items-center justify-center gap-3">
-              <BtnSecondary onClick={() => { setStep(1); setExcelFile(null); setItems([]); setExcelHeader(null); }}>
+              <BtnSecondary
+                onClick={() => {
+                  setStep(1);
+                  setExcelFile(null);
+                  setItems([]);
+                  setExcelHeader(null);
+                }}
+              >
                 Create Another
               </BtnSecondary>
-              <BtnPrimary onClick={() => navigate("/sales/purchase-orders")}>View Records</BtnPrimary>
+              <BtnPrimary onClick={() => navigate("/sales/purchase-orders")}>
+                View Records
+              </BtnPrimary>
             </div>
           </div>
         </Card>

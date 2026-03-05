@@ -81,7 +81,21 @@ export default function Dashboard() {
   const totalReorder       = stockCategories.reduce((sum, cat) => sum + (cat.reorderCount    || 0), 0);
   const totalCritical      = stockCategories.reduce((sum, cat) => sum + (cat.criticalCount   || 0), 0);
   const totalProducts      = stockCategories.reduce((sum, cat) => sum + (cat.productCount    || 0), 0);
-  const criticalCategories = stockCategories.filter((cat) => cat.criticalCount > 0);
+  // const criticalCategories = stockCategories.filter((cat) => cat.criticalCount > 0);
+
+  // ✅ Sort: Pipes first, Fittings second, others last (alphabetical within each group)
+  const getCategorySortOrder = (name = "") => {
+    const n = name.toUpperCase();
+    if (n.includes("PIPE")) return 0;
+    if (n.includes("FITTING")) return 1;
+    return 2;
+  };
+
+  const sortedCategories = [...stockCategories].sort((a, b) => {
+    const orderDiff = getCategorySortOrder(a.name) - getCategorySortOrder(b.name);
+    if (orderDiff !== 0) return orderDiff;
+    return a.name.localeCompare(b.name);
+  });
 
   const handleExport = () => {
     const headers = ["Category Name", "Total Products", "Critical Items", "Low Stock Items"];
@@ -230,7 +244,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {stockCategories.map((category) => (
+          {sortedCategories.map((category) => (
             <button
               key={category.docId}
               onClick={() =>
@@ -241,8 +255,6 @@ export default function Dashboard() {
               <h4 className="font-black text-slate-800 text-sm mb-2 line-clamp-2 min-h-[1.0rem]">
                 {category.name}
               </h4>
-
-
 
               <div className="mt-3 pt-3 border-t border-slate-200">
                 <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
