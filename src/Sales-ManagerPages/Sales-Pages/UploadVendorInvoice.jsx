@@ -922,9 +922,9 @@ export default function UploadVendorInvoice() {
           </p>
         </div>
         <div className="flex gap-3">
-          <BtnPrimary onClick={() => navigate("/sales/purchase-orders/upload")}>
+          {/* <BtnPrimary onClick={() => navigate("/sales/purchase-orders/upload")}>
             <FiPlus size={14} /> Edit PO
-          </BtnPrimary>
+          </BtnPrimary> */}
           <BtnSecondary onClick={() => navigate("/sales/purchase-orders")}>
             Cancel
           </BtnSecondary>

@@ -24,6 +24,7 @@ import ReportsAnalytics from "./Sales-ManagerPages/Sales-Pages/ReportsAnalytics"
 import UploadSalesOrder from "./Sales-ManagerPages/Sales-Pages/UploadSalesOrder";
 // import ViewExcelSheetData from "./Sales-ManagerPages/Sales-Pages/ViewExcelSheetData";
 import UploadPurchaseOrder from "./Sales-ManagerPages/Sales-Pages/UploadPurchaseOrder";
+import PurchaseOrders from "./Sales-ManagerPages/Sales-Pages/Purchaseorders";
 import CreateSalesOrder from "./Sales-ManagerPages/Sales-Pages/CreateSalesOrder";
 import SalesOrderList from "./Sales-ManagerPages/Sales-Pages/SalesOrderList";
 import SalesOrderDetails from "./Sales-ManagerPages/Sales-Pages/SalesOrderDetails";
@@ -90,6 +91,7 @@ const App = () => {
           element={<CreatePurchaseOrder />}
         />
 
+        <Route path="purchase-orders" element={<PurchaseOrders />} />
         <Route
           path="purchase-orders/upload"
           element={<UploadPurchaseOrder />}

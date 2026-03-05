@@ -1,220 +1,178 @@
-// import React, { useState } from "react";
-// import { FiPlus, FiEdit2, FiSave } from "react-icons/fi";
-// import { stockCategories, sampleProducts } from "../data/stockCategoriesData";
-
-// export default function ProductManagement() {
-//   const [selectedCategory, setSelectedCategory] = useState(stockCategories[0].id);
-//   const [isAddMode, setIsAddMode] = useState(false);
-//   const [newProduct, setNewProduct] = useState({ code: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
-
-//   // Get products for selected category (mock data)
-//   const products = sampleProducts[selectedCategory] || [];
-
-//   const handleAddProduct = (e) => {
-//     e.preventDefault();
-//     // In real app, save to backend
-//     alert(`Product "${newProduct.code}" added to category`);
-//     setIsAddMode(false);
-//     setNewProduct({ code: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       <div>
-//         <h2 className="text-2xl font-black text-slate-800">Product Management</h2>
-//         <p className="text-sm text-slate-500 mt-1">Add products and set low stock levels</p>
-//       </div>
-
-//       {/* Category Selection */}
-//       <div className="bg-white rounded-xl border border-slate-200 p-4">
-//         <label className="block text-sm font-bold text-slate-700 mb-2">Select Category</label>
-//         <select
-//           value={selectedCategory}
-//           onChange={(e) => setSelectedCategory(parseInt(e.target.value))}
-//           className="w-full md:w-1/3 border border-slate-200 rounded-lg px-3 py-2"
-//         >
-//           {stockCategories.map(cat => (
-//             <option key={cat.id} value={cat.id}>{cat.name}</option>
-//           ))}
-//         </select>
-//       </div>
-
-//       {/* Add Product Form */}
-//       {isAddMode ? (
-//         <div className="bg-white rounded-xl border border-slate-200 p-6">
-//           <h3 className="font-black text-slate-800 mb-4">Add New Product</h3>
-//           <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-//             <div>
-//               <label className="block text-xs font-bold text-slate-600 mb-2">Product Code/Name</label>
-//               <input
-//                 type="text"
-//                 value={newProduct.code}
-//                 onChange={(e) => setNewProduct({ ...newProduct, code: e.target.value })}
-//                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-//                 required
-//               />
-//             </div>
-//             <div>
-//               <label className="block text-xs font-bold text-slate-600 mb-2">Unit</label>
-//               <select
-//                 value={newProduct.unit}
-//                 onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
-//                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-//               >
-//                 <option>NOS</option>
-//                 <option>KG</option>
-//                 <option>MTR</option>
-//                 <option>LTR</option>
-//                 <option>SQ.M</option>
-//               </select>
-//             </div>
-//             <div>
-//               <label className="block text-xs font-bold text-slate-600 mb-2">Low Level</label>
-//               <input
-//                 type="number"
-//                 value={newProduct.lowLevel}
-//                 onChange={(e) => setNewProduct({ ...newProduct, lowLevel: parseInt(e.target.value) })}
-//                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-//                 required
-//               />
-//             </div>
-//             <div>
-//               <label className="block text-xs font-bold text-slate-600 mb-2">Reorder Level</label>
-//               <input
-//                 type="number"
-//                 value={newProduct.reorderLevel}
-//                 onChange={(e) => setNewProduct({ ...newProduct, reorderLevel: parseInt(e.target.value) })}
-//                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
-//                 required
-//               />
-//             </div>
-//             <div className="md:col-span-4 flex gap-3">
-//               <button
-//                 type="button"
-//                 onClick={() => setIsAddMode(false)}
-//                 className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50"
-//               >
-//                 Cancel
-//               </button>
-//               <button
-//                 type="submit"
-//                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center gap-2"
-//               >
-//                 <FiSave /> Save Product
-//               </button>
-//             </div>
-//           </form>
-//         </div>
-//       ) : (
-//         <button
-//           onClick={() => setIsAddMode(true)}
-//           className="w-full bg-white rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-indigo-400 hover:bg-indigo-50 transition-all"
-//         >
-//           <FiPlus className="mx-auto mb-2" size={24} />
-//           <p className="text-sm font-bold text-slate-600">Add Product to Category</p>
-//         </button>
-//       )}
-
-//       {/* Products List */}
-//       <div className="bg-white rounded-xl border border-slate-200">
-//         <div className="p-4 border-b border-slate-100">
-//           <h3 className="font-black text-slate-800">Products in {stockCategories.find(c => c.id === selectedCategory)?.name}</h3>
-//         </div>
-//         <div className="p-6">
-//           <div className="space-y-3">
-//             {products.map((product, idx) => (
-//               <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-//                 <div>
-//                   <p className="font-bold text-slate-800">{product}</p>
-//                   <p className="text-xs text-slate-500">Unit: NOS | Low Level: 100 | Reorder: 150</p>
-//                 </div>
-//                 <button className="p-2 hover:bg-white rounded">
-//                   <FiEdit2 size={16} className="text-slate-600" />
-//                 </button>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-import React, { useState } from "react";
-import { FiPlus, FiEdit2, FiSave } from "react-icons/fi";
-import { stockCategories, sampleProducts } from "../data/stockCategoriesData";
+import React, { useState, useEffect } from "react";
+import { FiPlus, FiEdit2, FiSave, FiTrash2, FiX } from "react-icons/fi";
+import { db } from "../../firebase";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 
 export default function ProductManagement() {
-  const [selectedCategory, setSelectedCategory] = useState(stockCategories[0].id);
+  const [categories, setCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [saving, setSaving] = useState(false);
   const [isAddMode, setIsAddMode] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null); // null = not editing
-  const [newProduct, setNewProduct] = useState({ code: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    unit: "NOS",
+    lowLevel: 100,
+    reorderLevel: 150,
+  });
 
-  const products = sampleProducts[selectedCategory] || [];
-
-  // Handle edit click — populate form with product data
-  const handleEditClick = (product) => {
-    setEditingProduct(product);
-    setNewProduct({
-      code: typeof product === "string" ? product : product.code,
-      unit: typeof product === "object" ? product.unit : "NOS",
-      lowLevel: typeof product === "object" ? product.lowLevel : 100,
-      reorderLevel: typeof product === "object" ? product.reorderLevel : 150,
-    });
-    setIsAddMode(true);
-    // Scroll to top of form
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const fetchCategories = async () => {
+    setLoadingCats(true);
+    const snapshot = await getDocs(collection(db, "stockCategories"));
+    const data = snapshot.docs.map((d) => ({ docId: d.id, ...d.data() }));
+    setCategories(data);
+    if (data.length > 0) setSelectedCategory(data[0].docId);
+    setLoadingCats(false);
   };
 
-  const handleAddProduct = (e) => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const selectedCat = categories.find((c) => c.docId === selectedCategory);
+  const products = selectedCat?.subcategories || [];
+
+  const saveToFirebase = async (updatedProducts) => {
+    await updateDoc(doc(db, "stockCategories", selectedCategory), {
+      subcategories: updatedProducts,
+      productCount: updatedProducts.length,
+    });
+    setCategories((prev) =>
+      prev.map((c) =>
+        c.docId === selectedCategory
+          ? {
+              ...c,
+              subcategories: updatedProducts,
+              productCount: updatedProducts.length,
+            }
+          : c,
+      ),
+    );
+  };
+
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
-    if (editingProduct) {
-      alert(`Product "${newProduct.code}" updated successfully!`);
+    setSaving(true);
+    const updatedProducts = [...products];
+
+    if (editingIndex !== null) {
+      updatedProducts[editingIndex] = {
+        ...updatedProducts[editingIndex],
+        name: newProduct.name.trim(),
+        unit: newProduct.unit,
+        lowLevel: newProduct.lowLevel,
+        reorderLevel: newProduct.reorderLevel,
+      };
     } else {
-      alert(`Product "${newProduct.code}" added to category!`);
+      const exists = products.some(
+        (p) => p.name.toUpperCase() === newProduct.name.trim().toUpperCase(),
+      );
+      if (exists) {
+        alert(`"${newProduct.name}" already exists in this category.`);
+        setSaving(false);
+        return;
+      }
+      updatedProducts.push({
+        name: newProduct.name.trim(),
+        unit: newProduct.unit,
+        lowLevel: newProduct.lowLevel,
+        reorderLevel: newProduct.reorderLevel,
+      });
     }
-    setIsAddMode(false);
-    setEditingProduct(null);
-    setNewProduct({ code: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
+
+    await saveToFirebase(updatedProducts);
+    setSaving(false);
+    handleCancel();
+  };
+
+  const handleDelete = async (idx) => {
+    if (!window.confirm(`Delete "${products[idx].name}"?`)) return;
+    const updatedProducts = products.filter((_, i) => i !== idx);
+    await saveToFirebase(updatedProducts);
+  };
+
+  const handleEditClick = (product, idx) => {
+    setEditingIndex(idx);
+    setNewProduct({
+      name: product.name || "",
+      unit: product.unit || "NOS",
+      lowLevel: product.lowLevel ?? 100,
+      reorderLevel: product.reorderLevel ?? 150,
+    });
+    setIsAddMode(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
     setIsAddMode(false);
-    setEditingProduct(null);
-    setNewProduct({ code: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
+    setEditingIndex(null);
+    setNewProduct({ name: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
   };
+
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+    handleCancel();
+  };
+
+  if (loadingCats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-slate-500 text-sm font-semibold animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-black text-slate-800">Product Management</h2>
-        <p className="text-sm text-slate-500 mt-1">Add products and set low stock levels</p>
+        <h2 className="text-2xl font-black text-slate-800">
+          Product Management
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Add products and set low stock levels
+        </p>
       </div>
-
       {/* Category Selection */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <label className="block text-sm font-bold text-slate-700 mb-2">Select Category</label>
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(parseInt(e.target.value))}
-          className="w-full md:w-1/3 border border-slate-200 rounded-lg px-3 py-2"
-        >
-          {stockCategories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
-          ))}
-        </select>
+        <div className="flex items-end gap-4">
+          <div className="flex-1 md:max-w-xs">
+            <label className="block text-sm font-bold text-slate-700 mb-2">
+              Select Category
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2"
+            >
+              {categories.map((cat) => (
+                <option key={cat.docId} value={cat.docId}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => setIsAddMode(true)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center gap-2 whitespace-nowrap"
+          >
+            <FiPlus size={14} /> Add Product
+          </button>
+        </div>
       </div>
 
-      {/* Add / Edit Product Form */}
+      {/* Add / Edit Form */}
       {isAddMode ? (
         <div className="bg-white rounded-xl border border-indigo-200 p-6 shadow-sm">
           <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-            {editingProduct ? (
+            {editingIndex !== null ? (
               <>
                 <FiEdit2 className="text-indigo-600" />
                 Edit Product
                 <span className="text-indigo-600">
-                  — {typeof editingProduct === "string" ? editingProduct : editingProduct.code}
+                  — {products[editingIndex]?.name}
                 </span>
               </>
             ) : (
@@ -225,23 +183,34 @@ export default function ProductManagement() {
             )}
           </h3>
 
-          <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <form
+            onSubmit={handleSaveProduct}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          >
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">Product Code/Name</label>
+              <label className="block text-xs font-bold text-slate-600 mb-2">
+                Product Name
+              </label>
               <input
                 type="text"
-                value={newProduct.code}
-                onChange={(e) => setNewProduct({ ...newProduct, code: e.target.value })}
+                value={newProduct.name}
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, name: e.target.value })
+                }
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 placeholder="e.g. MS ANGLE"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">Unit</label>
+              <label className="block text-xs font-bold text-slate-600 mb-2">
+                Unit
+              </label>
               <select
                 value={newProduct.unit}
-                onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, unit: e.target.value })
+                }
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
               >
                 <option>NOS</option>
@@ -249,24 +218,40 @@ export default function ProductManagement() {
                 <option>MTR</option>
                 <option>LTR</option>
                 <option>SQ.M</option>
+                <option>PCS</option>
+                <option>PKT</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">Low Level</label>
+              <label className="block text-xs font-bold text-slate-600 mb-2">
+                Low Level
+              </label>
               <input
                 type="number"
                 value={newProduct.lowLevel}
-                onChange={(e) => setNewProduct({ ...newProduct, lowLevel: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setNewProduct({
+                    ...newProduct,
+                    lowLevel: parseInt(e.target.value) || 0,
+                  })
+                }
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">Reorder Level</label>
+              <label className="block text-xs font-bold text-slate-600 mb-2">
+                Reorder Level
+              </label>
               <input
                 type="number"
                 value={newProduct.reorderLevel}
-                onChange={(e) => setNewProduct({ ...newProduct, reorderLevel: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setNewProduct({
+                    ...newProduct,
+                    reorderLevel: parseInt(e.target.value) || 0,
+                  })
+                }
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 required
               />
@@ -275,44 +260,41 @@ export default function ProductManagement() {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50"
+                className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 flex items-center gap-2"
               >
-                Cancel
+                <FiX size={14} /> Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center gap-2"
+                disabled={saving}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 flex items-center gap-2"
               >
-                <FiSave />
-                {editingProduct ? "Update Product" : "Save Product"}
+                <FiSave size={14} />
+                {saving
+                  ? "Saving..."
+                  : editingIndex !== null
+                    ? "Update Product"
+                    : "Save Product"}
               </button>
             </div>
           </form>
         </div>
-      ) : (
-        <button
-          onClick={() => setIsAddMode(true)}
-          className="w-full bg-white rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-indigo-400 hover:bg-indigo-50 transition-all"
-        >
-          <FiPlus className="mx-auto mb-2" size={24} />
-          <p className="text-sm font-bold text-slate-600">Add Product to Category</p>
-        </button>
-      )}
+      ) : null}
 
       {/* Products List */}
       <div className="bg-white rounded-xl border border-slate-200">
         <div className="p-4 border-b border-slate-100">
           <h3 className="font-black text-slate-800">
-            Products in {stockCategories.find(c => c.id === selectedCategory)?.name}
+            Products in {selectedCat?.name ?? ""}
+            <span className="ml-2 text-sm font-semibold text-slate-400">
+              ({products.length})
+            </span>
           </h3>
         </div>
         <div className="p-6">
           <div className="space-y-3">
             {products.map((product, idx) => {
-              const productName = typeof product === "string" ? product : product.code;
-              const isCurrentlyEditing = editingProduct &&
-                (typeof editingProduct === "string" ? editingProduct === product : editingProduct.code === productName);
-
+              const isCurrentlyEditing = editingIndex === idx;
               return (
                 <div
                   key={idx}
@@ -323,24 +305,32 @@ export default function ProductManagement() {
                   }`}
                 >
                   <div>
-                    <p className="font-bold text-slate-800">{productName}</p>
+                    <p className="font-bold text-slate-800">{product.name}</p>
                     <p className="text-xs text-slate-500">
-                      Unit: {typeof product === "object" ? product.unit : "NOS"} | 
-                      Low Level: {typeof product === "object" ? product.lowLevel : 100} | 
-                      Reorder: {typeof product === "object" ? product.reorderLevel : 150}
+                      Unit: {product.unit ?? "NOS"} &nbsp;|&nbsp; Low Level:{" "}
+                      {product.lowLevel ?? 100} &nbsp;|&nbsp; Reorder:{" "}
+                      {product.reorderLevel ?? 150}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleEditClick(product)}
-                    className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-semibold ${
-                      isCurrentlyEditing
-                        ? "bg-indigo-600 text-white"
-                        : "hover:bg-indigo-100 text-slate-600 hover:text-indigo-600"
-                    }`}
-                  >
-                    <FiEdit2 size={14} />
-                    {isCurrentlyEditing ? "Editing..." : "Edit"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditClick(product, idx)}
+                      className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-semibold ${
+                        isCurrentlyEditing
+                          ? "bg-indigo-600 text-white"
+                          : "hover:bg-indigo-100 text-slate-600 hover:text-indigo-600"
+                      }`}
+                    >
+                      <FiEdit2 size={14} />
+                      {isCurrentlyEditing ? "Editing..." : "Edit"}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(idx)}
+                      className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
