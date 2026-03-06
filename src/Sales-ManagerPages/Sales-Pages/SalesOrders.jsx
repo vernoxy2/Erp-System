@@ -257,10 +257,10 @@ export default function SalesOrder() {
                       <p className="text-xs text-slate-600">{wo.customer}</p>
                       <p className="text-xs text-slate-400 mt-1">Delivery: {wo.deliveryDate}</p>
                     </div>
-                    <div className="text-right">
+                    {/* <div className="text-right">
                       <p className="text-sm font-bold text-slate-800">₹{(wo.totalValue / 1000).toFixed(0)}K</p>
                       <p className="text-xs text-slate-400">{wo.items.length} items</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))
@@ -316,10 +316,10 @@ export default function SalesOrder() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    {/* <div className="text-right">
                       <p className="text-sm font-bold text-slate-800">₹{(po.grandTotal / 1000).toFixed(0)}K</p>
                       <p className="text-xs text-slate-400">ETA: {po.eta || "—"}</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))

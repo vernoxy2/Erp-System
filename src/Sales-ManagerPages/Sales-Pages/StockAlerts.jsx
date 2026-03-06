@@ -23,6 +23,7 @@ export default function SalesStock() {
   const [filterLow, setFilterLow]           = useState(false);
   const [ledgerItem, setLedgerItem]         = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("__ALL__");
+  const [statusFilter, setStatusFilter]     = useState("__ALL__");
   const [categoryList, setCategoryList]     = useState([]);
 
   useEffect(() => {
@@ -75,11 +76,11 @@ export default function SalesStock() {
   const getItemStatus = (item) =>
     getStockStatus(item.available ?? 0, item.lowLevel ?? 100, item.reorderLevel ?? 150);
 
-  // ✅ Cards now show correct counts
-  const shortageCount  = stockItems.filter(s => getItemStatus(s) === "shortage").length;
-  const lowCount       = stockItems.filter(s => getItemStatus(s) === "low").length;
-  const reorderCount   = stockItems.filter(s => getItemStatus(s) === "reorder").length;
-  const backorderCount = stockItems.filter(s => (s.backorder || 0) > 0).length;
+  const shortageCount = stockItems.filter(s => getItemStatus(s) === "shortage").length;
+  const lowCount      = stockItems.filter(s => getItemStatus(s) === "low").length;
+  const reorderCount  = stockItems.filter(s => getItemStatus(s) === "reorder").length;
+  // ✅ Reorder qty = items that have reorder field > 0 (pending reorder)
+  const reorderQtyCount = stockItems.filter(s => (s.reorder || 0) > 0).length;
 
   const filtered = useMemo(() => {
     return stockItems.filter(s => {
@@ -88,9 +89,10 @@ export default function SalesStock() {
         (s.productCode  || "").toLowerCase().includes(search.toLowerCase());
       const matchCategory = categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
       const matchAlert    = !filterLow || getItemStatus(s) !== "ok";
-      return matchSearch && matchCategory && matchAlert;
+      const matchStatus   = statusFilter === "__ALL__" || getItemStatus(s) === statusFilter;
+      return matchSearch && matchCategory && matchAlert && matchStatus;
     });
-  }, [stockItems, search, filterLow, categoryFilter]);
+  }, [stockItems, search, filterLow, categoryFilter, statusFilter]);
 
   return (
     <div className="space-y-5">
@@ -105,26 +107,26 @@ export default function SalesStock() {
       {!loading && (
         <div className="grid grid-cols-5 gap-4">
           <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <p className="text-xs text-slate-400 uppercase font-bold">Total SKUs</p>
+            <p className="text-md text-slate-400 uppercase font-bold">Total SKUs</p>
             <p className="text-2xl font-black text-slate-800 mt-1">{stockItems.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-red-200 p-4">
-            <p className="text-xs text-red-400 uppercase font-bold">Shortage</p>
-            <p className="text-2xl font-black text-red-600 mt-1">{shortageCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-amber-200 p-4">
-            <p className="text-xs text-amber-500 uppercase font-bold">Low Stock</p>
-            <p className="text-2xl font-black text-amber-600 mt-1">{lowCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-orange-200 p-4">
-            <p className="text-xs text-orange-400 uppercase font-bold">Reorder</p>
-            <p className="text-2xl font-black text-orange-600 mt-1">{reorderCount}</p>
-          </div>
           <div className="bg-white rounded-xl border border-emerald-200 p-4">
-            <p className="text-xs text-emerald-500 uppercase font-bold">In Stock</p>
+            <p className="text-md text-emerald-500 uppercase font-bold">Available</p>
             <p className="text-2xl font-black text-emerald-600 mt-1">
               {stockItems.filter(s => getItemStatus(s) === "ok").length}
             </p>
+          </div>
+          <div className="bg-white rounded-xl border border-red-200 p-4">
+            <p className="text-md text-red-400 uppercase font-bold">Shortage</p>
+            <p className="text-2xl font-black text-red-600 mt-1">{shortageCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-amber-200 p-4">
+            <p className="text-md text-amber-500 uppercase font-bold">Low Stock</p>
+            <p className="text-2xl font-black text-amber-600 mt-1">{lowCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-orange-200 p-4">
+            <p className="text-md text-orange-400 uppercase font-bold">Reorder</p>
+            <p className="text-2xl font-black text-orange-600 mt-1">{reorderCount}</p>
           </div>
         </div>
       )}
@@ -141,7 +143,6 @@ export default function SalesStock() {
               className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-          {/* ✅ Category Dropdown Filter */}
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
@@ -151,6 +152,17 @@ export default function SalesStock() {
             {categoryList.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
+          >
+            <option value="__ALL__">All Status</option>
+            <option value="shortage"> Shortage</option>
+            <option value="low"> Low Stock</option>
+            <option value="reorder"> Reorder</option>
+            <option value="ok"> OK</option>
           </select>
           <button
             onClick={() => setFilterLow(!filterLow)}
@@ -185,7 +197,7 @@ export default function SalesStock() {
                   <th className="px-4 py-3 text-center">HSN/SAC</th>
                   <th className="px-4 py-3 text-center">Available</th>
                   <th className="px-4 py-3 text-center">Reserved</th>
-                  <th className="px-4 py-3 text-center">Backorder</th>
+                  <th className="px-4 py-3 text-center">Reorder Qty</th>
                   <th className="px-4 py-3 text-center">Unit</th>
                   <th className="px-4 py-3 text-center">Status</th>
                   <th className="px-4 py-3 text-center">Ledger</th>
@@ -193,14 +205,14 @@ export default function SalesStock() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((item, idx) => {
-                  const avail        = Math.max(0, item.available ?? 0);
-                  const backorder    = item.backorder || 0;
-                  const status       = getItemStatus(item);
-                  const hasBackorder = backorder > 0;
+                  const avail      = Math.max(0, item.available ?? 0);
+                  const reorderQty = item.reorder || 0;   // ✅ reorder field (was backorder)
+                  const status     = getItemStatus(item);
+                  const hasReorder = reorderQty > 0;
 
                   const rowBg =
                     status === "shortage" ? "bg-red-50/40"    :
-                    hasBackorder          ? "bg-yellow-50/40" :
+                    hasReorder            ? "bg-orange-50/30" :
                     status === "low"      ? "bg-amber-50/30"  :
                     status === "reorder"  ? "bg-orange-50/20" : "";
 
@@ -227,10 +239,11 @@ export default function SalesStock() {
 
                       <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">{item.reserved || 0}</td>
 
+                      {/* ✅ Reorder Qty column — shows pending reorder quantity */}
                       <td className="px-4 py-3.5 text-center">
-                        {hasBackorder ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200">
-                            +{backorder}
+                        {hasReorder ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
+                            +{reorderQty}
                           </span>
                         ) : (
                           <span className="text-slate-300 text-xs">—</span>
@@ -242,8 +255,6 @@ export default function SalesStock() {
                       <td className="px-4 py-3.5 text-center">
                         {status === "shortage" ? (
                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
-                        ) : hasBackorder ? (
-                          <span className="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">BACKORDER</span>
                         ) : status === "low" ? (
                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
                         ) : status === "reorder" ? (
@@ -289,22 +300,22 @@ export default function SalesStock() {
           <div className="space-y-4">
             <div className="grid grid-cols-4 gap-3">
               {[
-                { label: "Available", value: Math.max(0, ledgerItem.available ?? 0), color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600" },
-                { label: "Reserved",  value: ledgerItem.reserved  || 0, color: "text-amber-600" },
-                { label: "Backorder", value: ledgerItem.backorder || 0, color: (ledgerItem.backorder || 0) > 0 ? "text-yellow-600" : "text-slate-400" },
-                { label: "Part No.",  value: ledgerItem.productCode || "—", color: "text-slate-700" },
+                { label: "Available",   value: Math.max(0, ledgerItem.available ?? 0), color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600" },
+                { label: "Reserved",    value: ledgerItem.reserved  || 0, color: "text-amber-600" },
+                { label: "Reorder Qty", value: ledgerItem.reorder   || 0, color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400" },
+                { label: "Part No.",    value: ledgerItem.productCode || "—", color: "text-slate-700" },
               ].map(({ label, value, color }) => (
-                <div key={label} className={`rounded-lg p-3 text-center ${label === "Backorder" && (ledgerItem.backorder || 0) > 0 ? "bg-yellow-50 border border-yellow-200" : "bg-slate-50"}`}>
+                <div key={label} className={`rounded-lg p-3 text-center ${label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0 ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">{label}</p>
                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>{value}</p>
                 </div>
               ))}
             </div>
 
-            {(ledgerItem.backorder || 0) > 0 && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs font-bold text-yellow-700">⚠️ Backorder: {ledgerItem.backorder} units</p>
-                <p className="text-xs text-yellow-600 mt-0.5">Sales order exceeded available stock. {ledgerItem.backorder} units need to be procured via PO.</p>
+            {(ledgerItem.reorder || 0) > 0 && (
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-xs font-bold text-orange-700">🔄 Reorder: {ledgerItem.reorder} units pending</p>
+                <p className="text-xs text-orange-600 mt-0.5">Stock is below reorder level. {ledgerItem.reorder} units need to be procured via PO.</p>
               </div>
             )}
 

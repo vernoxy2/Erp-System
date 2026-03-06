@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiAlertTriangle,
@@ -7,221 +7,313 @@ import {
   FiClock,
   FiArrowRight,
   FiDownload,
+  FiRefreshCw,
+  FiCheckCircle,
+  FiTrendingDown,
+  FiRepeat,
 } from "react-icons/fi";
-import { useState, useEffect } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
+import PPPIPES from "../../assets/Dashboardimgs/PPPIPES.svg";
+import PPCHPIPES from "../../assets/Dashboardimgs/PPCHPIPES.svg";
+import PPHPIPE from "../../assets/DashboardImgs/PPHPIPE.svg";
+import PPRCTPIPE from "../../assets/Dashboardimgs/PPRCTPIPE.svg";
+import THERMALPIPES from "../../assets/Dashboardimgs/THERMALPIPES.svg";
+import PPFITTINGS from "../../assets/Dashboardimgs/PPFITTINGS.svg";
+import PPCHFITTINGS from "../../assets/Dashboardimgs/PPCHFITTINGS.svg";
+import PPRCTFITTINGS from "../../assets/Dashboardimgs/PPRCTFITTINGS.svg";
+import PPRCValve from "../../assets/Dashboardimgs/PPRCValve.svg";
+import VALVES from "../../assets/Dashboardimgs/VALVES.svg";
+import Channel from "../../assets/Dashboardimgs/Channel.svg";
+import FRP from "../../assets/Dashboardimgs/FRP.svg";
+import FRPMATERIAL from "../../assets/Dashboardimgs/FRPMATERIAL.svg";
+import GRIDERCLAMP from "../../assets/DashboardImgs/GRIDERCLAMP.svg";
+import HARDWARE from "../../assets/DashboardImgs/HARDWARE.svg";
+import HDPE from "../../assets/Dashboardimgs/HDPE.svg";
+import INSULATION from "../../assets/Dashboardimgs/INSULATION.svg";
+import MSFLANGES from "../../assets/Dashboardimgs/MSFLANGES.svg";
+import MACHINE from "../../assets/Dashboardimgs/MACHINE.svg";
+import OTHERITEMS from "../../assets/Dashboardimgs/OTHERITEMS.svg";
+import UPVCPVC from "../../assets/Dashboardimgs/UPVCPVC.svg";
 
-// Same status logic as LowStockManagement
-const getStockStatus = (currentStock, lowLevel, reorderLevel) => {
-  if (currentStock <= 0)                  return "critical";
-  if (currentStock < lowLevel * 0.5)      return "critical";
-  if (currentStock < lowLevel)            return "low";
-  if (currentStock < reorderLevel)        return "reorder";
-  return "normal";
-};
+// ── Icon lookup ───────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [stockCategories, setStockCategories] = useState([]);
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // const ICON_MAP = {
+  //   CHANNEL: { icon: "🔩", bg: "bg-slate-100" },
+  //   "FRP MATERIAL": { icon: "🪨", bg: "bg-amber-100" },
+  //   FRP: { icon: "🧱", bg: "bg-orange-100" },
+  //   GRIDER: { icon: "🔗", bg: "bg-zinc-100" },
+  //   HARDWARE: { icon: "🔧", bg: "bg-blue-100" },
+  //   HDPE: { icon: "🟦", bg: "bg-cyan-100" },
+  //   INSULATION: { icon: "🧊", bg: "bg-sky-100" },
+  //   MACHINE: { icon: "⚙️", bg: "bg-gray-100" },
+  //   "M.S FLANGE": { icon: "🔘", bg: "bg-slate-100" },
+  //   OTHER: { icon: "📦", bg: "bg-purple-100" },
+  //   "PPCH FITTING": { icon: "🔵", bg: "bg-blue-100" },
+  //   "PPCH PIPE": { icon: "🟦", bg: "bg-indigo-100" },
+  //   "PP FITTING": { icon: "🟢", bg: "bg-green-100" },
+  //   "PPH PIPE": { icon: "💧", bg: "bg-teal-100" },
+  //   "PP PIPE": { icon: "🟩", bg: "bg-emerald-100" },
+  //   "PPRCT FITTING": { icon: "🔩", bg: "bg-blue-100" },
+  //   "PPRCT PIPE": { icon: "🟦", bg: "bg-blue-100" },
+  //   "PPRC VALVE": { icon: "🚰", bg: "bg-cyan-100" },
+  //   THERMAL: { icon: "🌡️", bg: "bg-red-100" },
+  //   UPVC: { icon: "🔷", bg: "bg-violet-100" },
+  //   VALVE: { icon: "🔒", bg: "bg-orange-100" },
+  // };
+  // function getCatIcon(name, savedIcon) {
+  //   if (savedIcon && savedIcon !== "📦")
+  //     return { icon: savedIcon, bg: "bg-slate-100" };
+  //   const upper = (name || "").toUpperCase();
+  //   const key = Object.keys(ICON_MAP).find((k) =>
+  //     upper.includes(k.toUpperCase()),
+  //   );
+  //   return ICON_MAP[key] || { icon: "📦", bg: "bg-slate-100" };
+  // }
+  // ── Real-time Firebase fetch ──────────────────────────────────────────────
+  const CAT_IMAGE_MAP = {
+    "PP PIPES": PPPIPES,
+    "PPCH PIPES": PPCHPIPES,
+    "PPH PIPE": PPHPIPE,
+    "PPRCT PIPES": PPRCTPIPE,
+    "THERMAL PIPES": THERMALPIPES,
+    "PP FITTINGS": PPFITTINGS,
+    "PPCH FITTINGS": PPCHFITTINGS,
+    "PPRCT FITTINGS": PPRCTFITTINGS,
+    "PPRC VALVES": PPRCValve,
+    VALVES: VALVES,
+    CHANNEL: Channel,
+    FRP: FRP,
+    "FRP MATERIAL": FRPMATERIAL,
+    "GRIDER & CLAMP ITEM": GRIDERCLAMP,
+    GRIDER: GRIDERCLAMP,
+    "HARDWARE ITEM": HARDWARE,
+    HDPE: HDPE,
+    INSULATION: INSULATION,
+    "M.S FLANGES": MSFLANGES,
+    MACHINE: MACHINE,
+    "OTHER ITEMS": OTHERITEMS,
+    "UPVC & PVC MATERIAL": UPVCPVC,
+  };
+
+ function getCatImage(name) {
+  const upper = (name || "").toUpperCase();
+  const key = Object.keys(CAT_IMAGE_MAP)
+    .sort((a, b) => b.length - a.length)  
+    .find((k) => upper.includes(k.toUpperCase()));
+  return CAT_IMAGE_MAP[key] || null;
+}
   useEffect(() => {
-    const fetchData = async () => {
-      // ✅ Fetch both collections in parallel
-      const [catSnapshot, stockSnapshot] = await Promise.all([
-        getDocs(collection(db, "stockCategories")),
-        getDocs(collection(db, "stock")),
-      ]);
-
-      // ✅ Build stock lookup map: name/description (lowercase) → available
-      const stockMap = {};
-      stockSnapshot.docs.forEach((d) => {
-        const s = d.data();
-        const key = (s.description || "").trim().toLowerCase();
-        if (key) stockMap[key] = s.available ?? 0;
-        const codeKey = (s.productCode || "").trim().toLowerCase();
-        if (codeKey) stockMap[codeKey] = s.available ?? 0;
-      });
-
-      // ✅ Compute criticalCount & lowStockCount dynamically per category
-      const cats = catSnapshot.docs.map((d) => {
-        const cat = { docId: d.id, ...d.data() };
-        const subcategories = cat.subcategories || [];
-
-        let criticalCount = 0;
-        let lowStockCount = 0;
-        let reorderCount  = 0;
-
-        subcategories.forEach((sub) => {
-          const nameKey = (sub.name || "").trim().toLowerCase();
-          // Same logic as LowStockManagement: fallback to sub.currentStock ?? 0
-          const liveStock = nameKey in stockMap ? stockMap[nameKey] : (sub.currentStock ?? 0);
-          const lowLevel = sub.lowLevel ?? 100;
-          const reorderLevel = sub.reorderLevel ?? 150;
-          const status = getStockStatus(liveStock, lowLevel, reorderLevel);
-
-          if (status === "critical") criticalCount++;
-          if (status === "low")      lowStockCount++;
-          if (status === "reorder")  reorderCount++;
+    const unsub = onSnapshot(collection(db, "stockCategories"), (snap) => {
+      const data = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => {
+          const getGroup = (name) => {
+            const n = (name || "").toUpperCase();
+            if (n.includes("PIPE")) return 0;
+            if (n.includes("FITTING")) return 1;
+            if (n.includes("VALVE")) return 2;
+            if (n.includes("CHANNEL")) return 3;
+            return 4;
+          };
+          const ga = getGroup(a.name),
+            gb = getGroup(b.name);
+          if (ga !== gb) return ga - gb;
+          return a.name.localeCompare(b.name); 
         });
-
-        // ✅ Use actual subcategories length, not stored productCount
-        const actualProductCount = subcategories.length;
-
-        return { ...cat, criticalCount, lowStockCount, reorderCount, productCount: actualProductCount };
-      });
-
-      setStockCategories(cats);
-    };
-
-    fetchData();
+      setCategories(data);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
-  const totalLowStock      = stockCategories.reduce((sum, cat) => sum + (cat.lowStockCount  || 0), 0);
-  const totalReorder       = stockCategories.reduce((sum, cat) => sum + (cat.reorderCount    || 0), 0);
-  const totalCritical      = stockCategories.reduce((sum, cat) => sum + (cat.criticalCount   || 0), 0);
-  const totalProducts      = stockCategories.reduce((sum, cat) => sum + (cat.productCount    || 0), 0);
-  // const criticalCategories = stockCategories.filter((cat) => cat.criticalCount > 0);
+  // ── Aggregates ────────────────────────────────────────────────────────────
+  const totalProducts = categories.reduce(
+    (s, c) => s + (c.productCount || 0),
+    0,
+  );
+  const totalCritical = categories.reduce(
+    (s, c) => s + (c.criticalCount || 0),
+    0,
+  );
+  const totalLowStock = categories.reduce(
+    (s, c) => s + (c.lowStockCount || 0),
+    0,
+  );
+  const criticalCats = categories.filter((c) => (c.criticalCount || 0) > 0);
+  const totalAvailable = categories.reduce(
+    (s, c) => s + (c.availableCount || 0),
+    0,
+  );
+  const totalReorder = categories.reduce(
+    (s, c) => s + (c.reorderCount || 0),
+    0,
+  );
 
-  // ✅ Sort: Pipes first, Fittings second, others last (alphabetical within each group)
-  const getCategorySortOrder = (name = "") => {
-    const n = name.toUpperCase();
-    if (n.includes("PIPE")) return 0;
-    if (n.includes("FITTING")) return 1;
-    return 2;
-  };
-
-  const sortedCategories = [...stockCategories].sort((a, b) => {
-    const orderDiff = getCategorySortOrder(a.name) - getCategorySortOrder(b.name);
-    if (orderDiff !== 0) return orderDiff;
-    return a.name.localeCompare(b.name);
-  });
-
+  // ── CSV Export ────────────────────────────────────────────────────────────
   const handleExport = () => {
-    const headers = ["Category Name", "Total Products", "Critical Items", "Low Stock Items"];
-    const rows = stockCategories.map((cat) => [
-      cat.name,
-      cat.productCount,
-      cat.criticalCount,
-      cat.lowStockCount,
-    ]);
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const rows = [
+      ["Category Name", "Total Products", "Critical Items", "Low Stock Items"],
+      ...categories.map((c) => [
+        c.name,
+        c.productCount || 0,
+        c.criticalCount || 0,
+        c.lowStockCount || 0,
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "Dashboard_Stock_Report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.setAttribute("download", "Dashboard_Stock_Report.csv");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <FiRefreshCw
+            size={28}
+            className="animate-spin mx-auto text-indigo-500 mb-3"
+          />
+          <p className="text-sm font-bold text-slate-500">
+            Loading dashboard...
+          </p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="space-y-6">
-      {/* Header + Export */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-slate-800">Sales Dashboard</h2>
+          <h2 className="text-2xl font-black text-slate-800">
+            Sales Dashboard
+          </h2>
           <p className="text-sm text-slate-500 mt-1">
             Overview of sales operations and stock alerts
           </p>
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition shadow-sm"
         >
-          <FiDownload size={16} />
-          Export
+          <FiDownload size={16} /> Export
         </button>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Total Categories</p>
-              <p className="text-3xl font-black text-slate-800 mt-2">{stockCategories.length}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <FiPackage size={24} className="text-indigo-600" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        {[
+          {
+            label: "Total Categories",
+            value: categories.length,
+            icon: <FiPackage size={20} />,
+            ib: "bg-indigo-50",
+            ic: "text-indigo-500",
+            b: "border-slate-200",
+            vc: "text-slate-800",
+          },
+          {
+            label: "Available",
+            value: totalAvailable,
+            icon: <FiCheckCircle size={20} />,
+            ib: "bg-green-50",
+            ic: "text-green-400",
+            b: "border-green-200",
+            vc: "text-green-600",
+          },
+          {
+            label: "Critical Items",
+            value: totalCritical,
+            icon: <FiAlertTriangle size={20} />,
+            ib: "bg-red-50",
+            ic: "text-red-500",
+            b: "border-red-200",
+            vc: "text-red-600",
+          },
+          {
+            label: "Low Stock Items",
+            value: totalLowStock,
+            icon: <FiClock size={20} />,
+            ib: "bg-yellow-50",
+            ic: "text-yellow-500",
+            b: "border-yellow-200",
+            vc: "text-yellow-600",
+          },
+          {
+            label: "Reorder Items",
+            value: totalReorder,
+            icon: <FiShoppingCart size={20} />,
+            ib: "bg-orange-50",
+            ic: "text-orange-500",
+            b: "border-orange-200",
+            vc: "text-orange-600",
+          },
+          {
+            label: "Total Products",
+            value: totalProducts,
+            icon: <FiPackage size={20} />,
+            ib: "bg-slate-50",
+            ic: "text-slate-500",
+            b: "border-slate-200",
+            vc: "text-slate-800",
+          },
+        ].map((c) => (
+          <div
+            key={c.label}
+            className={`bg-white rounded-2xl border ${c.b} p-5 shadow-sm`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight">
+                  {c.label}
+                </p>
+                <p className={`text-3xl font-black mt-2 ${c.vc}`}>{c.value}</p>
+              </div>
+              <div
+                className={`w-11 h-11 rounded-xl ${c.ib} flex items-center justify-center flex-shrink-0`}
+              >
+                <span className={c.ic}>{c.icon}</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-red-200 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-red-500 uppercase">Critical Items</p>
-              <p className="text-3xl font-black text-red-700 mt-2">{totalCritical}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center">
-              <FiAlertTriangle size={24} className="text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-yellow-200 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-yellow-600 uppercase">Low Stock Items</p>
-              <p className="text-3xl font-black text-yellow-700 mt-2">{totalLowStock}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center">
-              <FiClock size={24} className="text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-orange-200 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-orange-500 uppercase">Reorder Items</p>
-              <p className="text-3xl font-black text-orange-600 mt-2">{totalReorder}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
-              <FiShoppingCart size={24} className="text-orange-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Total Products</p>
-              <p className="text-3xl font-black text-slate-800 mt-2">{totalProducts}</p>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center">
-              <FiShoppingCart size={24} className="text-slate-600" />
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Low Stock Alerts */}
-      {/* {totalCritical > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border-2 border-red-200 p-6">
+      {/* Alert Banner */}
+      {totalCritical > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl border-2 border-red-200 p-6 shadow-sm">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-lg font-black text-red-900 flex items-center gap-2">
-                <FiAlertTriangle className="animate-pulse" />
-                Stock Alerts
+                <FiAlertTriangle className="animate-pulse" /> Stock Alerts
               </h3>
               <p className="text-sm text-red-700 mt-1">
-                {criticalCategories.length} categories have critical stock levels
+                {criticalCats.length} categories have critical stock levels
               </p>
             </div>
             <button
               onClick={() => navigate("/sales/low-stock-management")}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 flex items-center gap-2 shadow-sm"
             >
               View All <FiArrowRight />
             </button>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {criticalCategories.slice(0, 5).map((cat) => (
+            {criticalCats.slice(0, 5).map((cat) => (
               <span
-                key={cat.docId}
+                key={cat.id}
                 className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-300"
               >
                 {cat.name} ({cat.criticalCount} critical)
@@ -229,36 +321,134 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      )} */}
+      )}
 
-      {/* Stock Category Cards */}
+      {/* Categories Grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-black text-slate-800">Stock Categories</h3>
-          {/* <div className="flex gap-2">
-            <span className="text-xs font-bold text-slate-500">🔴 Critical</span>
-            <span className="text-xs font-bold text-slate-500">🟠 High Alert</span>
-            <span className="text-xs font-bold text-slate-500">🟡 Warning</span>
-            <span className="text-xs font-bold text-slate-500">🟢 Normal</span>
-          </div> */}
+          <h3 className="text-lg font-black text-slate-800">
+            Stock Categories
+          </h3>
+          <div className="flex items-center gap-4">
+            {[
+              { dot: "bg-red-500", label: "Critical" },
+              { dot: "bg-orange-500", label: "High Alert" },
+              { dot: "bg-yellow-400", label: "Warning" },
+              { dot: "bg-green-500", label: "Normal" },
+            ].map((i) => (
+              <div key={i.label} className="flex items-center gap-1.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${i.dot}`} />
+                <span className="text-xs font-semibold text-slate-500">
+                  {i.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {sortedCategories.map((category) => (
-            <button
-              key={category.docId}
-              onClick={() =>
-                navigate(`/sales/low-stock-management?category=${category.docId}`)
-              }
-              className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-lg transition-all hover:scale-105"
-            >
-              <h4 className="font-black text-slate-800 text-sm mb-2 line-clamp-2 min-h-[1.0rem]">
-                {category.name}
-              </h4>
+          {categories.map((cat) => (
+            // <button
+            //   key={cat.id}
+            //   onClick={() =>
+            //     navigate(`/sales/low-stock-management?category=${cat.id}`)
+            //   }
+            //   className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-md hover:border-indigo-200 transition-all group"
+            // >
+            //   <img
+            //     src={cat.image}
+            //     alt={cat.name}
+            //     className="w-full aspect-square object-cover rounded-xl mb-3"
+            //   />
+            //   {/* Name */}
+            //   <h4 className="font-black text-slate-800 text-sm leading-snug mb-1 line-clamp-2">
+            //     {cat.name}
+            //   </h4>
 
-              <div className="mt-3 pt-3 border-t border-slate-200">
-                <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                  View Details <FiArrowRight size={12} />
+            //   {/* Alert counts */}
+            //   {(cat.criticalCount || 0) > 0 || (cat.lowStockCount || 0) > 0 ? (
+            //     <div className="space-y-1 mb-3">
+            //       {(cat.criticalCount || 0) > 0 && (
+            //         <div className="flex items-center gap-1.5">
+            //           <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+            //           <span className="text-[10px] font-bold text-red-600">
+            //             {cat.criticalCount} critical
+            //           </span>
+            //         </div>
+            //       )}
+            //       {(cat.lowStockCount || 0) > 0 && (
+            //         <div className="flex items-center gap-1.5">
+            //           <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
+            //           <span className="text-[10px] font-bold text-yellow-600">
+            //             {cat.lowStockCount} low stock
+            //           </span>
+            //         </div>
+            //       )}
+            //     </div>
+            //   ) : (
+            //     <div className="mb-3" />
+            //   )}
+
+            //   {/* Footer */}
+            //   <div className="pt-3 border-t border-slate-100">
+            //     <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:gap-2 transition-all">
+            //       View Details <FiArrowRight size={11} />
+            //     </span>
+            //   </div>
+            // </button>
+            <button
+              key={cat.id}
+              onClick={() =>
+                navigate(`/sales/low-stock-management?category=${cat.id}`)
+              }
+              className="bg-white rounded-2xl border border-slate-200 p-5 text-left hover:shadow-md hover:border-indigo-200 transition-all group"
+            >
+              {/* Top: Icon + Name */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {getCatImage(cat.name) ? (
+                    <img
+                      src={getCatImage(cat.name)}
+                      alt={cat.name}
+                      className=" object-contain"
+                    />
+                  ) : (
+                    <FiPackage size={20} className="text-orange-400" />
+                  )}
+                </div>
+                <h4 className="font-black text-slate-800 text-sm leading-snug line-clamp-2">
+                  {cat.name}
+                </h4>
+              </div>
+
+              {/* Alert counts */}
+              {(cat.criticalCount || 0) > 0 || (cat.lowStockCount || 0) > 0 ? (
+                <div className="space-y-1 mb-3">
+                  {(cat.criticalCount || 0) > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                      <span className="text-[10px] font-bold text-red-600">
+                        {cat.criticalCount} critical
+                      </span>
+                    </div>
+                  )}
+                  {(cat.lowStockCount || 0) > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
+                      <span className="text-[10px] font-bold text-yellow-600">
+                        {cat.lowStockCount} low stock
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-3" />
+              )}
+
+              {/* Footer */}
+              <div className="pt-3 border-t border-slate-100">
+                <span className="text-xs font-bold text-indigo-800 flex items-center gap-1 group-hover:gap-2 transition-all">
+                  View Details <FiArrowRight size={11} />
                 </span>
               </div>
             </button>
