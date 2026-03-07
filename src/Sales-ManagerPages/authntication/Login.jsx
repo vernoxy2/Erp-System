@@ -298,7 +298,7 @@ export default function Login() {
           <div className="col-span-7 relative bg-gradient-to-br flex flex-col overflow-hidden">
             {/* Logo — clockwise rotation, positioned at top-center */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
-              {/* <img
+              <img
              src={logocrown}
                 alt="Fib2Fab"
                 className="h-30"
@@ -315,7 +315,7 @@ export default function Login() {
                   // animation: "rotateCW 8s linear infinite",
                   transformOrigin: "center center",
                 }}
-              /> */}
+              />
             </div>
 
             {/* Factory Image — zoom in/out, clipped inside panel */}
