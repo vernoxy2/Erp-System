@@ -416,7 +416,7 @@ export default function Dashboard() {
                     <FiPackage size={20} className="text-orange-400" />
                   )}
                 </div>
-                <h4 className="font-black text-slate-800 text-sm leading-snug line-clamp-2">
+                <h4 className="font-bold text-gray-500 text-sm leading-snug line-clamp-2">
                   {cat.name}
                 </h4>
               </div>
@@ -447,7 +447,7 @@ export default function Dashboard() {
 
               {/* Footer */}
               <div className="pt-3 border-t border-slate-100">
-                <span className="text-xs font-bold text-indigo-800 flex items-center gap-1 group-hover:gap-2 transition-all">
+                <span className="text-xs text-black flex items-center gap-1 group-hover:gap-2 transition-all">
                   View Details <FiArrowRight size={11} />
                 </span>
               </div>

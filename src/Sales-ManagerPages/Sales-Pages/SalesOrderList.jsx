@@ -290,7 +290,7 @@ export default function SalesOrderList() {
                 </td>
                 <td className="px-5 py-4 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <button
+                    {/* <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (so.status === "complete") {
@@ -301,7 +301,7 @@ export default function SalesOrderList() {
                       title="View Details"
                     >
                       <FiEye size={14} />
-                    </button>
+                    </button> */}
                     {so.status !== "ready" && so.status !== "complete" &&  so.status !== "excess" && (
                       <button
                         onClick={(e) => {
