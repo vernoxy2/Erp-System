@@ -34,14 +34,20 @@ import SOCompleteDetails from "./Sales-ManagerPages/Sales-Pages/SOCompleteDetail
 import UploadSalesInvoice from "./Sales-ManagerPages/Sales-Pages/UploadSalesInvoice";
 import ReadyToDispatchDeatils from "./Sales-ManagerPages/Sales-Pages/ReadyToDispatchDeatils";
 import DispatchOnChallanList from "./Sales-ManagerPages/Sales-Pages/Dispatchonchallanlist";
+import StoreDashboard from "./Store-ManagerPages/Store-Page/StoreDashboard";
+import StoreLowStockManagement from "./Store-ManagerPages/Store-Page/StoreLowStockManagement";
+import StoreCategoryManagement from "./Store-ManagerPages/Store-Page/StoreCategoryManagement";
+import StoreProductManagement from "./Store-ManagerPages/Store-Page/StoreProductManagement";
+import StoreLayout from "./Store-ManagerPages/StoreComponent/Layout/StoreLayout";
+import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader";
 
 const App = () => {
   return (
     <Routes>
+      {/* All for sales */}
       <Route path="/" element={<Navigate to="/Login" replace />} />
       <Route path="/Login" element={<Login />} />
       <Route path="/sales/*" element={<SalesLayout />}>
-        {/* <Route index element={<Navigate to="dashboard" replace />} /> */}
         {/* Dashboard */}
         <Route path="dashboard" element={<Dashboard />} />
         {/* STOCK MANAGEMENT */}
@@ -66,7 +72,6 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
-
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />
@@ -79,18 +84,15 @@ const App = () => {
           path="dispatch-detail/:soId"
           element={<ReadyToDispatchDeatils />}
         />
-
         {/* INVOICING */}
         <Route path="unbilled-challans" element={<UnbilledChallans />} />
         <Route path="invoice-history" element={<InvoiceHistory />} />
-
         {/* PURCHASES */}
         <Route path="purchase-orders" element={<PurchaseOrderList />} />
         <Route
           path="purchase-orders/create"
           element={<CreatePurchaseOrder />}
         />
-
         <Route path="purchase-orders" element={<PurchaseOrders />} />
         <Route
           path="purchase-orders/upload"
@@ -103,11 +105,9 @@ const App = () => {
           path="vendor-invoice-history"
           element={<VendorInvoiceHistory />}
         />
-
         {/* INVENTORY */}
         <Route path="items-master" element={<ItemsMaster />} />
         <Route path="stock-alerts" element={<StockAlerts />} />
-
         {/* REPORTS */}
         <Route path="reports" element={<ReportsAnalytics />} />
         <Route path="*" element={<Navigate to="/Login" replace />} />
@@ -115,8 +115,20 @@ const App = () => {
         {/* <Route path="*" element={<Navigate to="/sales/dashboard" replace />} /> */}
       </Route>
 
-      {/* Root redirect */}
-      {/* <Route path="/" element={<Navigate to="/sales/dashboard" replace />} /> */}
+      {/* for Store Routes */}
+      <Route path="/store/*" element={<StoreLayout />}>
+        <Route path="dashboard" element={<StoreDashboard />} />
+        <Route
+          path="low-stock-management"
+          element={<StoreLowStockManagement />}
+        />
+        <Route
+          path="category-management"
+          element={<StoreCategoryManagement />}
+        />
+        <Route path="product-management" element={<StoreProductManagement />} />
+      {/* <Route path="store-header" element={<StoreHeader />} /> */}
+      </Route>
     </Routes>
   );
 };
