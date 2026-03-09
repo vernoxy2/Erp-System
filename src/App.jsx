@@ -40,6 +40,7 @@ import StoreCategoryManagement from "./Store-ManagerPages/Store-Page/StoreCatego
 import StoreProductManagement from "./Store-ManagerPages/Store-Page/StoreProductManagement";
 import StoreLayout from "./Store-ManagerPages/StoreComponent/Layout/StoreLayout";
 import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader";
+import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuality";
 
 const App = () => {
   return (
@@ -114,10 +115,12 @@ const App = () => {
         {/* Catch all */}
         {/* <Route path="*" element={<Navigate to="/sales/dashboard" replace />} /> */}
       </Route>
-
-      {/* for Store Routes */}
+    
+      {/* STORE ROUTES */}
       <Route path="/store/*" element={<StoreLayout />}>
         <Route path="dashboard" element={<StoreDashboard />} />
+        <Route path="verify-quality" element={<StoreVerifyQuality />} />
+        <Route path="stock-alerts" element={<StockAlerts />} />
         <Route
           path="low-stock-management"
           element={<StoreLowStockManagement />}
@@ -127,6 +130,7 @@ const App = () => {
           element={<StoreCategoryManagement />}
         />
         <Route path="product-management" element={<StoreProductManagement />} />
+        
       {/* <Route path="store-header" element={<StoreHeader />} /> */}
       </Route>
     </Routes>

@@ -1,6 +1,13 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FiHome, FiAlertTriangle, FiLayers, FiSettings, FiBarChart2 } from "react-icons/fi";
+import {
+  FiHome,
+  FiAlertTriangle,
+  FiLayers,
+  FiSettings,
+  FiBarChart2,
+  FiPackage,
+} from "react-icons/fi";
 
 export default function StoreSidebar() {
   const navSections = [
@@ -11,12 +18,37 @@ export default function StoreSidebar() {
     {
       title: "STOCK MANAGEMENT",
       items: [
-        { to: "/store/low-stock-management", icon: FiAlertTriangle, label: "Low Stock Alerts", badge: 45, badgeColor: "red" },
-        { to: "/store/category-management", icon: FiLayers, label: "Manage Categories" },
-        { to: "/store/product-management", icon: FiSettings, label: "Manage Products" },
-        { to: "/store/stock-summary", icon: FiBarChart2, label: "Stock Summary" },
+        {
+          to: "/store/verify-quality",
+          icon: FiPackage,
+          label: "Quality Verify",
+        },
+        {
+          to: "/store/low-stock-management",
+          icon: FiAlertTriangle,
+          label: "Low Stock Alerts",
+          badge: 45,
+          badgeColor: "red",
+        },
+        {
+          to: "/store/category-management",
+          icon: FiLayers,
+          label: "Manage Categories",
+        },
+        {
+          to: "/store/product-management",
+          icon: FiSettings,
+          label: "Manage Products",
+        },
+        {
+          to: "/store/stock-summary",
+          icon: FiBarChart2,
+          label: "Stock Summary",
+        },
+       { to: "/store/stock-alerts", icon: FiBarChart2, label: "Stock Alerts" }
       ],
     },
+    
   ];
 
   const getBadgeClasses = (color) => {
@@ -34,7 +66,9 @@ export default function StoreSidebar() {
       <div className="h-16 border-b border-slate-200 flex gap-3.5 items-center px-5 flex-shrink-0">
         <div className="mt-2.5">
           <h2 className="text-sm font-black text-emerald-600">ERP System</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Store Management</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            Store Management
+          </p>
         </div>
       </div>
 
@@ -43,7 +77,9 @@ export default function StoreSidebar() {
           <div key={idx} className={idx > 0 ? "mt-6" : ""}>
             {section.title && (
               <div className="px-3 mb-2">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {section.title}
+                </h3>
               </div>
             )}
             <div className="space-y-1">
@@ -54,18 +90,29 @@ export default function StoreSidebar() {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all text-sm group ${
-                      isActive ? "bg-emerald-50 text-emerald-600 font-bold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                      isActive
+                        ? "bg-emerald-50 text-emerald-600 font-bold"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
                     }`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <item.icon size={18} className={isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"} />
+                        <item.icon
+                          size={18}
+                          className={
+                            isActive
+                              ? "text-emerald-600"
+                              : "text-slate-400 group-hover:text-slate-600"
+                          }
+                        />
                         <span className="truncate">{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border ${getBadgeClasses(item.badgeColor)}`}>
+                        <span
+                          className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border ${getBadgeClasses(item.badgeColor)}`}
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -84,7 +131,9 @@ export default function StoreSidebar() {
             <span className="text-sm font-bold text-emerald-600">SM</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">Store Manager</p>
+            <p className="text-sm font-bold text-slate-800 truncate">
+              Store Manager
+            </p>
             <p className="text-xs text-slate-400 truncate">store@company.com</p>
           </div>
         </div>
