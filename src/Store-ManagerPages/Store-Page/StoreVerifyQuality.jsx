@@ -630,6 +630,7 @@ export default function StoreVerifyQuality() {
                     </div>
 
                     <div className="grid grid-cols-4 gap-2 mb-2">
+                      
                       {/* Ordered */}
                       <div>
                         <p className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-wide">Ordered</p>
@@ -661,9 +662,9 @@ export default function StoreVerifyQuality() {
                               : currentItem.damagedQty;
                             const autoDetail =
                               autoIssue === "shortage"
-                                ? `Short: ${inv - newPhys} units (Invoice: ${inv}, Physical: ${newPhys})`
+                                ? `Short: ${inv - newPhys} units `
                                 : autoIssue === "damage"
-                                  ? `Damaged: ${autoDamaged} units (Invoice: ${inv}, Physical: ${newPhys})`
+                                  ? `Damaged: ${autoDamaged} units `
                                   : autoIssue === "excess"
                                     ? `Excess: ${newPhys - inv} units received`
                                     : currentItem.issueDetail;

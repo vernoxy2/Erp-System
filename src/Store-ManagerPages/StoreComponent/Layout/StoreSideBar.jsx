@@ -8,6 +8,7 @@ import {
   FiBarChart2,
   FiPackage,
 } from "react-icons/fi";
+import logo from "../../../assets/logo.svg";
 
 export default function StoreSidebar() {
   const navSections = [

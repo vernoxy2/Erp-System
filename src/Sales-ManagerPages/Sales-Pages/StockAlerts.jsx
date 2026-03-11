@@ -1264,7 +1264,7 @@ export default function SalesStock() {
           </select>
 
           {/* ✅ Vendor Filter — populated from real ledger data */}
-          <select
+          {/* <select
             value={vendorFilter}
             onChange={(e) => setVendorFilter(e.target.value)}
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
@@ -1275,7 +1275,7 @@ export default function SalesStock() {
                 {v}
               </option>
             ))}
-          </select>
+          </select> */}
 
           {/* Alerts Only Toggle */}
           <button
