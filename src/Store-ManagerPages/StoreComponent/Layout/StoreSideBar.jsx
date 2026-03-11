@@ -45,10 +45,9 @@ export default function StoreSidebar() {
           icon: FiBarChart2,
           label: "Stock Summary",
         },
-       { to: "/store/stock-alerts", icon: FiBarChart2, label: "Stock Alerts" }
+        { to: "/store/stock-alerts", icon: FiBarChart2, label: "Stock Alerts" },
       ],
     },
-    
   ];
 
   const getBadgeClasses = (color) => {
@@ -64,14 +63,14 @@ export default function StoreSidebar() {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen overflow-hidden">
       <div className="h-16 border-b border-slate-200 flex gap-3.5 items-center px-5 flex-shrink-0">
+        {/* <img src={logo} alt="Fib2Fab" className="h-10  " /> */}
         <div className="mt-2.5">
-          <h2 className="text-sm font-black text-emerald-600">ERP System</h2>
+          <h2 className="text-sm font-black text-indigo-600">ERP System</h2>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-            Store Management
+            Sales & Distribution
           </p>
         </div>
       </div>
-
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navSections.map((section, idx) => (
           <div key={idx} className={idx > 0 ? "mt-6" : ""}>

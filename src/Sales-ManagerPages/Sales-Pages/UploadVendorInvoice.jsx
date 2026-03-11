@@ -1684,13 +1684,13 @@ export default function UploadVendorInvoice() {
                   ))}
                 </div>
               </Card>
-              <Card>
+              {/* <Card>
                 <div className="px-6 pt-5 pb-3 border-b border-slate-50"><h3 className="text-sm font-black text-slate-800">Quality Check & Remarks</h3></div>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Select label="Quality Check Result" value={qualityCheck} onChange={(e) => setQualityCheck(e.target.value)} options={[{value:"passed",label:"✓ Passed — All items good"},{value:"failed",label:"✗ Failed — Issues found"},{value:"partial",label:"⚠ Partial — Some issues"}]}/>
                   <Textarea label="Remarks (optional)" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Any damage, shortage, or quality notes..." rows={3}/>
                 </div>
-              </Card>
+              </Card> */}
               <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <FiAlertCircle size={15} className="text-amber-600 mt-0.5 flex-shrink-0"/>
                 <p className="text-xs text-amber-800">Once submitted, this invoice will be <strong>locked for editing</strong>. Stock records are already updated by Store.</p>
