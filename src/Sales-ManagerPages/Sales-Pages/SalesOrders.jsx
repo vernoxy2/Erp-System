@@ -223,7 +223,7 @@ export default function SalesOrder() {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1  gap-6">
 
         {/* Recent Sales Orders */}
         <Card>
@@ -269,8 +269,8 @@ export default function SalesOrder() {
         </Card>
 
         {/* Purchase Orders */}
-        <Card>
-          <CardHeader
+        {/* <Card> */}
+          {/* <CardHeader
             title="Purchase Orders"
             subtitle={`${stats.totalPOs} total · ${stats.completedPOs} completed`}
             action={
@@ -278,8 +278,8 @@ export default function SalesOrder() {
                 View All →
               </button>
             }
-          />
-          <div className="divide-y divide-slate-50">
+          /> */}
+          {/* <div className="divide-y divide-slate-50">
             {recentPOs.length === 0 ? (
               <div className="px-6 py-8 text-center">
                 <p className="text-sm text-slate-400">No purchase orders found.</p>
@@ -316,22 +316,18 @@ export default function SalesOrder() {
                         </p>
                       </div>
                     </div>
-                    {/* <div className="text-right">
-                      <p className="text-sm font-bold text-slate-800">₹{(po.grandTotal / 1000).toFixed(0)}K</p>
-                      <p className="text-xs text-slate-400">ETA: {po.eta || "—"}</p>
-                    </div> */}
                   </div>
                 </div>
               ))
             )}
-          </div>
-        </Card>
+          </div> */}
+        {/* </Card> */}
       </div>
 
       {/* Quick Actions */}
       <Card>
         <CardHeader title="Quick Actions" />
-        <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
           <button
             onClick={() => navigate("/sales/sales-orders/upload")}
             className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all text-center"
@@ -346,13 +342,13 @@ export default function SalesOrder() {
             <FiTruck className="mx-auto mb-2 text-purple-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Dispatch on Challan</p>
           </button>
-          <button
+          {/* <button
             onClick={() => navigate("/sales/purchase-orders/create")}
             className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition-all text-center"
           >
             <FiShoppingCart className="mx-auto mb-2 text-emerald-600" size={24} />
             <p className="text-xs font-bold text-slate-700">Create PO</p>
-          </button>
+          </button> */}
           <button
             onClick={() => navigate("/sales/upload-sales-invoice")}
             className="p-4 border-2 border-dashed border-slate-200 rounded-lg hover:border-amber-300 hover:bg-amber-50 transition-all text-center"
