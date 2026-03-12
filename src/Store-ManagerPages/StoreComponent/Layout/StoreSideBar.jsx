@@ -1,16 +1,41 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import {
-  FiHome,
-  FiAlertTriangle,
-  FiLayers,
-  FiSettings,
-  FiBarChart2,
-  FiPackage,
-} from "react-icons/fi";
+import { FiHome, FiAlertTriangle, FiLayers, FiSettings, FiBarChart2, FiPackage } from "react-icons/fi";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../../firebase";
 import logo from "../../../assets/logo.svg";
 
 export default function StoreSidebar() {
+  const [userData, setUserData] = useState({
+    name: "Loading...",
+    email: "",
+    department: "",
+    role: "",
+  });
+
+  useEffect(() => {
+    // Logged-in user ka UID lo, phir Firestore se data fetch karo
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "user", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (error) {
+          console.error("User data fetch error:", error);
+        }
+      }
+    });
+
+    return () => unsubscribe(); // cleanup
+  }, []);
+  const initials = userData.name
+    ? userData.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+
   const navSections = [
     {
       title: null,
@@ -19,33 +44,11 @@ export default function StoreSidebar() {
     {
       title: "STOCK MANAGEMENT",
       items: [
-        {
-          to: "/store/verify-quality",
-          icon: FiPackage,
-          label: "Quality Verify",
-        },
-        {
-          to: "/store/low-stock-management",
-          icon: FiAlertTriangle,
-          label: "Low Stock Alerts",
-          badge: 45,
-          badgeColor: "red",
-        },
-        {
-          to: "/store/category-management",
-          icon: FiLayers,
-          label: "Manage Categories",
-        },
-        {
-          to: "/store/product-management",
-          icon: FiSettings,
-          label: "Manage Products",
-        },
-        {
-          to: "/store/stock-summary",
-          icon: FiBarChart2,
-          label: "Stock Summary",
-        },
+        { to: "/store/verify-quality", icon: FiPackage, label: "Quality Verify" },
+        { to: "/store/low-stock-management", icon: FiAlertTriangle, label: "Low Stock Alerts", badge: 45, badgeColor: "red" },
+        { to: "/store/category-management", icon: FiLayers, label: "Manage Categories" },
+        { to: "/store/product-management", icon: FiSettings, label: "Manage Products" },
+        { to: "/store/stock-summary", icon: FiBarChart2, label: "Stock Summary" },
         { to: "/store/stock-alerts", icon: FiBarChart2, label: "Stock Alerts" },
       ],
     },
@@ -63,8 +66,9 @@ export default function StoreSidebar() {
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen overflow-hidden">
+      {/* Logo */}
       <div className="h-16 border-b border-slate-200 flex gap-3.5 items-center px-5 flex-shrink-0">
-        {/* <img src={logo} alt="Fib2Fab" className="h-10  " /> */}
+        <img src={logo} alt="Fib2Fab" className="h-10" />
         <div className="mt-2.5">
           <h2 className="text-sm font-black text-indigo-600">ERP System</h2>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
@@ -72,6 +76,8 @@ export default function StoreSidebar() {
           </p>
         </div>
       </div>
+
+      {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navSections.map((section, idx) => (
           <div key={idx} className={idx > 0 ? "mt-6" : ""}>
@@ -99,20 +105,11 @@ export default function StoreSidebar() {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <item.icon
-                          size={18}
-                          className={
-                            isActive
-                              ? "text-emerald-600"
-                              : "text-slate-400 group-hover:text-slate-600"
-                          }
-                        />
+                        <item.icon size={18} className={isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"} />
                         <span className="truncate">{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span
-                          className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border ${getBadgeClasses(item.badgeColor)}`}
-                        >
+                        <span className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border ${getBadgeClasses(item.badgeColor)}`}>
                           {item.badge}
                         </span>
                       )}
@@ -125,16 +122,15 @@ export default function StoreSidebar() {
         ))}
       </nav>
 
+      {/* ✅ Dynamic User Section */}
       <div className="p-4 border-t border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-emerald-600">SM</span>
+            <span className="text-sm font-bold text-emerald-600">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">
-              Store Manager
-            </p>
-            <p className="text-xs text-slate-400 truncate">store@company.com</p>
+            <p className="text-sm font-bold text-slate-800 truncate">{userData.name}</p>
+            <p className="text-xs text-slate-400 truncate">{userData.email}</p>
           </div>
         </div>
       </div>
