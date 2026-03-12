@@ -27,10 +27,10 @@ const STATUS = {
 };
 
 const REASONS = [
-  { value: "short_supply", label: "Short Supply — Kam maal aavyu" },
-  { value: "damage",       label: "Damaged Goods — Nuksan thayelu maal" },
-  { value: "wrong_item",   label: "Wrong Item — Galat maal aavyu" },
-  { value: "overcharge",   label: "Overcharge — Vadhu charge thayel" },
+  { value: "short_supply", label: "Short Supply — Less material received" },
+  { value: "damage",       label: "Damaged Goods — Material received damaged" },
+  { value: "wrong_item",   label: "Wrong Item — Incorrect material received" },
+  { value: "overcharge",   label: "Overcharge — Excess amount charged" },
   { value: "return",       label: "Return to Vendor" },
 ];
 
@@ -130,7 +130,7 @@ export default function DebitCreditNotes() {
 
   const handleSubmit = async () => {
     if (!form.vendorName || !form.items[0].itemName) {
-      alert("Vendor name aur kam se kam ek item bharvo.");
+      alert("Please enter vendor name and at least one item.");
       return;
     }
     setSubmitting(true);
@@ -210,6 +210,7 @@ export default function DebitCreditNotes() {
         </button>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
           { label: "Debit Notes",    val: counts.debit,   bg: "bg-red-50 border-red-200",         text: "text-red-600",     Icon: FiAlertTriangle },
@@ -228,6 +229,7 @@ export default function DebitCreditNotes() {
         ))}
       </div>
 
+      {/* Filters */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {[{v:"all",l:"All"},{v:"debit",l:"Debit"},{v:"credit",l:"Credit"}].map(b => (
           <button key={b.v} onClick={() => setFilterType(b.v)}
@@ -246,14 +248,15 @@ export default function DebitCreditNotes() {
         ))}
       </div>
 
+      {/* Notes Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="py-20 text-center text-slate-400 text-sm">Loading...</div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center">
             <FiFileText size={40} className="mx-auto text-slate-300 mb-3" />
-            {/* <p className="text-slate-500 font-medium">Koi note nathi mlyel</p> */}
-            {/* <p className="text-slate-400 text-sm mt-1">Pehlu note banavo</p> */}
+            <p className="text-slate-500 font-medium">No notes found</p>
+            <p className="text-slate-400 text-sm mt-1">Create your first note</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -289,7 +292,7 @@ export default function DebitCreditNotes() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         {note.stockImpact
                           ? <span className={`text-xs font-bold ${note.stockAdjusted ? "text-emerald-600":"text-amber-600"}`}>
-                              {note.stockAdjusted ? "✅ Done":"⏳ Pending"}
+                              {note.stockAdjusted ? "✅ Done" : "⏳ Pending"}
                             </span>
                           : <span className="text-xs text-slate-400">—</span>}
                       </td>
@@ -326,24 +329,27 @@ export default function DebitCreditNotes() {
         )}
       </div>
 
+      {/* Create Note Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">New Debit / Credit Note</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Approved invoice select karo → issue details bharva</p>
+                <p className="text-xs text-slate-500 mt-0.5">Select an approved invoice → fill in issue details</p>
               </div>
               <button onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><FiX/></button>
             </div>
 
             <div className="p-6 space-y-5">
+
+              {/* Note Type */}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Note Type</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    {value:"debit",  label:"Debit Note",  desc:"Aapne vendor ne moko — nuksan thayel", color:"text-red-600",     active:"border-red-400 bg-red-50"},
-                    {value:"credit", label:"Credit Note", desc:"Vendor thaathi credit malyel",          color:"text-emerald-600", active:"border-emerald-400 bg-emerald-50"},
+                    { value:"debit",  label:"Debit Note",  desc:"Raised against vendor for loss or dispute", color:"text-red-600",     active:"border-red-400 bg-red-50" },
+                    { value:"credit", label:"Credit Note", desc:"Credit received from vendor",               color:"text-emerald-600", active:"border-emerald-400 bg-emerald-50" },
                   ].map(t => (
                     <button key={t.value} onClick={() => setForm(f=>({...f,type:t.value}))}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${form.type===t.value ? t.active : "border-slate-200 hover:border-slate-300"}`}>
@@ -354,11 +360,12 @@ export default function DebitCreditNotes() {
                 </div>
               </div>
 
+              {/* Linked Invoice */}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Linked Invoice *</label>
                 <select value={form.linkedInvoiceId} onChange={e => handleInvoiceSelect(e.target.value)}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400">
-                  <option value="">— Invoice select karo —</option>
+                  <option value="">— Select an invoice —</option>
                   {invoices.map(inv => (
                     <option key={inv.id} value={inv.id}>
                       Invoice #{inv.invoiceNo} | PO: {inv.linkedPoNo||"—"} | {inv.vendor||inv.supplier||inv.consignee}
@@ -367,16 +374,17 @@ export default function DebitCreditNotes() {
                 </select>
                 {invoices.length === 0 && (
                   <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
-                    <FiAlertTriangle size={12}/> Koi approved invoice nathi — Store Manager approval pehla levo
+                    <FiAlertTriangle size={12}/> No approved invoices found — get Store Manager approval first
                   </p>
                 )}
               </div>
 
+              {/* Vendor & PO */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Vendor</label>
                   <input value={form.vendorName} onChange={e => setForm(f=>({...f,vendorName:e.target.value}))}
-                    placeholder="Auto-fill thase invoice thi"
+                    placeholder="Auto-filled from invoice"
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"/>
                 </div>
                 <div>
@@ -386,6 +394,7 @@ export default function DebitCreditNotes() {
                 </div>
               </div>
 
+              {/* Reason */}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Reason *</label>
                 <select value={form.reason} onChange={e => setForm(f=>({...f,reason:e.target.value}))}
@@ -394,12 +403,13 @@ export default function DebitCreditNotes() {
                 </select>
               </div>
 
+              {/* Items Table */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items *</label>
                   <button onClick={() => setForm(f=>({...f,items:[...f.items,emptyItem()]}))}
                     className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
-                    <FiPlus size={12}/> Row Add
+                    <FiPlus size={12}/> Add Row
                   </button>
                 </div>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -450,11 +460,12 @@ export default function DebitCreditNotes() {
                 </div>
               </div>
 
+              {/* Stock Impact Toggle */}
               <div className={`flex items-center justify-between rounded-xl px-4 py-3 border transition-colors
                 ${form.stockImpact ? "bg-amber-50 border-amber-300" : "bg-slate-50 border-slate-200"}`}>
                 <div>
                   <p className="text-sm font-bold text-slate-800">Stock Impact?</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Return case — accepted thay tyare stock ma se quantity automatically minus thase</p>
+                  <p className="text-xs text-slate-500 mt-0.5">For return cases — quantity will be automatically deducted from stock once accepted</p>
                 </div>
                 <button onClick={()=>setForm(f=>({...f,stockImpact:!f.stockImpact}))}
                   className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${form.stockImpact ? "bg-amber-500":"bg-slate-300"}`}>
@@ -462,6 +473,7 @@ export default function DebitCreditNotes() {
                 </button>
               </div>
 
+              {/* Remarks */}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Remarks</label>
                 <textarea value={form.remarks} onChange={e=>setForm(f=>({...f,remarks:e.target.value}))}
@@ -475,13 +487,14 @@ export default function DebitCreditNotes() {
                 className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
               <button onClick={handleSubmit} disabled={submitting}
                 className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold disabled:opacity-50">
-                {submitting ? "Saving...":"Create Note"}
+                {submitting ? "Saving..." : "Create Note"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* View Note Modal */}
       {viewNote && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
@@ -549,6 +562,7 @@ export default function DebitCreditNotes() {
                 </div>
               )}
 
+              {/* Status Timeline */}
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Status Timeline</p>
                 <div className="flex items-center gap-1">
@@ -572,7 +586,7 @@ export default function DebitCreditNotes() {
                   })}
                 </div>
                 {viewNote.status==="rejected" && (
-                  <p className="text-xs text-red-500 font-semibold mt-2 text-center">❌ Note Rejected thayel che</p>
+                  <p className="text-xs text-red-500 font-semibold mt-2 text-center">❌ This note has been rejected</p>
                 )}
               </div>
             </div>
