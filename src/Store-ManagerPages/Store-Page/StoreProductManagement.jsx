@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiSave, FiTrash2, FiX, FiPackage } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiSave, FiTrash2, FiX, FiPackage, FiSearch } from "react-icons/fi";
 import { db } from "../../firebase";
 import { collection, getDocs, doc, updateDoc, onSnapshot } from "firebase/firestore";
 
@@ -37,13 +37,15 @@ export default function StoreProductManagement() {
   const [editingCatId, setEditingCatId] = useState(null);
   const [newProduct, setNewProduct]   = useState({ name: "", unit: "NOS", lowLevel: 100, reorderLevel: 150 });
 
+  // ── Search state ──────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+
   // ✅ Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       setLoadingCats(true);
       const snapshot = await getDocs(collection(db, "stockCategories"));
       const data = snapshot.docs.map((d) => ({ docId: d.id, ...d.data() }));
-      // Sort: Pipes → Fittings → rest
       data.sort((a, b) => {
         const order = (n = "") => n.toUpperCase().includes("PIPE") ? 0 : n.toUpperCase().includes("FITTING") ? 1 : 2;
         return order(a.name) - order(b.name) || a.name.localeCompare(b.name);
@@ -54,12 +56,15 @@ export default function StoreProductManagement() {
     fetchCategories();
   }, []);
 
-  // ✅ Live stock from Firestore
+  // ✅ Live stock from Firestore — store full item for part no / description search
+  const [stockItems, setStockItems] = useState([]);
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "stock"), (snapshot) => {
+      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setStockItems(items);
+
       const map = {};
-      snapshot.docs.forEach((d) => {
-        const s = d.data();
+      items.forEach((s) => {
         const key = (s.description || "").trim().toLowerCase();
         if (key) map[key] = s.available ?? 0;
         const codeKey = (s.productCode || "").trim().toLowerCase();
@@ -75,12 +80,46 @@ export default function StoreProductManagement() {
     return key in stockMap ? stockMap[key] : null;
   };
 
-  // ✅ Which categories to show
+  // ── Search logic ──────────────────────────────────────────────────────────
+  // When search is active, find matching stock items then show their category products
+  const trimmed = searchQuery.trim().toLowerCase();
+
+  const getSearchResults = () => {
+    if (!trimmed) return null; // null = not in search mode
+
+    // Find matching stock items by description or productCode
+    const matchedItems = stockItems.filter((item) => {
+      const desc    = (item.description  || "").toLowerCase();
+      const partNo  = (item.productCode  || "").toLowerCase();
+      return desc.includes(trimmed) || partNo.includes(trimmed);
+    });
+
+    // Also match subcategory product names directly
+    const results = [];
+    categories.forEach((cat) => {
+      (cat.subcategories || []).forEach((product, idx) => {
+        const name = (product.name || "").toLowerCase();
+        const matchedStock = matchedItems.find(
+          (s) => (s.description || "").toLowerCase() === name
+        );
+        const partNo = matchedStock ? (matchedStock.productCode || "").toLowerCase() : "";
+
+        if (name.includes(trimmed) || partNo.includes(trimmed)) {
+          results.push({ cat, product, idx });
+        }
+      });
+    });
+
+    return results;
+  };
+
+  const searchResults = getSearchResults();
+  const isSearchMode  = searchResults !== null;
+
+  // ── Which categories to show (non-search mode) ────────────────────────────
   const visibleCategories = selectedCategory === "__ALL__"
     ? categories
     : categories.filter((c) => c.docId === selectedCategory);
-
-  const selectedCat = categories.find((c) => c.docId === selectedCategory);
 
   const saveToFirebase = async (catId, updatedProducts) => {
     await updateDoc(doc(db, "stockCategories", catId), {
@@ -152,7 +191,6 @@ export default function StoreProductManagement() {
   };
 
   const handleAddClick = () => {
-    // When in All view, default to first category; otherwise use selected
     setEditingCatId(selectedCategory === "__ALL__" ? categories[0]?.docId : selectedCategory);
     setIsAddMode(true);
   };
@@ -166,6 +204,7 @@ export default function StoreProductManagement() {
 
   const handleCategoryChange = (e) => {
     setSelectedCategory(e.target.value);
+    setSearchQuery("");
     handleCancel();
   };
 
@@ -179,6 +218,71 @@ export default function StoreProductManagement() {
 
   const totalProducts = categories.reduce((sum, c) => sum + (c.subcategories?.length || 0), 0);
 
+  // ── Reusable product row ──────────────────────────────────────────────────
+  const ProductRow = ({ cat, product, idx }) => {
+    const liveStock = getLiveStock(product.name);
+    const available = liveStock ?? 0;
+    const status    = getStockStatus(available, product.lowLevel ?? 100, product.reorderLevel ?? 150);
+    const isEditing = editingCatId === cat.docId && editingIndex === idx;
+
+    // Get part no from stock if available
+    const matchedStock = stockItems.find(
+      (s) => (s.description || "").toLowerCase() === (product.name || "").toLowerCase()
+    );
+    const partNo = matchedStock?.productCode || null;
+
+    return (
+      <div
+        className={`flex items-center justify-between p-3.5 rounded-lg transition-all ${
+          isEditing ? "bg-indigo-50 border border-indigo-200" : "bg-slate-50 hover:bg-slate-100"
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-bold text-slate-800 text-sm">{product.name}</p>
+            <StatusBadge status={status} />
+            {partNo && (
+              <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                #{partNo}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <span className="text-xs text-slate-400">Unit: <span className="font-semibold text-slate-600">{product.unit ?? "NOS"}</span></span>
+            <span className="text-xs text-slate-400">Low: <span className="font-semibold text-slate-600">{product.lowLevel ?? 100}</span></span>
+            <span className="text-xs text-slate-400">Reorder: <span className="font-semibold text-slate-600">{product.reorderLevel ?? 150}</span></span>
+            <span className={`text-xs font-bold ${
+              liveStock === null ? "text-slate-300" :
+              status === "shortage" ? "text-red-500" :
+              status === "low"      ? "text-amber-600" :
+              status === "reorder"  ? "text-orange-500" :
+              "text-teal-600"
+            }`}>
+              Stock: {liveStock === null ? "—" : liveStock}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+          <button
+            onClick={() => handleEditClick(cat.docId, product, idx)}
+            className={`p-1.5 rounded-lg transition-all flex items-center gap-1 text-xs font-semibold ${
+              isEditing ? "bg-indigo-600 text-white" : "hover:bg-indigo-100 text-slate-500 hover:text-indigo-600"
+            }`}
+          >
+            <FiEdit2 size={13} />
+            <span className="hidden sm:inline">{isEditing ? "Editing…" : "Edit"}</span>
+          </button>
+          <button
+            onClick={() => handleDelete(cat.docId, idx, product.name)}
+            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
+          >
+            <FiTrash2 size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -187,17 +291,19 @@ export default function StoreProductManagement() {
         <p className="text-sm text-slate-500 mt-1">Add products and set low stock levels</p>
       </div>
 
-      {/* Category Selector + Add Button */}
+      {/* Category Selector + Search + Add Button */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex items-end gap-4 flex-wrap">
+        <div className="flex items-end gap-3 flex-wrap">
+
+          {/* Category dropdown */}
           <div className="flex-1 md:max-w-xs">
             <label className="block text-sm font-bold text-slate-700 mb-2">Select Category</label>
             <select
               value={selectedCategory}
               onChange={handleCategoryChange}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+              disabled={isSearchMode}
             >
-              {/* ✅ All Categories option */}
               <option value="__ALL__">All Categories ({totalProducts} products)</option>
               {categories.map((cat) => (
                 <option key={cat.docId} value={cat.docId}>
@@ -206,6 +312,32 @@ export default function StoreProductManagement() {
               ))}
             </select>
           </div>
+
+          {/* Search bar */}
+          <div className="flex-1 md:max-w-sm">
+            <label className="block text-sm font-bold text-slate-700 mb-2">
+              Search by Description / Part No.
+            </label>
+            <div className="relative">
+              <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="e.g. PP PIPE 10KG or #PART123"
+                className="w-full border border-slate-200 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
           <button
             onClick={handleAddClick}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center gap-2 whitespace-nowrap"
@@ -219,9 +351,10 @@ export default function StoreProductManagement() {
       {isAddMode && (
         <div className="bg-white rounded-xl border border-indigo-200 p-6 shadow-sm">
           <h3 className="font-black text-slate-800 mb-1 flex items-center gap-2">
-            {editingIndex !== null ? <><FiEdit2 className="text-indigo-600" /> Edit Product</> : <><FiPlus className="text-indigo-600" /> Add New Product</>}
+            {editingIndex !== null
+              ? <><FiEdit2 className="text-indigo-600" /> Edit Product</>
+              : <><FiPlus className="text-indigo-600" /> Add New Product</>}
           </h3>
-          {/* Show which category when in All view */}
           {selectedCategory === "__ALL__" && (
             <div className="mb-4">
               <label className="block text-xs font-bold text-slate-600 mb-2">Add to Category</label>
@@ -279,10 +412,12 @@ export default function StoreProductManagement() {
               />
             </div>
             <div className="md:col-span-4 flex gap-3">
-              <button type="button" onClick={handleCancel} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 flex items-center gap-2">
+              <button type="button" onClick={handleCancel}
+                className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 flex items-center gap-2">
                 <FiX size={14} /> Cancel
               </button>
-              <button type="submit" disabled={saving} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 flex items-center gap-2">
+              <button type="submit" disabled={saving}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 flex items-center gap-2">
                 <FiSave size={14} />
                 {saving ? "Saving..." : editingIndex !== null ? "Update Product" : "Save Product"}
               </button>
@@ -291,97 +426,85 @@ export default function StoreProductManagement() {
         </div>
       )}
 
-      {/* ✅ Categories + Products List */}
-      <div className="space-y-5">
-        {visibleCategories.map((cat) => {
-          const products = cat.subcategories || [];
-          return (
-            <div key={cat.docId} className="bg-white rounded-xl border border-slate-200">
-              {/* Category Header */}
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FiPackage size={15} className="text-indigo-500" />
-                  <h3 className="font-black text-slate-800 text-sm">{cat.name}</h3>
-                  <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                    {products.length} products
-                  </span>
-                </div>
-                {selectedCategory === "__ALL__" && (
-                  <button
-                    onClick={() => { setEditingCatId(cat.docId); setIsAddMode(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
-                  >
-                    <FiPlus size={12} /> Add
-                  </button>
-                )}
-              </div>
-
-              <div className="p-4">
-                {products.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-6">No products in this category yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {products.map((product, idx) => {
-                      const liveStock   = getLiveStock(product.name);
-                      const available   = liveStock ?? 0;
-                      const status      = getStockStatus(available, product.lowLevel ?? 100, product.reorderLevel ?? 150);
-                      const isEditing   = editingCatId === cat.docId && editingIndex === idx;
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center justify-between p-3.5 rounded-lg transition-all ${
-                            isEditing ? "bg-indigo-50 border border-indigo-200" : "bg-slate-50 hover:bg-slate-100"
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-bold text-slate-800 text-sm">{product.name}</p>
-                              <StatusBadge status={status} />
-                            </div>
-                            <div className="flex items-center gap-3 mt-1 flex-wrap">
-                              <span className="text-xs text-slate-400">Unit: <span className="font-semibold text-slate-600">{product.unit ?? "NOS"}</span></span>
-                              <span className="text-xs text-slate-400">Low: <span className="font-semibold text-slate-600">{product.lowLevel ?? 100}</span></span>
-                              <span className="text-xs text-slate-400">Reorder: <span className="font-semibold text-slate-600">{product.reorderLevel ?? 150}</span></span>
-                              {/* ✅ Live stock */}
-                              <span className={`text-xs font-bold ${
-                                liveStock === null ? "text-slate-300" :
-                                status === "shortage" ? "text-red-500" :
-                                status === "low"      ? "text-amber-600" :
-                                status === "reorder"  ? "text-orange-500" :
-                                "text-teal-600"
-                              }`}>
-                                Stock: {liveStock === null ? "—" : liveStock}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                            <button
-                              onClick={() => handleEditClick(cat.docId, product, idx)}
-                              className={`p-1.5 rounded-lg transition-all flex items-center gap-1 text-xs font-semibold ${
-                                isEditing ? "bg-indigo-600 text-white" : "hover:bg-indigo-100 text-slate-500 hover:text-indigo-600"
-                              }`}
-                            >
-                              <FiEdit2 size={13} />
-                              <span className="hidden sm:inline">{isEditing ? "Editing…" : "Edit"}</span>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(cat.docId, idx, product.name)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
-                            >
-                              <FiTrash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+      {/* ── SEARCH RESULTS MODE ── */}
+      {isSearchMode ? (
+        <div className="bg-white rounded-xl border border-slate-200">
+          <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
+            <FiSearch size={15} className="text-indigo-500" />
+            <h3 className="font-black text-slate-800 text-sm">
+              Search Results
+            </h3>
+            <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              {searchResults.length} found
+            </span>
+          </div>
+          <div className="p-4">
+            {searchResults.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-8">
+                No products found for "<span className="font-semibold">{searchQuery}</span>"
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {searchResults.map(({ cat, product, idx }) => (
+                  <div key={`${cat.docId}-${idx}`}>
+                    {/* Category label */}
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 ml-1">
+                      {cat.name}
+                    </div>
+                    <ProductRow cat={cat} product={product} idx={idx} />
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ── NORMAL CATEGORIES LIST ── */
+        <div className="space-y-5">
+          {visibleCategories.map((cat) => {
+            const products = cat.subcategories || [];
+            return (
+              <div key={cat.docId} className="bg-white rounded-xl border border-slate-200">
+                <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FiPackage size={15} className="text-indigo-500" />
+                    <h3 className="font-black text-slate-800 text-sm">{cat.name}</h3>
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {products.length} products
+                    </span>
+                  </div>
+                  {selectedCategory === "__ALL__" && (
+                    <button
+                      onClick={() => {
+                        setEditingCatId(cat.docId);
+                        setIsAddMode(true);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+                    >
+                      <FiPlus size={12} /> Add
+                    </button>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  {products.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-6">
+                      No products in this category yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {products.map((product, idx) => (
+                        <ProductRow key={idx} cat={cat} product={product} idx={idx} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -37,6 +37,17 @@ const getStockStatus = (available, lowLevel, reorderLevel) => {
   return "ok";
 };
 
+// ── Priority category order ───────────────────────────────────────────────────
+const PRIORITY_CATEGORIES = [
+  "PPCH PIPES",
+  "PPRCT PIPES",
+  "PP PIPES",
+  "PPH PIPE",
+  "PPRCT FITTINGS",
+  "PPCH FITTINGS",
+  "PP FITTINGS",
+];
+
 export default function StoreDashboard() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -83,14 +94,23 @@ export default function StoreDashboard() {
           };
         });
         return cat;
-      }).sort((a, b) => {
-        const g = (n = "") => n.toUpperCase().includes("PIPE") ? 0
-          : n.toUpperCase().includes("FITTING") ? 1
-          : n.toUpperCase().includes("VALVE") ? 2
-          : n.toUpperCase().includes("CHANNEL") ? 3 : 4;
-        return g(a.name) - g(b.name) || a.name.localeCompare(b.name);
       });
-      setCategories(data);
+
+      // ── Priority sort ─────────────────────────────────────────────────────
+      const sortedCategories = [
+        // First 7: fixed priority order
+        ...PRIORITY_CATEGORIES
+          .map((name) =>
+            data.find((c) => c.name?.toUpperCase().trim() === name)
+          )
+          .filter(Boolean),
+        // Rest: all categories not in priority list
+        ...data.filter(
+          (c) => !PRIORITY_CATEGORIES.includes(c.name?.toUpperCase().trim())
+        ),
+      ];
+
+      setCategories(sortedCategories);
       catLoaded = true;
       checkDone();
     });
@@ -123,7 +143,7 @@ export default function StoreDashboard() {
   const getItemStatus = (item) =>
     getStockStatus(item.available ?? 0, item.lowLevel ?? 100, item.reorderLevel ?? 150);
 
-  // ── Aggregates from stock collection ✅ ──────────────────────────────────
+  // ── Aggregates ────────────────────────────────────────────────────────────
   const totalProducts  = stockItems.length;
   const totalAvailable = stockItems.filter((i) => getItemStatus(i) === "ok").length;
   const totalCritical  = stockItems.filter((i) => getItemStatus(i) === "shortage").length;
@@ -240,12 +260,12 @@ export default function StoreDashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {[
-          { label: "Total Categories", value: categories.length,  icon: <FiPackage size={20} />,      ib: "bg-indigo-50", ic: "text-indigo-500", b: "border-slate-200",  vc: "text-slate-800" },
-          { label: "Available SKUs",   value: totalAvailable,     icon: <FiCheckCircle size={20} />,  ib: "bg-green-50",  ic: "text-green-400",  b: "border-green-200",  vc: "text-green-600" },
-          { label: "Shortage Items",   value: totalCritical,      icon: <FiAlertTriangle size={20} />,ib: "bg-red-50",    ic: "text-red-500",    b: "border-red-200",    vc: "text-red-600"   },
-          { label: "Low Stock Items",  value: totalLowStock,      icon: <FiClock size={20} />,        ib: "bg-yellow-50", ic: "text-yellow-500", b: "border-yellow-200", vc: "text-yellow-600"},
-          { label: "Reorder Items",    value: totalReorder,       icon: <FiShoppingCart size={20} />, ib: "bg-orange-50", ic: "text-orange-500", b: "border-orange-200", vc: "text-orange-600"},
-          { label: "Total Products",   value: totalProducts,      icon: <FiPackage size={20} />,      ib: "bg-slate-50",  ic: "text-slate-500",  b: "border-slate-200",  vc: "text-slate-800" },
+          { label: "Total Categories", value: categories.length,  icon: <FiPackage size={20} />,       ib: "bg-indigo-50", ic: "text-indigo-500", b: "border-slate-200",  vc: "text-slate-800"  },
+          { label: "Available SKUs",   value: totalAvailable,     icon: <FiCheckCircle size={20} />,   ib: "bg-green-50",  ic: "text-green-400",  b: "border-green-200",  vc: "text-green-600"  },
+          { label: "Shortage Items",   value: totalCritical,      icon: <FiAlertTriangle size={20} />, ib: "bg-red-50",    ic: "text-red-500",    b: "border-red-200",    vc: "text-red-600"    },
+          { label: "Low Stock Items",  value: totalLowStock,      icon: <FiClock size={20} />,         ib: "bg-yellow-50", ic: "text-yellow-500", b: "border-yellow-200", vc: "text-yellow-600" },
+          { label: "Reorder Items",    value: totalReorder,       icon: <FiShoppingCart size={20} />,  ib: "bg-orange-50", ic: "text-orange-500", b: "border-orange-200", vc: "text-orange-600" },
+          { label: "Total Products",   value: totalProducts,      icon: <FiPackage size={20} />,       ib: "bg-slate-50",  ic: "text-slate-500",  b: "border-slate-200",  vc: "text-slate-800"  },
         ].map((c) => (
           <div key={c.label} className={`bg-white rounded-2xl border ${c.b} p-5 shadow-sm`}>
             <div className="flex items-center justify-between">
@@ -265,14 +285,6 @@ export default function StoreDashboard() {
       {totalCritical > 0 && (
         <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl border-2 border-red-200 p-6 shadow-sm">
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-black text-red-900 flex items-center gap-2">
-                <FiAlertTriangle className="animate-pulse" /> Stock Alerts
-              </h3>
-              <p className="text-sm text-red-700 mt-1">
-                {totalCritical} SKUs have zero / critical stock levels
-              </p>
-            </div>
             <button onClick={() => navigate("/store/low-stock-management")}
               className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 flex items-center gap-2 shadow-sm">
               View All <FiArrowRight />
@@ -329,36 +341,6 @@ export default function StoreDashboard() {
                   </div>
                   <h4 className="font-bold text-gray-500 text-sm leading-snug line-clamp-2">{cat.name}</h4>
                 </div>
-
-                {stats.shortage > 0 || stats.low > 0 || stats.reorder > 0 ? (
-                  <div className="space-y-1 mb-3">
-                    {stats.shortage > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                        <span className="text-[10px] font-bold text-red-600">{stats.shortage} shortage</span>
-                      </div>
-                    )}
-                    {stats.low > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
-                        <span className="text-[10px] font-bold text-yellow-600">{stats.low} low stock</span>
-                      </div>
-                    )}
-                    {stats.reorder > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                        <span className="text-[10px] font-bold text-orange-600">{stats.reorder} reorder</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                      <span className="text-[10px] font-bold text-green-600">All stock normal</span>
-                    </div>
-                  </div>
-                )}
 
                 <div className="pt-3 border-t border-slate-100">
                   <span className="text-xs text-black flex items-center gap-1 group-hover:gap-2 transition-all">
