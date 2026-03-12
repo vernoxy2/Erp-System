@@ -752,14 +752,11 @@ export default function UploadVendorInvoice() {
           }
           return "";
         };
-
-        // ── Extract Supplier Invoice No. & Date (e.g. "2435/25-26  dt. 5-Dec-25") ──
         const rawSupplierInv = findVal(["Supplier Invoice No.", "Supplier Invoice No. & Date", "Supplier Inv"]);
         let parsedInvoiceNo = "";
         let parsedInvoiceDate = "";
 
         if (rawSupplierInv) {
-          // Format: "2435/25-26  dt. 5-Dec-25"  →  invoiceNo = "2435/25-26", date = "5-Dec-25"
           const dtMatch = rawSupplierInv.match(/^(.+?)\s+dt\.?\s*(.+)$/i);
           if (dtMatch) {
             parsedInvoiceNo   = dtMatch[1].trim();
@@ -768,12 +765,9 @@ export default function UploadVendorInvoice() {
             parsedInvoiceNo = rawSupplierInv.trim();
           }
         }
-
-        // Fallback to plain Invoice No. if Supplier Invoice not found
         if (!parsedInvoiceNo) {
           parsedInvoiceNo = findVal(["Invoice No.", "Invoice No", "Invoice Number", "Bill No"]);
         }
-        // Fallback date
         if (!parsedInvoiceDate) {
           parsedInvoiceDate = findVal(["Dates", "Dated", "Invoice Date", "Bill Date"]);
         }
@@ -1108,7 +1102,7 @@ export default function UploadVendorInvoice() {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {invoiceHeader.invoiceNo && <div><p className="text-slate-400">Supplier Invoice No.</p><p className="font-bold text-slate-800">{invoiceHeader.invoiceNo}</p></div>}
                       {invoiceHeader.dated && <div><p className="text-slate-400">Dated</p><p className="font-bold text-slate-800">{invoiceHeader.dated}</p></div>}
-                      {invoiceHeader.supplier && <div><p className="text-slate-400">Supplier</p><p className="font-bold text-slate-800">{invoiceHeader.supplier}</p></div>}
+                      {/* {invoiceHeader.supplier && <div><p className="text-slate-400">Supplier</p><p className="font-bold text-slate-800">{invoiceHeader.supplier}</p></div>} */}
                     </div>
                   </div>
                 )}

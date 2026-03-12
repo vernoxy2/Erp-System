@@ -439,7 +439,7 @@ export default function DebitCreditNotes() {
                               placeholder="0.00"
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-indigo-400"/>
                           </td>
-                          <td className="px-2 py-2 w-24 font-bold text-slate-700 text-xs">₹{(item.amount||0).toFixed(2)}</td>
+                          {/* <td className="px-2 py-2 w-24 font-bold text-slate-700 text-xs">₹{(item.amount||0).toFixed(2)}</td> */}
                           <td className="px-2 py-2 w-8">
                             {form.items.length>1 && (
                               <button onClick={()=>setForm(f=>({...f,items:f.items.filter((_,i)=>i!==idx)}))}
@@ -449,13 +449,7 @@ export default function DebitCreditNotes() {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-slate-50 border-t border-slate-200">
-                      <tr>
-                        <td colSpan={3} className="px-3 py-2 text-right text-xs font-bold text-slate-600">Total:</td>
-                        <td className="px-2 py-2 font-bold text-indigo-700 text-sm">₹{totalAmount.toFixed(2)}</td>
-                        <td/>
-                      </tr>
-                    </tfoot>
+                  
                   </table>
                 </div>
               </div>

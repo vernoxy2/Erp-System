@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FiHome, FiAlertTriangle, FiLayers, FiSettings, FiBarChart2, FiPackage } from "react-icons/fi";
-import { doc, getDoc } from "firebase/firestore";
+import { FiHome, FiAlertTriangle, FiLayers, FiSettings, FiBarChart2, FiPackage, FiShield } from "react-icons/fi";
+import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../firebase";
 import logo from "../../../assets/logo.svg";
@@ -14,24 +14,53 @@ export default function StoreSidebar() {
     role: "",
   });
 
+  // ── Dynamic QC pending count ──────────────────────────────────────────────
+  const [qcPendingCount, setQcPendingCount] = useState(0);
+
   useEffect(() => {
-    // Logged-in user ka UID lo, phir Firestore se data fetch karo
+    const unsub = onSnapshot(collection(db, "excelupload"), (snap) => {
+      const pending = snap.docs.filter((d) => {
+        const data = d.data();
+        return (
+          data.type === "INVOICE" &&
+          data.linkedPoId &&
+          data.storeQcStatus !== "approved" &&
+          data.storeQcStatus !== "approved_with_issues" &&
+          data.storeQcStatus !== "rejected"
+        );
+      });
+
+      // Deduplicate — same linkedPoId + invoiceNo = 1 count
+      const seen = new Set();
+      let count = 0;
+      for (const d of pending) {
+        const data = d.data();
+        const key = `${data.linkedPoId}_${data.invoiceNo}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          count++;
+        }
+      }
+      setQcPendingCount(count);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const docRef = doc(db, "user", user.uid);
           const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setUserData(docSnap.data());
-          }
+          if (docSnap.exists()) setUserData(docSnap.data());
         } catch (error) {
           console.error("User data fetch error:", error);
         }
       }
     });
-
-    return () => unsubscribe(); // cleanup
+    return () => unsubscribe();
   }, []);
+
   const initials = userData.name
     ? userData.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "??";
@@ -44,7 +73,13 @@ export default function StoreSidebar() {
     {
       title: "STOCK MANAGEMENT",
       items: [
-        { to: "/store/verify-quality", icon: FiPackage, label: "Quality Verify" },
+        {
+          to: "/store/verify-quality",
+          icon: FiShield,
+          label: "Quality Verify",
+          badge: qcPendingCount > 0 ? qcPendingCount : null,
+          badgeColor: "emerald",
+        },
         { to: "/store/low-stock-management", icon: FiAlertTriangle, label: "Low Stock Alerts", badge: 45, badgeColor: "red" },
         { to: "/store/category-management", icon: FiLayers, label: "Manage Categories" },
         { to: "/store/product-management", icon: FiSettings, label: "Manage Products" },
@@ -56,10 +91,10 @@ export default function StoreSidebar() {
 
   const getBadgeClasses = (color) => {
     const colors = {
-      red: "bg-red-100 text-red-700 border-red-200",
+      red:     "bg-red-100 text-red-700 border-red-200",
       emerald: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      orange: "bg-orange-100 text-orange-700 border-orange-200",
-      amber: "bg-amber-100 text-amber-700 border-amber-200",
+      orange:  "bg-orange-100 text-orange-700 border-orange-200",
+      amber:   "bg-amber-100 text-amber-700 border-amber-200",
     };
     return colors[color] || "bg-slate-100 text-slate-700 border-slate-200";
   };
@@ -105,10 +140,13 @@ export default function StoreSidebar() {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <item.icon size={18} className={isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"} />
+                        <item.icon
+                          size={18}
+                          className={isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"}
+                        />
                         <span className="truncate">{item.label}</span>
                       </div>
-                      {item.badge && (
+                      {item.badge != null && (
                         <span className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border ${getBadgeClasses(item.badgeColor)}`}>
                           {item.badge}
                         </span>
@@ -122,7 +160,7 @@ export default function StoreSidebar() {
         ))}
       </nav>
 
-      {/* ✅ Dynamic User Section */}
+      {/* User Section */}
       <div className="p-4 border-t border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">

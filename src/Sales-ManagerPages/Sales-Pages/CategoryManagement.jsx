@@ -197,12 +197,12 @@ export default function CategoryManagement() {
           >
             <FiPlus size={14} /> Add Category
           </button>
-          <button
+          {/* <button
             onClick={() => fileInputRef.current?.click()}
             className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 flex items-center gap-2"
           >
             <FiUpload size={14} /> Upload Excel
-          </button>
+          </button> */}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileSelect} />
         </div>
       </div>
