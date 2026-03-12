@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../../firebase"; // apna path adjust karo
 import {
   FiHome,
   FiFileText,
@@ -22,6 +25,41 @@ import {
 import logo from "../../../assets/logo.svg";
 
 export default function Sidebar() {
+  const [userData, setUserData] = useState({
+    name: "Loading...",
+    email: "",
+    department: "",
+    role: "",
+  });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "user", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (error) {
+          console.error("User data fetch error:", error);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Name se auto initials generate karo — "Sales Manager" → "SM"
+  const initials = userData.name
+    ? userData.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
+
   const navSections = [
     {
       title: null,
@@ -63,7 +101,6 @@ export default function Sidebar() {
           label: "Sales Orders",
           end: true,
         },
-        // { to: "/sales/sales-orders/upload", icon: FiPackage, label: "Upload Sales Orders" },
         {
           to: "/sales/sales-orders/List",
           icon: FiFileText,
@@ -100,17 +137,6 @@ export default function Sidebar() {
         },
       ],
     },
-    // {
-    //   title: "DISPATCH",
-    //   items: [
-    //     { to: "/sales/dispatch-on-invoice", icon: FiDollarSign, label: "Dispatch on Invoice" }
-    //   ]
-    // },
-    // {
-    //   title: "INVOICING",
-    //   items: [
-    //   ]
-    // },
     {
       title: "Inward",
       items: [
@@ -121,7 +147,6 @@ export default function Sidebar() {
           badge: "2d",
           badgeColor: "orange",
         },
-        // {to: "/sales/purchase-orders/List", icon: FiFileText, label: "Purchase Orders List"},
         {
           to: "/sales/upload-vendor-invoice",
           icon: FiUpload,
@@ -179,7 +204,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen overflow-hidden">
       <div className="h-16 border-b border-slate-200 flex gap-3.5 items-center px-5 flex-shrink-0">
-          <img src={logo} alt="Fib2Fab" className="h-10  " />
+        <img src={logo} alt="Fib2Fab" className="h-10" />
         <div className="mt-2.5">
           <h2 className="text-sm font-black text-indigo-600">ERP System</h2>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
@@ -241,16 +266,15 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* ✅ Dynamic User Section — Firebase se aata hai */}
       <div className="p-4 border-t border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-indigo-600">SP</span>
+            <span className="text-sm font-bold text-indigo-600">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">
-              Sales Person
-            </p>
-            <p className="text-xs text-slate-400 truncate">sales@company.com</p>
+            <p className="text-sm font-bold text-slate-800 truncate">{userData.name}</p>
+            <p className="text-xs text-slate-400 truncate">{userData.email}</p>
           </div>
         </div>
       </div>
