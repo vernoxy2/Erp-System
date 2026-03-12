@@ -42,6 +42,7 @@ import StoreLayout from "./Store-ManagerPages/StoreComponent/Layout/StoreLayout"
 import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader";
 import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuality";
 
+
 const App = () => {
   return (
     <Routes>
@@ -73,6 +74,7 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
+        <Route path="debit-credit-notes" element={<DebitCreditNotes />} />
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />

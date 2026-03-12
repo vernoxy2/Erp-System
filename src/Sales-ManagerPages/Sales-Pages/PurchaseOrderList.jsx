@@ -36,10 +36,14 @@ function calcEtaStatus(deliveryDate) {
   return { status: "ordered", remainingDays: diff };
 }
 
-function formatDateTime(isoStr) {
-  if (!isoStr) return "—";
+function formatDateTime(val) {
+  if (!val) return "—";
   try {
-    return new Date(isoStr).toLocaleString("en-IN", {
+    let date;
+    if (typeof val?.toDate === "function") date = val.toDate();
+    else if (val?.seconds) date = new Date(val.seconds * 1000);
+    else date = new Date(val);
+    return date.toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -48,24 +52,26 @@ function formatDateTime(isoStr) {
       hour12: true,
     });
   } catch {
-    return isoStr;
+    return "—";
   }
 }
 
 // ── Status Pill ───────────────────────────────────────────────────────────────
 function StatusPill({ status }) {
   const map = {
-    ordered:   "bg-blue-50   text-blue-700   border-blue-200",
-    partial:   "bg-orange-50 text-orange-700 border-orange-200",
-    complete:  "bg-emerald-50 text-emerald-700 border-emerald-200",
-    excess:    "bg-purple-50 text-purple-700 border-purple-200",
-    overdue:   "bg-red-50    text-red-700    border-red-200",
-    warning:   "bg-orange-50 text-orange-700 border-orange-200",
-    received:  "bg-teal-50   text-teal-700   border-teal-200",
+    ordered: "bg-blue-50   text-blue-700   border-blue-200",
+    partial: "bg-orange-50 text-orange-700 border-orange-200",
+    complete: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    excess: "bg-purple-50 text-purple-700 border-purple-200",
+    overdue: "bg-red-50    text-red-700    border-red-200",
+    warning: "bg-orange-50 text-orange-700 border-orange-200",
+    received: "bg-teal-50   text-teal-700   border-teal-200",
   };
   const s = (status || "ordered").toLowerCase();
   return (
-    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${map[s] || map.ordered}`}>
+    <span
+      className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${map[s] || map.ordered}`}
+    >
       {s.replace("_", " ")}
     </span>
   );
@@ -80,7 +86,7 @@ function HistoryModal({ po, onClose }) {
     if (!po) return;
     setLoading(true);
     getDocs(
-      query(collection(db, "excelupload"), where("linkedPoId", "==", po.id))
+      query(collection(db, "excelupload"), where("linkedPoId", "==", po.id)),
     ).then((snap) => {
       const invoices = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
@@ -94,23 +100,21 @@ function HistoryModal({ po, onClose }) {
   if (!po) return null;
 
   return (
-    <Modal
-      title={`History — ${po.poNumber}`}
-      onClose={onClose}
-      size="lg"
-    >
+    <Modal title={`History — ${po.poNumber}`} onClose={onClose} size="lg">
       <div className="space-y-3">
-
         {/* ── PO Created ── */}
         <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/50">
           <span className="text-base mt-0.5">📄</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs font-bold text-slate-800">Purchase Order Created</p>
+              <p className="text-xs font-bold text-slate-800">
+                Purchase Order Created
+              </p>
               <StatusPill status="ordered" />
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              PO: {po.poNumber} · Vendor: {po.vendor} · {po.items?.length || 0} items
+              PO: {po.poNumber} · Vendor: {po.vendor} · {po.items?.length || 0}{" "}
+              items
             </p>
           </div>
           <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 mt-0.5">
@@ -122,19 +126,32 @@ function HistoryModal({ po, onClose }) {
         {(po.editHistory || []).length > 0 && (
           <>
             {po.editHistory.map((edit, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-amber-100 bg-amber-50/40">
+              <div
+                key={i}
+                className="flex items-start gap-3 p-3 rounded-lg border border-amber-100 bg-amber-50/40"
+              >
                 <span className="text-base mt-0.5">✏️</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-amber-800">Quantities Edited</p>
+                  <p className="text-xs font-bold text-amber-800">
+                    Quantities Edited
+                  </p>
                   <div className="mt-1 space-y-0.5">
                     {(edit.changes || []).map((c, j) =>
                       c.productCode && c.oldQty !== undefined ? (
-                        <p key={j} className="text-[11px] text-amber-700 font-mono">
-                          {c.productCode}: <span className="line-through text-slate-400">{c.oldQty}</span>
+                        <p
+                          key={j}
+                          className="text-[11px] text-amber-700 font-mono"
+                        >
+                          {c.productCode}:{" "}
+                          <span className="line-through text-slate-400">
+                            {c.oldQty}
+                          </span>
                           {" → "}
-                          <span className="font-bold text-amber-800">{c.newQty}</span>
+                          <span className="font-bold text-amber-800">
+                            {c.newQty}
+                          </span>
                         </p>
-                      ) : null
+                      ) : null,
                     )}
                   </div>
                 </div>
@@ -154,7 +171,10 @@ function HistoryModal({ po, onClose }) {
           </div>
         ) : linkedInvoices.length > 0 ? (
           linkedInvoices.map((inv, i) => {
-            const thisQty = (inv.items || []).reduce((s, item) => s + (item.newReceived || 0), 0);
+            const thisQty = (inv.items || []).reduce(
+              (s, item) => s + (item.newReceived || 0),
+              0,
+            );
             return (
               <React.Fragment key={i}>
                 {/* Invoice uploaded */}
@@ -163,7 +183,8 @@ function HistoryModal({ po, onClose }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-xs font-bold text-indigo-800">
-                        Invoice Uploaded{inv.invoiceNo ? ` — ${inv.invoiceNo}` : ""}
+                        Invoice Uploaded
+                        {inv.invoiceNo ? ` — ${inv.invoiceNo}` : ""}
                       </p>
                       <StatusPill status={inv.poStatus || "partial"} />
                     </div>
@@ -177,11 +198,15 @@ function HistoryModal({ po, onClose }) {
                         </span>
                       )}
                       {inv.qualityCheck && (
-                        <span className={`text-[10px] font-bold ${
-                          inv.qualityCheck === "passed" ? "text-emerald-600"
-                          : inv.qualityCheck === "failed" ? "text-red-600"
-                          : "text-orange-600"
-                        }`}>
+                        <span
+                          className={`text-[10px] font-bold ${
+                            inv.qualityCheck === "passed"
+                              ? "text-emerald-600"
+                              : inv.qualityCheck === "failed"
+                                ? "text-red-600"
+                                : "text-orange-600"
+                          }`}
+                        >
                           🔍 QC: {inv.qualityCheck.toUpperCase()}
                         </span>
                       )}
@@ -196,7 +221,11 @@ function HistoryModal({ po, onClose }) {
                 {inv.poStatus && (
                   <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-100">
                     <span className="text-base mt-0.5">
-                      {inv.poStatus === "complete" ? "✅" : inv.poStatus === "excess" ? "⚠️" : "🔄"}
+                      {inv.poStatus === "complete"
+                        ? "✅"
+                        : inv.poStatus === "excess"
+                          ? "⚠️"
+                          : "🔄"}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -271,7 +300,9 @@ export default function PurchaseOrders() {
         });
 
         const mapped = pos.map((po) => {
-          const { status: etaStatus, remainingDays } = calcEtaStatus(po.deliveryDate);
+          const { status: etaStatus, remainingDays } = calcEtaStatus(
+            po.deliveryDate,
+          );
           const poStatus = po.poStatus || etaStatus;
           return {
             id: po.id,
@@ -300,7 +331,7 @@ export default function PurchaseOrders() {
 
         setPurchaseOrders(mapped);
         setLoading(false);
-      }
+      },
     );
     return () => unsub();
   }, []);
@@ -319,10 +350,16 @@ export default function PurchaseOrders() {
   }, [purchaseOrders, search, statusFilter]);
 
   // ── Summary counts ────────────────────────────────────────────────────────
-  const totalCount    = purchaseOrders.length;
-  const orderedCount  = purchaseOrders.filter((p) => p.status === "ordered" || p.status === "warning").length;
-  const partialCount  = purchaseOrders.filter((p) => p.status === "partial").length;
-  const overdueCount  = purchaseOrders.filter((p) => p.status === "overdue").length;
+  const totalCount = purchaseOrders.length;
+  const orderedCount = purchaseOrders.filter(
+    (p) => p.status === "ordered" || p.status === "warning",
+  ).length;
+  const partialCount = purchaseOrders.filter(
+    (p) => p.status === "partial",
+  ).length;
+  const overdueCount = purchaseOrders.filter(
+    (p) => p.status === "overdue",
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -383,7 +420,9 @@ export default function PurchaseOrders() {
               key={card.label}
               className={`bg-white rounded-2xl border ${card.border} p-5 flex items-center gap-4 shadow-sm`}
             >
-              <div className={`${card.iconBg} text-white p-3 rounded-xl flex-shrink-0`}>
+              <div
+                className={`${card.iconBg} text-white p-3 rounded-xl flex-shrink-0`}
+              >
                 {card.icon}
               </div>
               <div>
@@ -404,13 +443,20 @@ export default function PurchaseOrders() {
         {/* Table Header */}
         <div className="px-6 py-4 flex items-center justify-between gap-4 border-b border-slate-100">
           <div>
-            <p className="text-sm font-black text-slate-800">All Purchase Orders</p>
-            <p className="text-xs text-slate-400 mt-0.5">{filtered.length} orders</p>
+            <p className="text-sm font-black text-slate-800">
+              All Purchase Orders
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {filtered.length} orders
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative">
-              <FiSearch size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <FiSearch
+                size={13}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 placeholder="Search PO, Vendor..."
                 value={search}
@@ -424,9 +470,19 @@ export default function PurchaseOrders() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
             >
-              {["All Status", "ordered", "partial", "complete", "excess", "overdue", "warning"].map((s) => (
+              {[
+                "All Status",
+                "ordered",
+                "partial",
+                "complete",
+                "excess",
+                "overdue",
+                "warning",
+              ].map((s) => (
                 <option key={s} value={s}>
-                  {s === "All Status" ? "All Status" : s.charAt(0).toUpperCase() + s.slice(1)}
+                  {s === "All Status"
+                    ? "All Status"
+                    : s.charAt(0).toUpperCase() + s.slice(1)}
                 </option>
               ))}
             </select>
@@ -436,14 +492,21 @@ export default function PurchaseOrders() {
         {/* Table */}
         {loading ? (
           <div className="text-center py-16">
-            <FiRefreshCw size={28} className="animate-spin mx-auto text-indigo-500 mb-3" />
+            <FiRefreshCw
+              size={28}
+              className="animate-spin mx-auto text-indigo-500 mb-3"
+            />
             <p className="text-sm text-slate-400">Loading purchase orders...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <FiShoppingCart size={40} className="mx-auto mb-3 text-slate-200" />
-            <p className="text-sm font-bold text-slate-400">No purchase orders found</p>
-            <p className="text-xs text-slate-300 mt-1">Upload a PO to get started</p>
+            <p className="text-sm font-bold text-slate-400">
+              No purchase orders found
+            </p>
+            <p className="text-xs text-slate-300 mt-1">
+              Upload a PO to get started
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -464,28 +527,43 @@ export default function PurchaseOrders() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((po) => {
-                  const totalOrdered   = po.items.reduce((s, i) => s + (i.orderedQty || 0), 0);
-                  const totalReceived  = po.items.reduce((s, i) => s + (i.totalReceivedQty || 0), 0);
+                  const totalOrdered = po.items.reduce(
+                    (s, i) => s + (i.orderedQty || 0),
+                    0,
+                  );
+                  const totalReceived = po.items.reduce(
+                    (s, i) => s + (i.totalReceivedQty || 0),
+                    0,
+                  );
                   const rowBg =
-                    po.status === "overdue" ? "bg-red-50/40" :
-                    po.status === "warning" ? "bg-orange-50/30" :
-                    po.status === "partial" ? "bg-orange-50/20" : "";
+                    po.status === "overdue"
+                      ? "bg-red-50/40"
+                      : po.status === "warning"
+                        ? "bg-orange-50/30"
+                        : po.status === "partial"
+                          ? "bg-orange-50/20"
+                          : "";
 
                   return (
-                    <tr key={po.id} className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}>
+                    <tr
+                      key={po.id}
+                      className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}
+                    >
                       {/* PO Number */}
                       <td className="px-5 py-4">
-                        <p className="text-sm font-bold text-slate-800">{po.poNumber}</p>
+                        <p className="text-sm font-bold text-slate-800">
+                          {po.poNumber}
+                        </p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
-                          {po.createdAt
-                            ? new Date(po.createdAt).toLocaleDateString("en-IN")
-                            : "—"}
+                          {formatDateTime(po.createdAt)}
                         </p>
                       </td>
 
                       {/* Vendor */}
                       <td className="px-4 py-4">
-                        <p className="text-sm font-medium text-slate-700">{po.vendor}</p>
+                        <p className="text-sm font-medium text-slate-700">
+                          {po.vendor}
+                        </p>
                         {po.excelHeader?.reference && (
                           <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
                             {po.excelHeader.reference}
@@ -505,9 +583,11 @@ export default function PurchaseOrders() {
                             <FiClock
                               size={11}
                               className={
-                                po.status === "overdue" ? "text-red-500"
-                                : po.status === "warning" ? "text-orange-500"
-                                : "text-slate-400"
+                                po.status === "overdue"
+                                  ? "text-red-500"
+                                  : po.status === "warning"
+                                    ? "text-orange-500"
+                                    : "text-slate-400"
                               }
                             />
                             <span className="text-xs text-slate-500">
@@ -517,9 +597,11 @@ export default function PurchaseOrders() {
                           {po.remainingDays !== null && (
                             <span
                               className={`text-[10px] font-bold ${
-                                po.status === "overdue" ? "text-red-500"
-                                : po.status === "warning" ? "text-orange-500"
-                                : "text-slate-400"
+                                po.status === "overdue"
+                                  ? "text-red-500"
+                                  : po.status === "warning"
+                                    ? "text-orange-500"
+                                    : "text-slate-400"
                               }`}
                             >
                               {po.remainingDays < 0
@@ -545,11 +627,12 @@ export default function PurchaseOrders() {
                       {/* Status */}
                       <td className="px-4 py-4 text-center">
                         <StatusPill status={po.status} />
-                        {po.status === "partial" && totalOrdered - totalReceived > 0 && (
-                          <p className="text-[10px] text-orange-500 font-bold mt-1">
-                            {totalOrdered - totalReceived} pending
-                          </p>
-                        )}
+                        {po.status === "partial" &&
+                          totalOrdered - totalReceived > 0 && (
+                            <p className="text-[10px] text-orange-500 font-bold mt-1">
+                              {totalOrdered - totalReceived} pending
+                            </p>
+                          )}
                       </td>
 
                       {/* ── History / View ── */}
@@ -567,7 +650,7 @@ export default function PurchaseOrders() {
                         <button
                           onClick={() =>
                             navigate(
-                              `/sales/purchase-orders/upload?poId=${po.id}&editMode=true`
+                              `/sales/purchase-orders/upload?poId=${po.id}&editMode=true`,
                             )
                           }
                           className="flex items-center gap-1.5 mx-auto text-indigo-600 hover:text-indigo-800 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg transition-colors"
@@ -586,18 +669,42 @@ export default function PurchaseOrders() {
 
       {/* Status Legend */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <p className="text-xs font-black text-slate-600 mb-4">📋 Status Legend:</p>
+        <p className="text-xs font-black text-slate-600 mb-4">
+          📋 Status Legend:
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { color: "bg-blue-500",    label: "Ordered",  desc: "PO sent, awaiting material" },
-            { color: "bg-orange-500",  label: "Partial",  desc: "Some material received" },
-            { color: "bg-emerald-500", label: "Complete", desc: "All material received" },
-            { color: "bg-purple-500",  label: "Excess",   desc: "Extra material received" },
-            { color: "bg-orange-400",  label: "Warning",  desc: "2 days or less" },
-            { color: "bg-red-500",     label: "Overdue",  desc: "ETA passed" },
+            {
+              color: "bg-blue-500",
+              label: "Ordered",
+              desc: "PO sent, awaiting material",
+            },
+            {
+              color: "bg-orange-500",
+              label: "Partial",
+              desc: "Some material received",
+            },
+            {
+              color: "bg-emerald-500",
+              label: "Complete",
+              desc: "All material received",
+            },
+            {
+              color: "bg-purple-500",
+              label: "Excess",
+              desc: "Extra material received",
+            },
+            {
+              color: "bg-orange-400",
+              label: "Warning",
+              desc: "2 days or less",
+            },
+            { color: "bg-red-500", label: "Overdue", desc: "ETA passed" },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2.5">
-              <div className={`w-3 h-3 rounded-full ${item.color} flex-shrink-0`} />
+              <div
+                className={`w-3 h-3 rounded-full ${item.color} flex-shrink-0`}
+              />
               <div>
                 <p className="text-xs font-bold text-slate-700">{item.label}</p>
                 <p className="text-[10px] text-slate-400">{item.desc}</p>
