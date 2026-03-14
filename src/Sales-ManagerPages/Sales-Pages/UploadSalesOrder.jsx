@@ -1,3 +1,5 @@
+
+
 // import React, { useState } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { FiCheck, FiRefreshCw, FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
@@ -7,7 +9,6 @@
 // } from "../SalesComponent/ui/index";
 // import { db } from "../../firebase";
 // import { collection, addDoc, getDocs, query, where, updateDoc, doc } from "firebase/firestore";
-
 // import * as XLSX from "xlsx";
 
 // // ── Unit detector ─────────────────────────────────────────────────────────────
@@ -225,12 +226,10 @@
 //         }
 
 //         // ── Build header ───────────────────────────────────────────────────
-//         // Address: Row 4 + Row 5 (skip company name, MSME rows)
 //         const address = [getCell(raw, 3, 0), getCell(raw, 4, 0), getCell(raw, 5, 0)]
 //           .filter((v) => v && !v.toUpperCase().includes("MSME") && !v.includes("FIB 2 FAB"))
 //           .join(", ");
 
-//         // State: find "State Name :" row in col0
 //         let state = "";
 //         for (let i = 0; i < raw.length; i++) {
 //           const col0 = String(raw[i]?.[0] || "").trim();
@@ -241,7 +240,6 @@
 //           }
 //         }
 
-//         // Email: find "E-Mail :" row in col0
 //         let email = "";
 //         for (let i = 0; i < raw.length; i++) {
 //           const col0 = String(raw[i]?.[0] || "").trim();
@@ -251,7 +249,6 @@
 //           }
 //         }
 
-//         // MSME: find "MSME NO:" row in col0
 //         let msme = "";
 //         for (let i = 0; i < raw.length; i++) {
 //           const col0 = String(raw[i]?.[0] || "").trim();
@@ -261,7 +258,6 @@
 //           }
 //         }
 
-//         // GSTIN: find row with col0 === "GSTIN/UIN:" and value in col3
 //         let gstin = "";
 //         for (let i = 0; i < raw.length; i++) {
 //           const col0 = String(raw[i]?.[0] || "").trim().toLowerCase();
@@ -308,7 +304,7 @@
 //     parseExcel(file);
 //   };
 
-//   // ── Stock Check ───────────────────────────────────────────────────────────
+//   // ── Stock Check (read-only badge only) ───────────────────────────────────
 //   const checkStock = async (parsedItems) => {
 //     setChecking(true);
 //     try {
@@ -323,7 +319,7 @@
 //         let available = 0;
 //         if (!snap.empty) {
 //           const d = snap.docs[0].data();
-//           available = d.currentStock || d.quantity || 0;
+//           available = d.available || d.currentStock || d.quantity || 0;
 //         }
 //         const status =
 //           available === 0           ? "out"       :
@@ -338,64 +334,75 @@
 //     }
 //   };
 
-//   // ── Deduct Stock (OUT) ────────────────────────────────────────────────────
-// const deductStock = async (itemsToDeduct, soNumber, customer) => {
-//   const now = new Date().toISOString();
-//   for (const item of itemsToDeduct) {
-//     const qty = item.quantity || 0;
-//     if (qty <= 0) continue;
-//     const key = item.productCode?.toString().trim() || item.description?.trim();
-//     if (!key) continue;
+//   // ── Deduct Stock (OUT) on SO Upload ──────────────────────────────────────
+//   const deductStock = async (itemsToDeduct, soNumber, customer) => {
+//     const now = new Date().toISOString();
+//     for (const item of itemsToDeduct) {
+//       const qty = item.quantity || 0;
+//       if (qty <= 0) continue;
+//       const key = item.productCode?.toString().trim() || item.description?.trim();
+//       if (!key) continue;
 
-//     const q = query(collection(db, "stock"), where("productCode", "==", key));
-//     const snap = await getDocs(q);
+//       const q = query(collection(db, "stock"), where("productCode", "==", key));
+//       const snap = await getDocs(q);
 
-//     if (snap.empty) {
-//       await addDoc(collection(db, "stock"), {
-//         productCode: key,
-//         description: item.description || "",
-//         hsnSac: item.hsnSac || "",
-//         unit: item.unit || "nos",
-//         available: 0,
-//         reserved: 0,
-//         backorder: qty,
-//         minLevel: 0,
-//         lastUpdated: now,
-//         ledger: [{ type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now }],
-//       });
-//     } else {
-//       const sd = snap.docs[0];
-//       const sdata = sd.data();
-//       const current = sdata.available || 0;
-//       const newAvail = current - qty;
-
-//       if (newAvail >= 0) {
-//         await updateDoc(doc(db, "stock", sd.id), {
-//           available: newAvail,
-//           reserved: (sdata.reserved || 0) + qty,
-//           backorder: 0,
+//       if (snap.empty) {
+//         // Stock નથી — backorder create
+//         await addDoc(collection(db, "stock"), {
+//           productCode: key,
+//           description: item.description || "",
+//           hsnSac:      item.hsnSac || "",
+//           unit:        item.unit || "nos",
+//           available:   0,
+//           reserved:    0,
+//           backorder:   qty,
+//           minLevel:    0,
 //           lastUpdated: now,
-//           ledger: [...(sdata.ledger || []), { type: "OUT", qty, ref: soNumber, by: customer, balance: newAvail, date: now }],
+//           ledger: [{ type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now }],
 //         });
 //       } else {
-//         const backorderQty = Math.abs(newAvail);
-//         await updateDoc(doc(db, "stock", sd.id), {
-//           available: 0,
-//           reserved: (sdata.reserved || 0) + current,
-//           backorder: (sdata.backorder || 0) + backorderQty,
-//           lastUpdated: now,
-//           ledger: [...(sdata.ledger || []), { type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now }],
-//         });
+//         const sd    = snap.docs[0];
+//         const sdata = sd.data();
+//         const current  = sdata.available || 0;
+//         const newAvail = current - qty;
+
+//         if (newAvail >= 0) {
+//           await updateDoc(doc(db, "stock", sd.id), {
+//             available:   newAvail,
+//             reserved:    (sdata.reserved || 0) + qty,
+//             backorder:   0,
+//             lastUpdated: now,
+//             ledger: [
+//               ...(sdata.ledger || []),
+//               { type: "OUT", qty, ref: soNumber, by: customer, balance: newAvail, date: now },
+//             ],
+//           });
+//         } else {
+//           const backorderQty = Math.abs(newAvail);
+//           await updateDoc(doc(db, "stock", sd.id), {
+//             available:   0,
+//             reserved:    (sdata.reserved || 0) + current,
+//             backorder:   (sdata.backorder || 0) + backorderQty,
+//             lastUpdated: now,
+//             ledger: [
+//               ...(sdata.ledger || []),
+//               { type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now },
+//             ],
+//           });
+//         }
 //       }
 //     }
-//   }
-// };
-//   // ── Save to Firebase ──────────────────────────────────────────────────────
+//   };
+
+//   // ── Save to Firebase + Deduct Stock ──────────────────────────────────────
 //   const handleCreate = async () => {
 //     setUploading(true);
 //     try {
 //       const hasShortage = stockCheck.some((i) => i.status === "out" || i.status === "partial");
-//       await addDoc(collection(db, "excelupload"), {
+//       const customer    = header.consignee || header.buyer || "";
+//       const soNumber    = header.voucherNo || "";
+
+//       const docRef = await addDoc(collection(db, "excelupload"), {
 //         type:        "SALES_ORDER",
 //         excelHeader: header,
 //         items: items.map((item) => {
@@ -411,10 +418,14 @@
 //         totalItems:  items.length,
 //         orderStatus: "pending",
 //         hasShortage,
-//         customer:    header.consignee || header.buyer || "",
+//         customer,
 //         createdAt:   new Date().toISOString(),
-//         woNumber:    header.voucherNo || "",
+//         woNumber:    soNumber,
 //       });
+
+//       // ── Stock deduct on SO upload ──
+//       await deductStock(items, soNumber || docRef.id.slice(0, 8).toUpperCase(), customer);
+
 //       setUploading(false);
 //       setStep(3);
 //     } catch (err) {
@@ -597,7 +608,7 @@
 //               <div className="flex gap-3">
 //                 <BtnSecondary onClick={resetAll}>← Back</BtnSecondary>
 //                 <BtnPrimary onClick={handleCreate} disabled={uploading}>
-//                   {uploading ? "Saving..." : "Create Sales Order →"}
+//                   {uploading ? "Saving & Deducting Stock..." : "Create Sales Order →"}
 //                 </BtnPrimary>
 //               </div>
 //             </div>
@@ -617,11 +628,12 @@
 //             </h3>
 //             <div className="space-y-1.5 text-sm text-slate-600 mb-8">
 //               <p>✅ {items.length} items saved to Firebase</p>
+//               <p>✅ Stock deducted from inventory</p>
 //               <p>✅ Customer: <strong>{header?.consignee || header?.buyer || "—"}</strong></p>
 //               <p>✅ Voucher No: <strong>{header?.voucherNo || "—"}</strong></p>
 //               {shortageCount > 0 && (
 //                 <p className="text-amber-600 font-semibold">
-//                   ⚠ {shortageCount} items have stock shortage
+//                   ⚠ {shortageCount} items had stock shortage (backorder created)
 //                 </p>
 //               )}
 //             </div>
@@ -646,7 +658,7 @@ import {
   Alert, FileUpload,
 } from "../SalesComponent/ui/index";
 import { db } from "../../firebase";
-import { collection, addDoc, getDocs, query, where, updateDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
 // ── Unit detector ─────────────────────────────────────────────────────────────
@@ -828,10 +840,10 @@ export default function UploadSalesOrder() {
         let descCol = -1, hsnCol = -1, partCol = -1, qtyCol = -1;
         thRow.forEach((cell, colIdx) => {
           const v = String(cell || "").toLowerCase();
-          if (v.includes("description"))               descCol = colIdx;
-          if (v.includes("hsn"))                       hsnCol  = colIdx;
-          if (v.includes("part"))                      partCol = colIdx;
-          if (v.includes("qty") || v.includes("quantity")) qtyCol = colIdx;
+          if (v.includes("description"))                   descCol = colIdx;
+          if (v.includes("hsn"))                           hsnCol  = colIdx;
+          if (v.includes("part"))                          partCol = colIdx;
+          if (v.includes("qty") || v.includes("quantity")) qtyCol  = colIdx;
         });
 
         // ── Parse items ────────────────────────────────────────────────────
@@ -942,7 +954,7 @@ export default function UploadSalesOrder() {
     parseExcel(file);
   };
 
-  // ── Stock Check (read-only badge only) ───────────────────────────────────
+  // ── Stock Check (read-only — badge display only, NO deduction) ────────────
   const checkStock = async (parsedItems) => {
     setChecking(true);
     try {
@@ -960,8 +972,8 @@ export default function UploadSalesOrder() {
           available = d.available || d.currentStock || d.quantity || 0;
         }
         const status =
-          available === 0           ? "out"       :
-          available < item.quantity ? "partial"   : "sufficient";
+          available === 0           ? "out"     :
+          available < item.quantity ? "partial" : "sufficient";
         results.push({ ...item, available, status });
       }
       setStockCheck(results);
@@ -972,67 +984,8 @@ export default function UploadSalesOrder() {
     }
   };
 
-  // ── Deduct Stock (OUT) on SO Upload ──────────────────────────────────────
-  const deductStock = async (itemsToDeduct, soNumber, customer) => {
-    const now = new Date().toISOString();
-    for (const item of itemsToDeduct) {
-      const qty = item.quantity || 0;
-      if (qty <= 0) continue;
-      const key = item.productCode?.toString().trim() || item.description?.trim();
-      if (!key) continue;
-
-      const q = query(collection(db, "stock"), where("productCode", "==", key));
-      const snap = await getDocs(q);
-
-      if (snap.empty) {
-        // Stock નથી — backorder create
-        await addDoc(collection(db, "stock"), {
-          productCode: key,
-          description: item.description || "",
-          hsnSac:      item.hsnSac || "",
-          unit:        item.unit || "nos",
-          available:   0,
-          reserved:    0,
-          backorder:   qty,
-          minLevel:    0,
-          lastUpdated: now,
-          ledger: [{ type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now }],
-        });
-      } else {
-        const sd    = snap.docs[0];
-        const sdata = sd.data();
-        const current  = sdata.available || 0;
-        const newAvail = current - qty;
-
-        if (newAvail >= 0) {
-          await updateDoc(doc(db, "stock", sd.id), {
-            available:   newAvail,
-            reserved:    (sdata.reserved || 0) + qty,
-            backorder:   0,
-            lastUpdated: now,
-            ledger: [
-              ...(sdata.ledger || []),
-              { type: "OUT", qty, ref: soNumber, by: customer, balance: newAvail, date: now },
-            ],
-          });
-        } else {
-          const backorderQty = Math.abs(newAvail);
-          await updateDoc(doc(db, "stock", sd.id), {
-            available:   0,
-            reserved:    (sdata.reserved || 0) + current,
-            backorder:   (sdata.backorder || 0) + backorderQty,
-            lastUpdated: now,
-            ledger: [
-              ...(sdata.ledger || []),
-              { type: "OUT", qty, ref: soNumber, by: customer, balance: 0, date: now },
-            ],
-          });
-        }
-      }
-    }
-  };
-
-  // ── Save to Firebase + Deduct Stock ──────────────────────────────────────
+  // ── Save SO to Firebase — NO stock deduction here ─────────────────────────
+  // Stock will be deducted only when Sales Invoice is uploaded against this SO.
   const handleCreate = async () => {
     setUploading(true);
     try {
@@ -1040,29 +993,32 @@ export default function UploadSalesOrder() {
       const customer    = header.consignee || header.buyer || "";
       const soNumber    = header.voucherNo || "";
 
-      const docRef = await addDoc(collection(db, "excelupload"), {
+      await addDoc(collection(db, "excelupload"), {
         type:        "SALES_ORDER",
+        soStatus:    "reserved",          // SO reserved — stock NOT yet deducted
         excelHeader: header,
         items: items.map((item) => {
           const sc = stockCheck.find((s) => s.productCode === item.productCode);
           return {
             ...item,
-            orderedQty:   item.quantity,
-            availableQty: sc?.available || 0,
-            stockStatus:  sc?.status    || "unknown",
-            itemStatus:   "pending",
+            orderedQty:     item.quantity,
+            invoicedQty:    0,            // will be updated on invoice upload
+            availableQty:   sc?.available || 0,
+            stockStatus:    sc?.status    || "unknown",
+            itemStatus:     "reserved",
           };
         }),
-        totalItems:  items.length,
-        orderStatus: "pending",
+        totalItems:   items.length,
+        orderStatus:  "pending",
         hasShortage,
         customer,
-        createdAt:   new Date().toISOString(),
-        woNumber:    soNumber,
+        createdAt:    new Date().toISOString(),
+        woNumber:     soNumber,
+        invoiceCount: 0,
+        invoiceNos:   [],
       });
 
-      // ── Stock deduct on SO upload ──
-      await deductStock(items, soNumber || docRef.id.slice(0, 8).toUpperCase(), customer);
+      // ✅ NO deductStock() call here — stock deducted on Sales Invoice upload only
 
       setUploading(false);
       setStep(3);
@@ -1088,7 +1044,7 @@ export default function UploadSalesOrder() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-slate-800">Upload Sales Order</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Upload Excel → Stock auto-reserved</p>
+          <p className="text-xs text-slate-400 mt-0.5">Upload Excel → Order reserved (stock deducted on invoice)</p>
         </div>
         <BtnSecondary onClick={() => navigate("/sales/orders")}>Cancel</BtnSecondary>
       </div>
@@ -1134,17 +1090,17 @@ export default function UploadSalesOrder() {
       {/* ── Step 2: Review ── */}
       {step === 2 && header && (
         <div className="space-y-6">
-
           {/* Shortage Alert */}
           {(shortageCount > 0 || partialCount > 0) && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
-              <FiAlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 flex items-start gap-3">
+              <FiAlertTriangle size={18} className="text-yellow-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-black text-red-800">Stock Shortage Detected</p>
-                <p className="text-xs text-red-600 mt-0.5">
+                <p className="text-sm font-black text-yellow-800">Low Stock Warning</p>
+                <p className="text-xs text-yellow-600 mt-0.5">
                   {shortageCount > 0 && `${shortageCount} items out of stock`}
                   {shortageCount > 0 && partialCount > 0 && " · "}
                   {partialCount  > 0 && `${partialCount} items partially available`}
+                  {" — order can still be created"}
                 </p>
               </div>
             </div>
@@ -1234,19 +1190,13 @@ export default function UploadSalesOrder() {
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-              <p className="text-xs">
-                {shortageCount > 0 ? (
-                  <span className="text-red-600 font-bold">
-                    ⚠ {shortageCount} shortage items — order can still be created
-                  </span>
-                ) : (
-                  <span className="text-green-600 font-bold">✓ Stock levels verified</span>
-                )}
+              <p className="text-xs text-slate-500">
+                Stock will be deducted when Sales Invoice is uploaded
               </p>
               <div className="flex gap-3">
                 <BtnSecondary onClick={resetAll}>← Back</BtnSecondary>
                 <BtnPrimary onClick={handleCreate} disabled={uploading}>
-                  {uploading ? "Saving & Deducting Stock..." : "Create Sales Order →"}
+                  {uploading ? "Saving..." : "Create Sales Order →"}
                 </BtnPrimary>
               </div>
             </div>
@@ -1266,12 +1216,15 @@ export default function UploadSalesOrder() {
             </h3>
             <div className="space-y-1.5 text-sm text-slate-600 mb-8">
               <p>✅ {items.length} items saved to Firebase</p>
-              <p>✅ Stock deducted from inventory</p>
+              <p>✅ SO Status: <strong className="text-blue-600">Reserved</strong></p>
               <p>✅ Customer: <strong>{header?.consignee || header?.buyer || "—"}</strong></p>
               <p>✅ Voucher No: <strong>{header?.voucherNo || "—"}</strong></p>
+              {/* <p className="text-blue-600 font-semibold mt-2">
+                📦 Stock will be deducted when Sales Invoice is uploaded
+              </p> */}
               {shortageCount > 0 && (
                 <p className="text-amber-600 font-semibold">
-                  ⚠ {shortageCount} items had stock shortage (backorder created)
+                  ⚠ {shortageCount} items currently out of stock
                 </p>
               )}
             </div>

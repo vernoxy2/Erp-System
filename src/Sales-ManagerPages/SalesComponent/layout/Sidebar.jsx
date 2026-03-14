@@ -21,6 +21,8 @@ import {
   FiLayers,
   FiSettings,
   FiClipboard,
+  FiInbox,
+  FiRefreshCw,
 } from "react-icons/fi";
 import logo from "../../../assets/logo.svg";
 
@@ -153,8 +155,15 @@ export default function Sidebar() {
           label: "Upload Vendor Invoice",
         },
         {
+          to: "/sales/recieved-on-challan",
+          icon: FiInbox,
+          label: "Recieved on Challan",
+          badge: 2,
+          badgeColor: "amber",
+        },
+        {
           to: "/sales/debit-credit-notes",
-          icon: FiFile,
+          icon: FiRefreshCw,
           label: "Debit/Credit Notes",
           badge: 2,
           badgeColor: "amber",
@@ -270,10 +279,14 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-indigo-600">{initials}</span>
+            <span className="text-sm font-bold text-indigo-600">
+              {initials}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">{userData.name}</p>
+            <p className="text-sm font-bold text-slate-800 truncate">
+              {userData.name}
+            </p>
             <p className="text-xs text-slate-400 truncate">{userData.email}</p>
           </div>
         </div>

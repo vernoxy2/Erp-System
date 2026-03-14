@@ -1310,10 +1310,10 @@ export default function SalesStock() {
             <p className="text-sm text-slate-400">Fetching stock data...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)]">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <thead className="sticky top-0 z-10 bg-white">
+                <tr className="bg-slate-50 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-200">
                   <th className="px-5 py-3 text-left">No</th>
                   <th className="px-4 py-3 text-left">Description</th>
                   <th className="px-4 py-3 text-center">Part No.</th>
