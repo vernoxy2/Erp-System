@@ -41,7 +41,7 @@ import StoreProductManagement from "./Store-ManagerPages/Store-Page/StoreProduct
 import StoreLayout from "./Store-ManagerPages/StoreComponent/Layout/StoreLayout";
 import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader";
 import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuality";
-
+import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChallan";
 
 const App = () => {
   return (
@@ -104,6 +104,7 @@ const App = () => {
         <Route path="upload-vendor-invoice" element={<UploadVendorInvoice />} />
         <Route path="upload-sales-invoice" element={<UploadSalesInvoice />} />
         <Route path="debit-credit-notes" element={<DebitCreditNotes />} />
+        <Route path="recieved-on-challan" element={<ReceivedOnChallan />} />
         <Route
           path="vendor-invoice-history"
           element={<VendorInvoiceHistory />}
