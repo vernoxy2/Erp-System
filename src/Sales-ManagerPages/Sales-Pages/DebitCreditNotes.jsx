@@ -26,7 +26,8 @@ const STATUS = {
   draft:    { label: "Draft",    color: "bg-slate-100 text-slate-600",     icon: FiFileText },
   sent:     { label: "Sent",     color: "bg-blue-100 text-blue-600",       icon: FiSend },
   accepted: { label: "Accepted", color: "bg-emerald-100 text-emerald-600", icon: FiCheckCircle },
-  settled:  { label: "Settled",  color: "bg-indigo-100 text-indigo-600",   icon: FiRefreshCw },
+  settled:  { label: "Settled",  color: "bg-violet-100 text-violet-600",   icon: FiCheckCircle },
+  complete: { label: "Complete", color: "bg-violet-100 text-violet-600",   icon: FiCheckCircle },
   rejected: { label: "Rejected", color: "bg-red-100 text-red-600",         icon: FiXCircle },
 };
 
@@ -207,14 +208,21 @@ const Pagination = ({ total, page, setPage }) => {
 
 const NoteCard = ({ note, onView, onAction, userRole }) => {
   const isDebit = note.type === "debit";
+  // ── Treat as settled if replacementStatus complete (even if Firestore status = draft) ──
+  const isSettled = note.status === "settled" || note.status === "complete" || note.replacementStatus === "complete";
+
+  const cardBg = isSettled
+    ? "border-violet-100 bg-violet-50/40 hover:bg-violet-50/70"
+    : isDebit
+    ? "border-pink-100 bg-rose-50/30 hover:bg-rose-50/60"
+    : "border-teal-100 bg-teal-50/30 hover:bg-teal-50/60";
+
   return (
     <div
       onClick={() => onView(note)}
-      className={`rounded-xl border p-3 hover:shadow-sm transition-all cursor-pointer ${
-        isDebit ? "border-red-100 bg-white hover:bg-red-50/20" : "border-emerald-100 bg-white hover:bg-emerald-50/20"
-      }`}>
-      {(note.status === "complete" || note.status === "settled") && (
-        <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mb-1.5">
+      className={`rounded-xl border p-3 hover:shadow-sm transition-all cursor-pointer ${cardBg}`}>
+      {isSettled && (
+        <div className="text-[10px] text-violet-600 font-semibold flex items-center gap-1 mb-1.5">
           <FiCheckCircle size={10}/> Click to view full details
         </div>
       )}
@@ -240,21 +248,25 @@ const NoteCard = ({ note, onView, onAction, userRole }) => {
               <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-semibold">⏳ Partial Replace</span>
             )}
             {note.replacementStatus === "complete" && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-semibold">✅ Replaced</span>
+              <span className="text-[10px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-semibold">✅ Replaced</span>
             )}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          <StatusChip status={note.status} />
+          {/* Show effective status */}
+          {isSettled
+            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-600"><FiCheckCircle size={10}/> Complete</span>
+            : <StatusChip status={note.status} />
+          }
           <FiEye size={13} className="text-slate-300 mt-1" />
         </div>
       </div>
       <div className="flex gap-1.5 mt-2 flex-wrap">
-        {note.status === "draft" && (
+        {!isSettled && note.status === "draft" && (
           <button onClick={e => { e.stopPropagation(); onAction(note.id, "sent", note); }}
             className="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-semibold">Send</button>
         )}
-        {note.status === "sent" && ["store_manager","admin"].includes(userRole) && (
+        {!isSettled && note.status === "sent" && ["store_manager","admin"].includes(userRole) && (
           <>
             <button onClick={e => { e.stopPropagation(); onAction(note.id, "accepted", note); }}
               className="px-2.5 py-1 text-xs bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 font-semibold">Accept</button>
@@ -487,13 +499,16 @@ const ReplacementUpload = ({ note, onDone, currentUser }) => {
 
 const NoteDetailPage = ({ note, onBack }) => {
   const isDebit = note.type === "debit";
-  const accentBg   = isDebit ? "from-red-500 to-rose-600" : "from-emerald-500 to-teal-600";
-  const accentLight = isDebit ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100";
-  const accentText  = isDebit ? "text-red-700" : "text-emerald-700";
+  const effectiveStatus = note.status === "draft" && note.replacementStatus === "complete"
+    ? "complete" : note.status;
+
+  const accentBg   = isDebit ? "from-purple-500 to-purple-300" : "from-violet-400 to-indigo-400";
+  const accentLight = isDebit ? "bg-pink-50 border-pink-100" : "bg-violet-50 border-violet-100";
+  const accentText  = isDebit ? "text-pink-700" : "text-violet-700";
 
   const statusRow = [
-    { label: "Status",      val: <StatusChip status={note.status} /> },
-    { label: "Note #",      val: <span className="font-mono text-xs font-bold text-slate-700">{note.noteNumber}</span> },
+    { label: "Status",      val: <StatusChip status={effectiveStatus} /> },
+    { label: "Note #",      val: <span className="font-mono text-xs font-bold">{note.noteNumber}</span> },
     { label: "Created",     val: note.createdAt ? new Date(note.createdAt.seconds * 1000).toLocaleDateString("en-IN") : "—" },
     { label: "Settled At",  val: note.settledAt ? new Date(note.settledAt.seconds * 1000).toLocaleDateString("en-IN") : "—" },
   ];
@@ -609,8 +624,6 @@ const NoteDetailPage = ({ note, onBack }) => {
   );
 };
 
-// ── Main Component ─────────────────────────────────────────────────────────
-
 export default function DebitCreditNotes() {
   const [notes,           setNotes]          = useState([]);
   const [invoices,        setInvoices]       = useState([]);
@@ -631,7 +644,6 @@ export default function DebitCreditNotes() {
   const [challanParsed,  setChallanParsed]   = useState(null);
   const [challanParsing, setChallanParsing]  = useState(false);
   const [challanMismatch,setChallanMismatch] = useState(null);
-
   const [form, setForm] = useState({
     type: "debit", linkedInvoiceId: "", linkedInvoiceNo: "",
     linkedPoNo: "", vendorName: "", reason: "short_supply",
@@ -694,13 +706,10 @@ export default function DebitCreditNotes() {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return;
     const issueItems = (inv.items || []).filter(i => i.issue && i.issue !== "none" && i.issue !== "");
-
     const dominantIssue = issueItems[0]?.issue || "shortage";
     const autoReason = issueToReason(dominantIssue);
-
     setChallanFile(null);
     setChallanParsed(null);
-
     setForm(f => ({
       ...f,
       linkedInvoiceId: invoiceId,
@@ -741,7 +750,6 @@ export default function DebitCreditNotes() {
 
       if (form.linkedInvoiceId) {
         const mismatches = [];
-
         if (parsed.vendorName && form.vendorName) {
           const challanVendor = parsed.vendorName.toLowerCase().trim();
           const noteVendor    = form.vendorName.toLowerCase().trim();
@@ -767,7 +775,6 @@ export default function DebitCreditNotes() {
         if (unmatchedItems.length > 0) {
           mismatches.push(`Items not found in challan: ${unmatchedItems.map(i=>i.itemName).join(", ")}`);
         }
-
         if (mismatches.length > 0) setChallanMismatch(mismatches);
       }
     } catch (err) {
@@ -882,7 +889,8 @@ export default function DebitCreditNotes() {
         ? (allComplete ? "complete" : anyReceived ? "partial" : "missing")
         : null;
 
-      const finalStatus = allComplete ? "complete" : "draft";
+      // ── FIX: "complete" is not in STATUS map → use "settled" ──
+      const finalStatus = allComplete ? "settled" : "draft";
 
       let noteRef;
       if (editingNoteId) {
@@ -1189,6 +1197,11 @@ export default function DebitCreditNotes() {
                 : debitPaged.map(note => (
                     <NoteCard key={note.id} note={note}
                       onView={n => {
+                        // complete/settled/replaced → read-only detail page
+                        if (n.status === "complete" || n.status === "settled" || n.replacementStatus === "complete") {
+                          setDetailNote(n);
+                          return;
+                        }
                         setForm({
                           type:            n.type,
                           linkedInvoiceId: n.linkedInvoiceId || "",
@@ -1260,6 +1273,11 @@ export default function DebitCreditNotes() {
                 : creditPaged.map(note => (
                     <NoteCard key={note.id} note={note}
                       onView={n => {
+                        // complete/settled/replaced → read-only detail page
+                        if (n.status === "complete" || n.status === "settled" || n.replacementStatus === "complete") {
+                          setDetailNote(n);
+                          return;
+                        }
                         setForm({
                           type:            n.type,
                           linkedInvoiceId: n.linkedInvoiceId || "",

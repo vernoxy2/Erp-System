@@ -310,3 +310,287 @@
   animation: zoomInOutPause 16s ease-in-out infinite;
   will-change: transform;
 }
+
+/* ============================================
+   VendorInvoiceHistory — vih- classes
+   ============================================ */
+
+/* ── Page ── */
+.vih-page {
+  padding: 22px 26px;
+  background: #f0f4fb;
+  min-height: 100vh;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.vih-page-header {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.vih-page-title { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
+.vih-page-sub   { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+.vih-export-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 13px;
+  background: #3b82f6; border: none; border-radius: 7px;
+  color: #fff; font-size: 12px; cursor: pointer; font-weight: 500;
+  transition: background 0.15s;
+}
+.vih-export-btn:hover { background: #2563eb; }
+
+/* ── Cards ── */
+.vih-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 11px;
+  margin-bottom: 14px;
+}
+.vih-card        { border-radius: 10px; padding: 13px 15px; }
+.vih-card-label  { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+.vih-card-value  { font-size: 21px; font-weight: 700; margin: 0; }
+.vih-card-sub    { font-size: 10px; margin-top: 3px; }
+
+.vih-card-blue   { background:#eff6ff; border:1px solid #bfdbfe; }
+.vih-card-blue   .vih-card-label { color:#3b82f6; }
+.vih-card-blue   .vih-card-value { color:#1e40af; }
+.vih-card-blue   .vih-card-sub   { color:#93c5fd; }
+
+.vih-card-purple { background:#f5f3ff; border:1px solid #ddd6fe; }
+.vih-card-purple .vih-card-label { color:#8b5cf6; }
+.vih-card-purple .vih-card-value { color:#6d28d9; }
+.vih-card-purple .vih-card-sub   { color:#c4b5fd; }
+
+.vih-card-green  { background:#f0fdf4; border:1px solid #86efac; }
+.vih-card-green  .vih-card-label { color:#22c55e; }
+.vih-card-green  .vih-card-value { color:#15803d; }
+.vih-card-green  .vih-card-sub   { color:#86efac; }
+
+.vih-card-orange { background:#fff7ed; border:1px solid #fed7aa; }
+.vih-card-orange .vih-card-label { color:#f97316; }
+.vih-card-orange .vih-card-value { color:#c2410c; }
+.vih-card-orange .vih-card-sub   { color:#fdba74; }
+
+/* ── Filter Bar ── */
+.vih-filter-bar {
+  background: #fff; border-radius: 10px;
+  border: 1px solid #e2e8f0; padding: 8px 12px;
+  margin-bottom: 13px; display: flex; gap: 7px; align-items: center;
+}
+.vih-divider { width: 1px; height: 20px; background: #e2e8f0; flex-shrink: 0; }
+.vih-search-wrap { position: relative; width: 155px; flex-shrink: 0; }
+.vih-search-icon { position: absolute; left: 7px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+.vih-search {
+  width: 100%; padding-left: 22px; height: 28px;
+  border: 1px solid #e2e8f0; border-radius: 6px;
+  font-size: 12px; color: #1e293b; background: #f8fafc; outline: none;
+}
+.vih-date-btn {
+  display: flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 9px;
+  border: 1px solid #e2e8f0; border-radius: 6px;
+  background: #f8fafc; cursor: pointer; font-size: 11.5px; white-space: nowrap;
+}
+.vih-date-clear { color: #94a3b8; font-size: 13px; cursor: pointer; margin-left: 2px; }
+.vih-status-sel {
+  height: 28px; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 0 6px; font-size: 11.5px; color: #1e293b;
+  background: #f8fafc; outline: none; flex-shrink: 0; cursor: pointer;
+}
+.vih-clear-btn {
+  height: 28px; padding: 0 10px; border: 1px solid #e2e8f0;
+  border-radius: 6px; font-size: 11.5px; color: #94a3b8;
+  background: #fff; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ── Calendar ── */
+.vih-cal {
+  position: absolute; top: 38px; left: 0; z-index: 999;
+  background: #fff; border: 1px solid #dde3ed; border-radius: 13px;
+  padding: 14px 13px 11px;
+  box-shadow: 0 8px 26px rgba(59,130,246,.10); min-width: 288px;
+}
+.vih-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.vih-nav-btn  { background:none; border:none; cursor:pointer; color:#5a6474; font-size:17px; padding:2px 7px; border-radius:6px; line-height:1; }
+.vih-sel      { border:1px solid #e2e8f0; border-radius:5px; padding:2px 4px; font-size:11px; color:#1e293b; background:#fff; outline:none; cursor:pointer; }
+.vih-cal-dow  { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:2px; }
+.vih-cal-dow > div { text-align:center; font-size:10px; color:#94a3b8; font-weight:600; padding:2px 0; }
+.vih-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+.vih-cal-cell { position:relative; height:32px; display:flex; align-items:center; justify-content:center; }
+.vih-cal-day  { position:relative; z-index:1; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:12px; }
+.vih-cal-presets { margin-top:9px; border-top:1px solid #f1f5f9; padding-top:8px; display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+.vih-preset-btn   { font-size:11px; padding:3px 8px; border:1px solid #dde3ed; border-radius:20px; background:#fff; color:#5a6474; cursor:pointer; }
+.vih-preset-clear { margin-left:auto; border-color:#fecdd3; color:#e11d48; }
+
+/* ── Status Badge ── */
+.vih-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:500; }
+
+/* ── Table ── */
+.vih-table-wrap { background:#fff; border-radius:10px; border:1px solid #e2e8f0; overflow:hidden; }
+.vih-table      { width:100%; border-collapse:collapse; font-size:12.5px; }
+.vih-table thead tr { background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+.vih-table th { padding:9px 13px; font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+.vih-tr { transition:background 0.15s; }
+.vih-tr:hover   { background:#f0f7ff; }
+.vih-tr td      { padding:10px 13px; }
+.vih-td-invoice { color:#3b82f6; font-weight:500; }
+.vih-td-bold    { color:#1e293b; font-weight:500; }
+.vih-td-muted   { color:#64748b; }
+.vih-td-amount  { color:#1e293b; font-weight:600; text-align:right; }
+.vih-table-msg  { padding:40px; text-align:center; color:#94a3b8; font-size:12px; }
+.vih-table-footer { padding:9px 13px; border-top:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8; }
+.vih-table-total  { color:#1e293b; font-weight:600; }
+.vih-view-btn { background:none; border:1px solid #e2e8f0; border-radius:6px; padding:4px 10px; font-size:11px; color:#3b82f6; cursor:pointer; font-weight:500; }
+.vih-view-btn:hover { background:#eff6ff; }
+
+/* ── Spinner ── */
+.vih-spinner {
+  display:inline-block; width:18px; height:18px;
+  border:2px solid #e2e8f0; border-top-color:#3b82f6;
+  border-radius:50%; animation:vihSpin 0.7s linear infinite; vertical-align:middle;
+}
+@keyframes vihSpin { to { transform:rotate(360deg); } }
+
+/* ── Modal Overlay ── */
+.vih-overlay {
+  position:fixed; inset:0;
+  background:rgba(15,23,42,.50);
+  z-index:1000; display:flex;
+  align-items:center; justify-content:center;
+}
+.vih-modal {
+  background:#fff; width:860px; max-width:95vw;
+  max-height:90vh; overflow-y:auto;
+  border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.22);
+  display:flex; flex-direction:column;
+}
+.vih-modal-header {
+  padding:18px 22px 14px; border-bottom:1px solid #f1f5f9;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  position:sticky; top:0; background:#fff; z-index:10;
+  border-radius:16px 16px 0 0;
+}
+.vih-modal-label  { font-size:11px; color:#94a3b8; margin-bottom:3px; }
+.vih-modal-title  { font-size:16px; font-weight:700; color:#1e293b; margin:0; }
+.vih-modal-vendor { font-size:12px; color:#64748b; margin-top:2px; }
+.vih-close-btn    { background:none; border:none; cursor:pointer; color:#94a3b8; font-size:20px; line-height:1; padding:2px 4px; }
+.vih-close-btn:hover { color:#475569; }
+.vih-modal-body   { padding:4px 22px 20px; flex:1; overflow-y:auto; }
+
+/* ── Info Row ── */
+.vih-info-row { display:flex; justify-content:space-between; align-items:flex-start; padding:7px 0; border-bottom:1px solid #f1f5f9; }
+.vih-info-label { font-size:11.5px; color:#94a3b8; flex-shrink:0; width:45%; }
+.vih-info-value { font-size:12px; color:#1e293b; font-weight:500; text-align:right; word-break:break-all; }
+
+/* ── Section Head ── */
+.vih-section-head { font-size:10px; font-weight:700; color:#3b82f6; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 6px; }
+
+/* ── QC Badges ── */
+.vih-qc-badges { display:flex; gap:8px; margin:6px 0 4px; }
+.vih-qc-badge  { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:500; }
+
+/* ── Items ── */
+.vih-items-list { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+.vih-item-card  { background:#f8fafc; border-radius:9px; padding:11px 13px; border:1px solid #e2e8f0; }
+.vih-item-top   { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.vih-item-name  { font-size:12px; font-weight:600; color:#1e293b; flex:1; margin-right:8px; }
+.vih-item-status-badge { font-size:10px; padding:2px 8px; border-radius:20px; background:#eff6ff; color:#3b82f6; font-weight:500; flex-shrink:0; text-transform:capitalize; }
+.vih-item-grid  { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+.vih-item-field-label { font-size:9.5px; color:#94a3b8; margin-bottom:1px; }
+.vih-item-field-value { font-size:11.5px; color:#1e293b; font-weight:500; }
+
+/* ── Damage Block ── */
+.vih-damage-block {
+  margin-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Damage row */
+.vih-damage-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fff7ed;
+  border-radius: 7px;
+  border-left: 3px solid #f97316;
+}
+.vih-damage-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #f97316;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.vih-damage-info { display: flex; flex-direction: column; gap: 2px; }
+.vih-damage-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c2410c;
+}
+.vih-damage-detail {
+  font-size: 10px;
+  color: #92400e;
+}
+
+/* Replacement row */
+.vih-replace-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border-radius: 7px;
+  border-left: 3px solid #22c55e;
+}
+.vih-replace-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.vih-replace-info   { display: flex; flex-direction: column; gap: 2px; }
+.vih-replace-badge  { font-size: 11px; font-weight: 600; color: #15803d; }
+.vih-replace-detail { font-size: 10px; color: #166534; }
+
+/* Replacement total row */
+.vih-replace-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #eff6ff;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #1e40af;
+}
+.vih-replace-total strong { font-weight: 700; }
+
+/* ── Modal Footer ── */
+.vih-modal-footer {
+  padding: 12px 22px; border-top: 1px solid #f1f5f9; background: #fff;
+  display: flex; gap: 8px; justify-content: flex-end;
+  border-radius: 0 0 16px 16px; position: sticky; bottom: 0;
+}
+.vih-btn-close { height:34px; padding:0 16px; border:1px solid #e2e8f0; border-radius:7px; font-size:12px; color:#64748b; background:#fff; cursor:pointer; }
+.vih-btn-close:hover { background:#f8fafc; }
+.vih-btn-pdf   { height:34px; padding:0 16px; border:none; border-radius:7px; font-size:12px; color:#fff; background:#3b82f6; cursor:pointer; font-weight:500; }
+.vih-btn-pdf:hover { background:#2563eb; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .vih-cards { grid-template-columns: repeat(2, 1fr); }
+  .vih-modal { width:100%; max-width:100vw; max-height:100vh; border-radius:0; }
+}
+@media (max-width: 480px) {
+  .vih-page { padding: 14px; }
+  .vih-cards { grid-template-columns: 1fr 1fr; }
+  .vih-item-grid { grid-template-columns: 1fr 1fr; }
+}

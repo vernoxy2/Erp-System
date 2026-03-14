@@ -1,36 +1,407 @@
+// // // import { useState, useMemo, useEffect } from "react";
+// // // import {
+// // //   FiSearch, FiEye, FiClock,
+// // //   FiArrowUp, FiArrowDown, FiAlertCircle, FiRefreshCw,
+// // // } from "react-icons/fi";
+// // // import { Card, CardHeader, Modal } from "../SalesComponent/ui/index";
+// // // import { db } from '../../firebase';
+// // // import { collection, onSnapshot, getDocs } from 'firebase/firestore';
+
+// // // // ✅ Same status logic as LowStockManagement & Dashboard
+// // // const getStockStatus = (available, lowLevel, reorderLevel) => {
+// // //   if (available <= 0)              return "shortage";
+// // //   if (available < lowLevel * 0.5)  return "shortage";
+// // //   if (available < lowLevel)        return "low";
+// // //   if (available < reorderLevel)    return "reorder";
+// // //   return "ok";
+// // // };
+
+// // // export default function SalesStock() {
+// // //   const [stockItems, setStockItems]         = useState([]);
+// // //   const [loading, setLoading]               = useState(true);
+// // //   const [search, setSearch]                 = useState("");
+// // //   const [filterLow, setFilterLow]           = useState(false);
+// // //   const [ledgerItem, setLedgerItem]         = useState(null);
+// // //   const [categoryFilter, setCategoryFilter] = useState("__ALL__");
+// // //   const [statusFilter, setStatusFilter]     = useState("__ALL__");
+// // //   const [categoryList, setCategoryList]     = useState([]);
+
+// // //   useEffect(() => {
+// // //     let unsubStock = null;
+
+// // //     getDocs(collection(db, "stockCategories")).then((catSnapshot) => {
+
+// // //       const thresholdMap = {};
+// // //       const cats = [];
+
+// // //       catSnapshot.docs.forEach((d) => {
+// // //         const cat = d.data();
+// // //         cats.push(cat.name);
+// // //         (cat.subcategories || []).forEach((sub) => {
+// // //           const key = (sub.name || "").trim().toLowerCase();
+// // //           if (key) thresholdMap[key] = {
+// // //             lowLevel:     sub.lowLevel     ?? 100,
+// // //             reorderLevel: sub.reorderLevel ?? 150,
+// // //             categoryName: cat.name,
+// // //           };
+// // //         });
+// // //       });
+
+// // //       cats.sort((a, b) => {
+// // //         const order = (n = "") => n.toUpperCase().includes("PIPE") ? 0 : n.toUpperCase().includes("FITTING") ? 1 : 2;
+// // //         return order(a) - order(b) || a.localeCompare(b);
+// // //       });
+// // //       setCategoryList(cats);
+
+// // //       unsubStock = onSnapshot(collection(db, "stock"), (snapshot) => {
+// // //         const data = snapshot.docs.map((d) => {
+// // //           const item   = { id: d.id, ...d.data() };
+// // //           const key    = (item.description || "").trim().toLowerCase();
+// // //           const thresh = thresholdMap[key] || {};
+// // //           return {
+// // //             ...item,
+// // //             lowLevel:     item.lowLevel     ?? thresh.lowLevel     ?? 100,
+// // //             reorderLevel: item.reorderLevel ?? thresh.reorderLevel ?? 150,
+// // //             categoryName: thresh.categoryName ?? "Uncategorized",
+// // //           };
+// // //         });
+// // //         setStockItems(data);
+// // //         setLoading(false);
+// // //       });
+// // //     });
+
+// // //     return () => { if (unsubStock) unsubStock(); };
+// // //   }, []);
+
+// // //   const getItemStatus = (item) =>
+// // //     getStockStatus(item.available ?? 0, item.lowLevel ?? 100, item.reorderLevel ?? 150);
+
+// // //   const shortageCount = stockItems.filter(s => getItemStatus(s) === "shortage").length;
+// // //   const lowCount      = stockItems.filter(s => getItemStatus(s) === "low").length;
+// // //   const reorderCount  = stockItems.filter(s => getItemStatus(s) === "reorder").length;
+// // //   // ✅ Reorder qty = items that have reorder field > 0 (pending reorder)
+// // //   const reorderQtyCount = stockItems.filter(s => (s.reorder || 0) > 0).length;
+
+// // //   const filtered = useMemo(() => {
+// // //     return stockItems.filter(s => {
+// // //       const matchSearch =
+// // //         (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
+// // //         (s.productCode  || "").toLowerCase().includes(search.toLowerCase());
+// // //       const matchCategory = categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
+// // //       const matchAlert    = !filterLow || getItemStatus(s) !== "ok";
+// // //       const matchStatus   = statusFilter === "__ALL__" || getItemStatus(s) === statusFilter;
+// // //       return matchSearch && matchCategory && matchAlert && matchStatus;
+// // //     });
+// // //   }, [stockItems, search, filterLow, categoryFilter, statusFilter]);
+
+// // //   return (
+// // //     <div className="space-y-5">
+// // //       <div>
+// // //         <h2 className="text-xl font-black text-slate-800 tracking-tight">Stock Management</h2>
+// // //         <p className="text-xs text-slate-400 mt-0.5">
+// // //           {loading ? "Loading..." : `${stockItems.length} total SKUs · Live stock levels`}
+// // //         </p>
+// // //       </div>
+
+// // //       {/* ✅ Summary Cards */}
+// // //       {!loading && (
+// // //         <div className="grid grid-cols-5 gap-4">
+// // //           <div className="bg-white rounded-xl border border-slate-200 p-4">
+// // //             <p className="text-md text-slate-400 uppercase font-bold">Total SKUs</p>
+// // //             <p className="text-2xl font-black text-slate-800 mt-1">{stockItems.length}</p>
+// // //           </div>
+// // //           <div className="bg-white rounded-xl border border-emerald-200 p-4">
+// // //             <p className="text-md text-emerald-500 uppercase font-bold">Available</p>
+// // //             <p className="text-2xl font-black text-emerald-600 mt-1">
+// // //               {stockItems.filter(s => getItemStatus(s) === "ok").length}
+// // //             </p>
+// // //           </div>
+// // //           <div className="bg-white rounded-xl border border-red-200 p-4">
+// // //             <p className="text-md text-red-400 uppercase font-bold">Shortage</p>
+// // //             <p className="text-2xl font-black text-red-600 mt-1">{shortageCount}</p>
+// // //           </div>
+// // //           <div className="bg-white rounded-xl border border-amber-200 p-4">
+// // //             <p className="text-md text-amber-500 uppercase font-bold">Low Stock</p>
+// // //             <p className="text-2xl font-black text-amber-600 mt-1">{lowCount}</p>
+// // //           </div>
+// // //           <div className="bg-white rounded-xl border border-orange-200 p-4">
+// // //             <p className="text-md text-orange-400 uppercase font-bold">Reorder</p>
+// // //             <p className="text-2xl font-black text-orange-600 mt-1">{reorderCount}</p>
+// // //           </div>
+// // //         </div>
+// // //       )}
+
+// // //       {/* Filters */}
+// // //       <Card>
+// // //         <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+// // //           <div className="flex-1 min-w-[180px] max-w-xs relative">
+// // //             <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+// // //             <input
+// // //               placeholder="Search description / part no..."
+// // //               value={search}
+// // //               onChange={e => setSearch(e.target.value)}
+// // //               className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+// // //             />
+// // //           </div>
+// // //           <select
+// // //             value={categoryFilter}
+// // //             onChange={e => setCategoryFilter(e.target.value)}
+// // //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
+// // //           >
+// // //             <option value="__ALL__">All Categories</option>
+// // //             {categoryList.map(cat => (
+// // //               <option key={cat} value={cat}>{cat}</option>
+// // //             ))}
+// // //           </select>
+// // //           <select
+// // //             value={statusFilter}
+// // //             onChange={e => setStatusFilter(e.target.value)}
+// // //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
+// // //           >
+// // //             <option value="__ALL__">All Status</option>
+// // //             <option value="shortage"> Shortage</option>
+// // //             <option value="low"> Low Stock</option>
+// // //             <option value="reorder"> Reorder</option>
+// // //             <option value="ok"> OK</option>
+// // //           </select>
+// // //           <button
+// // //             onClick={() => setFilterLow(!filterLow)}
+// // //             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+// // //               filterLow
+// // //                 ? "bg-red-500 text-white border-red-500"
+// // //                 : "bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600"
+// // //             }`}
+// // //           >
+// // //             <FiAlertCircle size={13} /> Alerts Only
+// // //           </button>
+// // //           <span className="ml-auto text-xs text-slate-400 font-medium">{filtered.length} results</span>
+// // //         </div>
+// // //       </Card>
+
+// // //       {/* Stock Table */}
+// // //       <Card>
+// // //         <CardHeader title="All Stock Items" subtitle="PO = stock increase, SO Invoice = stock decrease" />
+// // //         {loading ? (
+// // //           <div className="text-center py-16">
+// // //             <FiRefreshCw size={28} className="animate-spin mx-auto text-teal-500 mb-3" />
+// // //             <p className="text-sm text-slate-400">Fetching stock data...</p>
+// // //           </div>
+// // //         ) : (
+// // //           <div className="overflow-x-auto">
+// // //             <table className="w-full text-sm">
+// // //               <thead>
+// // //                 <tr className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+// // //                   <th className="px-5 py-3 text-left">No</th>
+// // //                   <th className="px-4 py-3 text-left">Description</th>
+// // //                   <th className="px-4 py-3 text-center">Part No.</th>
+// // //                   <th className="px-4 py-3 text-center">HSN/SAC</th>
+// // //                   <th className="px-4 py-3 text-center">Available</th>
+// // //                   <th className="px-4 py-3 text-center">Reserved</th>
+// // //                   <th className="px-4 py-3 text-center">Reorder Qty</th>
+// // //                   <th className="px-4 py-3 text-center">Unit</th>
+// // //                   <th className="px-4 py-3 text-center">Status</th>
+// // //                   <th className="px-4 py-3 text-center">Ledger</th>
+// // //                 </tr>
+// // //               </thead>
+// // //               <tbody className="divide-y divide-slate-50">
+// // //                 {filtered.map((item, idx) => {
+// // //                   const avail      = Math.max(0, item.available ?? 0);
+// // //                   const reorderQty = item.reorder || 0;   // ✅ reorder field (was backorder)
+// // //                   const status     = getItemStatus(item);
+// // //                   const hasReorder = reorderQty > 0;
+
+// // //                   const rowBg =
+// // //                     status === "shortage" ? "bg-red-50/40"    :
+// // //                     hasReorder            ? "bg-orange-50/30" :
+// // //                     status === "low"      ? "bg-amber-50/30"  :
+// // //                     status === "reorder"  ? "bg-orange-50/20" : "";
+
+// // //                   const availColor =
+// // //                     status === "shortage" ? "text-red-500"    :
+// // //                     status === "low"      ? "text-amber-600"  :
+// // //                     status === "reorder"  ? "text-orange-500" :
+// // //                     "text-teal-600";
+
+// // //                   return (
+// // //                     <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}>
+// // //                       <td className="px-5 py-3.5 text-slate-400 text-xs font-semibold">{idx + 1}</td>
+// // //                       <td className="px-4 py-3.5 text-slate-800 font-medium max-w-xs truncate">{item.description || "—"}</td>
+// // //                       <td className="px-4 py-3.5 text-center">
+// // //                         <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono font-medium">
+// // //                           {item.productCode || "—"}
+// // //                         </span>
+// // //                       </td>
+// // //                       <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">{item.hsnSac || "—"}</td>
+
+// // //                       <td className="px-4 py-3.5 text-center">
+// // //                         <span className={`font-black text-base ${availColor}`}>{avail}</span>
+// // //                       </td>
+
+// // //                       <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">{item.reserved || 0}</td>
+
+// // //                       {/* ✅ Reorder Qty column — shows pending reorder quantity */}
+// // //                       <td className="px-4 py-3.5 text-center">
+// // //                         {hasReorder ? (
+// // //                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
+// // //                             +{reorderQty}
+// // //                           </span>
+// // //                         ) : (
+// // //                           <span className="text-slate-300 text-xs">—</span>
+// // //                         )}
+// // //                       </td>
+
+// // //                       <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">{item.unit || "nos"}</td>
+
+// // //                       <td className="px-4 py-3.5 text-center">
+// // //                         {status === "shortage" ? (
+// // //                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
+// // //                         ) : status === "low" ? (
+// // //                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
+// // //                         ) : status === "reorder" ? (
+// // //                           <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
+// // //                         ) : (
+// // //                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
+// // //                         )}
+// // //                       </td>
+
+// // //                       <td className="px-4 py-3.5 text-center">
+// // //                         <button
+// // //                           onClick={() => setLedgerItem(item)}
+// // //                           className="flex items-center gap-1 mx-auto text-teal-600 hover:text-teal-800 text-xs font-semibold bg-teal-50 hover:bg-teal-100 px-2.5 py-1.5 rounded-lg transition-colors"
+// // //                         >
+// // //                           <FiEye size={12} /> View
+// // //                         </button>
+// // //                       </td>
+// // //                     </tr>
+// // //                   );
+// // //                 })}
+// // //                 {filtered.length === 0 && (
+// // //                   <tr>
+// // //                     <td colSpan={10} className="text-center py-14 text-slate-400 text-sm">
+// // //                       {stockItems.length === 0
+// // //                         ? "No stock data yet. Upload a PO to add stock."
+// // //                         : "No items match your search"}
+// // //                     </td>
+// // //                   </tr>
+// // //                 )}
+// // //               </tbody>
+// // //             </table>
+// // //           </div>
+// // //         )}
+// // //       </Card>
+
+// // //       {/* Ledger Modal */}
+// // //       {ledgerItem && (
+// // //         <Modal
+// // //           title={`Stock Ledger — ${ledgerItem.description || ledgerItem.productCode}`}
+// // //           onClose={() => setLedgerItem(null)}
+// // //           size="lg"
+// // //         >
+// // //           <div className="space-y-4">
+// // //             <div className="grid grid-cols-4 gap-3">
+// // //               {[
+// // //                 { label: "Available",   value: Math.max(0, ledgerItem.available ?? 0), color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600" },
+// // //                 { label: "Reserved",    value: ledgerItem.reserved  || 0, color: "text-amber-600" },
+// // //                 { label: "Reorder Qty", value: ledgerItem.reorder   || 0, color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400" },
+// // //                 { label: "Part No.",    value: ledgerItem.productCode || "—", color: "text-slate-700" },
+// // //               ].map(({ label, value, color }) => (
+// // //                 <div key={label} className={`rounded-lg p-3 text-center ${label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0 ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}>
+// // //                   <p className="text-[10px] text-slate-400 uppercase font-bold">{label}</p>
+// // //                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>{value}</p>
+// // //                 </div>
+// // //               ))}
+// // //             </div>
+
+// // //             {(ledgerItem.reorder || 0) > 0 && (
+// // //               <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+// // //                 <p className="text-xs font-bold text-orange-700">🔄 Reorder: {ledgerItem.reorder} units pending</p>
+// // //                 <p className="text-xs text-orange-600 mt-0.5">Stock is below reorder level. {ledgerItem.reorder} units need to be procured via PO.</p>
+// // //               </div>
+// // //             )}
+
+// // //             <div>
+// // //               <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+// // //                 <FiClock size={13} /> Movement History
+// // //               </p>
+// // //               {(ledgerItem.ledger || []).length > 0 ? (
+// // //                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+// // //                   {[...(ledgerItem.ledger || [])].reverse().map((l, i) => (
+// // //                     <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50">
+// // //                       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" ? "bg-emerald-100" : "bg-red-100"}`}>
+// // //                         {l.type === "IN"
+// // //                           ? <FiArrowDown size={13} className="text-emerald-600" />
+// // //                           : <FiArrowUp   size={13} className="text-red-600" />}
+// // //                       </div>
+// // //                       <div className="flex-1 min-w-0">
+// // //                         <div className="flex items-center gap-2">
+// // //                           <span className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}>
+// // //                             {l.type} {l.qty} units
+// // //                           </span>
+// // //                           <span className="text-[10px] text-slate-400">· Ref: {l.ref || "—"}</span>
+// // //                         </div>
+// // //                         <p className="text-[11px] text-slate-500 mt-0.5">
+// // //                           Balance: <span className="font-bold">{Math.max(0, l.balance)}</span> · By: {l.by || "—"}
+// // //                         </p>
+// // //                       </div>
+// // //                       <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
+// // //                         <div>{l.date ? new Date(l.date).toLocaleDateString("en-IN") : "—"}</div>
+// // //                         <div>{l.date ? new Date(l.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : ""}</div>
+// // //                       </span>
+// // //                     </div>
+// // //                   ))}
+// // //                 </div>
+// // //               ) : (
+// // //                 <div className="text-center py-8 text-slate-400">
+// // //                   <FiClock size={24} className="mx-auto mb-2 opacity-40" />
+// // //                   <p className="text-sm">No movement records found</p>
+// // //                 </div>
+// // //               )}
+// // //             </div>
+// // //           </div>
+// // //         </Modal>
+// // //       )}
+// // //     </div>
+// // //   );
+// // // }
+
 // // import { useState, useMemo, useEffect } from "react";
 // // import {
-// //   FiSearch, FiEye, FiClock,
-// //   FiArrowUp, FiArrowDown, FiAlertCircle, FiRefreshCw,
+// //   FiSearch,
+// //   FiEye,
+// //   FiClock,
+// //   FiArrowUp,
+// //   FiArrowDown,
+// //   FiAlertCircle,
+// //   FiRefreshCw,
+// //   FiAlertTriangle,
 // // } from "react-icons/fi";
 // // import { Card, CardHeader, Modal } from "../SalesComponent/ui/index";
-// // import { db } from '../../firebase';
-// // import { collection, onSnapshot, getDocs } from 'firebase/firestore';
+// // import { db } from "../../firebase";
+// // import { collection, onSnapshot, getDocs } from "firebase/firestore";
 
 // // // ✅ Same status logic as LowStockManagement & Dashboard
 // // const getStockStatus = (available, lowLevel, reorderLevel) => {
-// //   if (available <= 0)              return "shortage";
-// //   if (available < lowLevel * 0.5)  return "shortage";
-// //   if (available < lowLevel)        return "low";
-// //   if (available < reorderLevel)    return "reorder";
+// //   if (available <= 0) return "shortage";
+// //   if (available < lowLevel * 0.5) return "shortage";
+// //   if (available < lowLevel) return "low";
+// //   if (available < reorderLevel) return "reorder";
 // //   return "ok";
 // // };
 
 // // export default function SalesStock() {
-// //   const [stockItems, setStockItems]         = useState([]);
-// //   const [loading, setLoading]               = useState(true);
-// //   const [search, setSearch]                 = useState("");
-// //   const [filterLow, setFilterLow]           = useState(false);
-// //   const [ledgerItem, setLedgerItem]         = useState(null);
+// //   const [stockItems, setStockItems] = useState([]);
+// //   const [loading, setLoading] = useState(true);
+// //   const [search, setSearch] = useState("");
+// //   const [filterLow, setFilterLow] = useState(false);
+// //   const [ledgerItem, setLedgerItem] = useState(null);
 // //   const [categoryFilter, setCategoryFilter] = useState("__ALL__");
-// //   const [statusFilter, setStatusFilter]     = useState("__ALL__");
-// //   const [categoryList, setCategoryList]     = useState([]);
-
+// //   const [statusFilter, setStatusFilter] = useState("__ALL__");
+// //   const [categoryList, setCategoryList] = useState([]);
+// // const [vendorFilter, setVendorFilter] = useState("__ALL__");
 // //   useEffect(() => {
 // //     let unsubStock = null;
 
 // //     getDocs(collection(db, "stockCategories")).then((catSnapshot) => {
-
 // //       const thresholdMap = {};
 // //       const cats = [];
 
@@ -39,28 +410,34 @@
 // //         cats.push(cat.name);
 // //         (cat.subcategories || []).forEach((sub) => {
 // //           const key = (sub.name || "").trim().toLowerCase();
-// //           if (key) thresholdMap[key] = {
-// //             lowLevel:     sub.lowLevel     ?? 100,
-// //             reorderLevel: sub.reorderLevel ?? 150,
-// //             categoryName: cat.name,
-// //           };
+// //           if (key)
+// //             thresholdMap[key] = {
+// //               lowLevel: sub.lowLevel ?? 100,
+// //               reorderLevel: sub.reorderLevel ?? 150,
+// //               categoryName: cat.name,
+// //             };
 // //         });
 // //       });
 
 // //       cats.sort((a, b) => {
-// //         const order = (n = "") => n.toUpperCase().includes("PIPE") ? 0 : n.toUpperCase().includes("FITTING") ? 1 : 2;
+// //         const order = (n = "") =>
+// //           n.toUpperCase().includes("PIPE")
+// //             ? 0
+// //             : n.toUpperCase().includes("FITTING")
+// //               ? 1
+// //               : 2;
 // //         return order(a) - order(b) || a.localeCompare(b);
 // //       });
 // //       setCategoryList(cats);
 
 // //       unsubStock = onSnapshot(collection(db, "stock"), (snapshot) => {
 // //         const data = snapshot.docs.map((d) => {
-// //           const item   = { id: d.id, ...d.data() };
-// //           const key    = (item.description || "").trim().toLowerCase();
+// //           const item = { id: d.id, ...d.data() };
+// //           const key = (item.description || "").trim().toLowerCase();
 // //           const thresh = thresholdMap[key] || {};
 // //           return {
 // //             ...item,
-// //             lowLevel:     item.lowLevel     ?? thresh.lowLevel     ?? 100,
+// //             lowLevel: item.lowLevel ?? thresh.lowLevel ?? 100,
 // //             reorderLevel: item.reorderLevel ?? thresh.reorderLevel ?? 150,
 // //             categoryName: thresh.categoryName ?? "Uncategorized",
 // //           };
@@ -70,36 +447,75 @@
 // //       });
 // //     });
 
-// //     return () => { if (unsubStock) unsubStock(); };
+// //     return () => {
+// //       if (unsubStock) unsubStock();
+// //     };
 // //   }, []);
 
 // //   const getItemStatus = (item) =>
-// //     getStockStatus(item.available ?? 0, item.lowLevel ?? 100, item.reorderLevel ?? 150);
+// //     getStockStatus(
+// //       item.available ?? 0,
+// //       item.lowLevel ?? 100,
+// //       item.reorderLevel ?? 150,
+// //     );
 
-// //   const shortageCount = stockItems.filter(s => getItemStatus(s) === "shortage").length;
-// //   const lowCount      = stockItems.filter(s => getItemStatus(s) === "low").length;
-// //   const reorderCount  = stockItems.filter(s => getItemStatus(s) === "reorder").length;
-// //   // ✅ Reorder qty = items that have reorder field > 0 (pending reorder)
-// //   const reorderQtyCount = stockItems.filter(s => (s.reorder || 0) > 0).length;
+// //   const shortageCount = stockItems.filter(
+// //     (s) => getItemStatus(s) === "shortage",
+// //   ).length;
+// //   const lowCount = stockItems.filter((s) => getItemStatus(s) === "low").length;
+// //   const reorderCount = stockItems.filter(
+// //     (s) => getItemStatus(s) === "reorder",
+// //   ).length;
+// //   const reorderQtyCount = stockItems.filter((s) => (s.reorder || 0) > 0).length;
+
+// //   // ✅ Total damaged units across all ledger entries
+// //   const getDamagedQty = (item) => {
+// //     return (item.ledger || []).reduce((sum, l) => {
+// //       if (
+// //         l.type === "IN" &&
+// //         l.remarks &&
+// //         l.remarks.toLowerCase().includes("damage:")
+// //       ) {
+// //         const match = l.remarks.match(/Damage:\s*(\d+)/i);
+// //         if (match) return sum + parseInt(match[1], 10);
+// //       }
+// //       return sum;
+// //     }, 0);
+// //   };
 
 // //   const filtered = useMemo(() => {
-// //     return stockItems.filter(s => {
+// //     return stockItems.filter((s) => {
 // //       const matchSearch =
 // //         (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
-// //         (s.productCode  || "").toLowerCase().includes(search.toLowerCase());
-// //       const matchCategory = categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
-// //       const matchAlert    = !filterLow || getItemStatus(s) !== "ok";
-// //       const matchStatus   = statusFilter === "__ALL__" || getItemStatus(s) === statusFilter;
+// //         (s.productCode || "").toLowerCase().includes(search.toLowerCase());
+// //       const matchCategory =
+// //         categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
+// //       const matchAlert = !filterLow || getItemStatus(s) !== "ok";
+// //       // const matchStatus   = statusFilter === "__ALL__" || getItemStatus(s) === statusFilter;
+// //       const matchStatus =
+// //         statusFilter === "__ALL__" ||
+// //         (statusFilter === "damaged"
+// //           ? getDamagedQty(s) > 0
+// //           : getItemStatus(s) === statusFilter);
 // //       return matchSearch && matchCategory && matchAlert && matchStatus;
 // //     });
 // //   }, [stockItems, search, filterLow, categoryFilter, statusFilter]);
 
+// //   const vendors = [...new Set(
+// //   data.flatMap(item => (item.ledger || []).map(l => l.by).filter(Boolean))
+// // )].sort();
+// // // Store in state — add this state: const [vendorList, setVendorList] = useState([]);
+// // setVendorList(vendors);
 // //   return (
 // //     <div className="space-y-5">
 // //       <div>
-// //         <h2 className="text-xl font-black text-slate-800 tracking-tight">Stock Management</h2>
+// //         <h2 className="text-xl font-black text-slate-800 tracking-tight">
+// //           Stock Management
+// //         </h2>
 // //         <p className="text-xs text-slate-400 mt-0.5">
-// //           {loading ? "Loading..." : `${stockItems.length} total SKUs · Live stock levels`}
+// //           {loading
+// //             ? "Loading..."
+// //             : `${stockItems.length} total SKUs · Live stock levels`}
 // //         </p>
 // //       </div>
 
@@ -107,26 +523,42 @@
 // //       {!loading && (
 // //         <div className="grid grid-cols-5 gap-4">
 // //           <div className="bg-white rounded-xl border border-slate-200 p-4">
-// //             <p className="text-md text-slate-400 uppercase font-bold">Total SKUs</p>
-// //             <p className="text-2xl font-black text-slate-800 mt-1">{stockItems.length}</p>
+// //             <p className="text-md text-slate-400 uppercase font-bold">
+// //               Total SKUs
+// //             </p>
+// //             <p className="text-2xl font-black text-slate-800 mt-1">
+// //               {stockItems.length}
+// //             </p>
 // //           </div>
 // //           <div className="bg-white rounded-xl border border-emerald-200 p-4">
-// //             <p className="text-md text-emerald-500 uppercase font-bold">Available</p>
+// //             <p className="text-md text-emerald-500 uppercase font-bold">
+// //               Available
+// //             </p>
 // //             <p className="text-2xl font-black text-emerald-600 mt-1">
-// //               {stockItems.filter(s => getItemStatus(s) === "ok").length}
+// //               {stockItems.filter((s) => getItemStatus(s) === "ok").length}
 // //             </p>
 // //           </div>
 // //           <div className="bg-white rounded-xl border border-red-200 p-4">
 // //             <p className="text-md text-red-400 uppercase font-bold">Shortage</p>
-// //             <p className="text-2xl font-black text-red-600 mt-1">{shortageCount}</p>
+// //             <p className="text-2xl font-black text-red-600 mt-1">
+// //               {shortageCount}
+// //             </p>
 // //           </div>
 // //           <div className="bg-white rounded-xl border border-amber-200 p-4">
-// //             <p className="text-md text-amber-500 uppercase font-bold">Low Stock</p>
-// //             <p className="text-2xl font-black text-amber-600 mt-1">{lowCount}</p>
+// //             <p className="text-md text-amber-500 uppercase font-bold">
+// //               Low Stock
+// //             </p>
+// //             <p className="text-2xl font-black text-amber-600 mt-1">
+// //               {lowCount}
+// //             </p>
 // //           </div>
 // //           <div className="bg-white rounded-xl border border-orange-200 p-4">
-// //             <p className="text-md text-orange-400 uppercase font-bold">Reorder</p>
-// //             <p className="text-2xl font-black text-orange-600 mt-1">{reorderCount}</p>
+// //             <p className="text-md text-orange-400 uppercase font-bold">
+// //               Reorder
+// //             </p>
+// //             <p className="text-2xl font-black text-orange-600 mt-1">
+// //               {reorderCount}
+// //             </p>
 // //           </div>
 // //         </div>
 // //       )}
@@ -135,34 +567,48 @@
 // //       <Card>
 // //         <div className="px-5 py-4 flex flex-wrap items-center gap-3">
 // //           <div className="flex-1 min-w-[180px] max-w-xs relative">
-// //             <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+// //             <FiSearch
+// //               size={14}
+// //               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+// //             />
 // //             <input
 // //               placeholder="Search description / part no..."
 // //               value={search}
-// //               onChange={e => setSearch(e.target.value)}
+// //               onChange={(e) => setSearch(e.target.value)}
 // //               className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
 // //             />
 // //           </div>
 // //           <select
 // //             value={categoryFilter}
-// //             onChange={e => setCategoryFilter(e.target.value)}
+// //             onChange={(e) => setCategoryFilter(e.target.value)}
 // //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
 // //           >
 // //             <option value="__ALL__">All Categories</option>
-// //             {categoryList.map(cat => (
-// //               <option key={cat} value={cat}>{cat}</option>
+// //             {categoryList.map((cat) => (
+// //               <option key={cat} value={cat}>
+// //                 {cat}
+// //               </option>
 // //             ))}
 // //           </select>
 // //           <select
 // //             value={statusFilter}
-// //             onChange={e => setStatusFilter(e.target.value)}
+// //             onChange={(e) => setStatusFilter(e.target.value)}
 // //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
 // //           >
 // //             <option value="__ALL__">All Status</option>
 // //             <option value="shortage"> Shortage</option>
+// //             <option value="damaged"> Damage</option>
 // //             <option value="low"> Low Stock</option>
 // //             <option value="reorder"> Reorder</option>
+
 // //             <option value="ok"> OK</option>
+// //           </select>
+// //           <select
+// //             value={statusFilter}
+// //             onChange={(e) => setStatusFilter(e.target.value)}
+// //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
+// //           >
+// //             <option value="company">Vendors Name</option>
 // //           </select>
 // //           <button
 // //             onClick={() => setFilterLow(!filterLow)}
@@ -174,16 +620,25 @@
 // //           >
 // //             <FiAlertCircle size={13} /> Alerts Only
 // //           </button>
-// //           <span className="ml-auto text-xs text-slate-400 font-medium">{filtered.length} results</span>
+          
+// //           <span className="ml-auto text-xs text-slate-400 font-medium">
+// //             {filtered.length} results
+// //           </span>
 // //         </div>
 // //       </Card>
 
 // //       {/* Stock Table */}
 // //       <Card>
-// //         <CardHeader title="All Stock Items" subtitle="PO = stock increase, SO Invoice = stock decrease" />
+// //         <CardHeader
+// //           title="All Stock Items"
+// //           subtitle="PO = stock increase, SO Invoice = stock decrease"
+// //         />
 // //         {loading ? (
 // //           <div className="text-center py-16">
-// //             <FiRefreshCw size={28} className="animate-spin mx-auto text-teal-500 mb-3" />
+// //             <FiRefreshCw
+// //               size={28}
+// //               className="animate-spin mx-auto text-teal-500 mb-3"
+// //             />
 // //             <p className="text-sm text-slate-400">Fetching stock data...</p>
 // //           </div>
 // //         ) : (
@@ -205,41 +660,81 @@
 // //               </thead>
 // //               <tbody className="divide-y divide-slate-50">
 // //                 {filtered.map((item, idx) => {
-// //                   const avail      = Math.max(0, item.available ?? 0);
-// //                   const reorderQty = item.reorder || 0;   // ✅ reorder field (was backorder)
-// //                   const status     = getItemStatus(item);
+// //                   const avail = Math.max(0, item.available ?? 0);
+// //                   const reorderQty = item.reorder || 0;
+// //                   const status = getItemStatus(item);
 // //                   const hasReorder = reorderQty > 0;
+// //                   // ✅ Calculate damaged qty from ledger remarks
+// //                   const damagedQty = getDamagedQty(item);
+// //                   const hasDamage = damagedQty > 0;
 
 // //                   const rowBg =
-// //                     status === "shortage" ? "bg-red-50/40"    :
-// //                     hasReorder            ? "bg-orange-50/30" :
-// //                     status === "low"      ? "bg-amber-50/30"  :
-// //                     status === "reorder"  ? "bg-orange-50/20" : "";
+// //                     status === "shortage"
+// //                       ? "bg-red-50/40"
+// //                       : hasReorder
+// //                         ? "bg-orange-50/30"
+// //                         : status === "low"
+// //                           ? "bg-amber-50/30"
+// //                           : status === "reorder"
+// //                             ? "bg-orange-50/20"
+// //                             : "";
 
 // //                   const availColor =
-// //                     status === "shortage" ? "text-red-500"    :
-// //                     status === "low"      ? "text-amber-600"  :
-// //                     status === "reorder"  ? "text-orange-500" :
-// //                     "text-teal-600";
+// //                     status === "shortage"
+// //                       ? "text-red-500"
+// //                       : status === "low"
+// //                         ? "text-amber-600"
+// //                         : status === "reorder"
+// //                           ? "text-orange-500"
+// //                           : "text-teal-600";
 
 // //                   return (
-// //                     <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}>
-// //                       <td className="px-5 py-3.5 text-slate-400 text-xs font-semibold">{idx + 1}</td>
-// //                       <td className="px-4 py-3.5 text-slate-800 font-medium max-w-xs truncate">{item.description || "—"}</td>
+// //                     <tr
+// //                       key={item.id}
+// //                       className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}
+// //                     >
+// //                       <td className="px-5 py-3.5 text-slate-400 text-xs font-semibold">
+// //                         {idx + 1}
+// //                       </td>
+// //                       <td className="px-4 py-3.5 text-slate-800 font-medium max-w-xs">
+// //                         <div className="truncate">
+// //                           {item.description || "—"}
+// //                         </div>
+// //                         {/* ✅ Damage badge under description */}
+// //                         {hasDamage && (
+// //                           <div className="flex items-center gap-1 mt-1">
+// //                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-600 border border-red-200">
+// //                               <FiAlertTriangle size={9} />
+// //                               {damagedQty} Damaged
+// //                             </span>
+// //                           </div>
+// //                         )}
+// //                       </td>
 // //                       <td className="px-4 py-3.5 text-center">
 // //                         <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono font-medium">
 // //                           {item.productCode || "—"}
 // //                         </span>
 // //                       </td>
-// //                       <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">{item.hsnSac || "—"}</td>
-
-// //                       <td className="px-4 py-3.5 text-center">
-// //                         <span className={`font-black text-base ${availColor}`}>{avail}</span>
+// //                       <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">
+// //                         {item.hsnSac || "—"}
 // //                       </td>
 
-// //                       <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">{item.reserved || 0}</td>
+// //                       <td className="px-4 py-3.5 text-center">
+// //                         <span className={`font-black text-base ${availColor}`}>
+// //                           {avail}
+// //                         </span>
+// //                         {/* ✅ Damaged sub-note under available count */}
+// //                         {hasDamage && (
+// //                           <p className="text-[10px] text-red-400 font-bold mt-0.5 leading-none">
+// //                             +{damagedQty} dmg
+// //                           </p>
+// //                         )}
+// //                       </td>
 
-// //                       {/* ✅ Reorder Qty column — shows pending reorder quantity */}
+// //                       <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">
+// //                         {item.reserved || 0}
+// //                       </td>
+
 // //                       <td className="px-4 py-3.5 text-center">
 // //                         {hasReorder ? (
 // //                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
@@ -250,17 +745,51 @@
 // //                         )}
 // //                       </td>
 
-// //                       <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">{item.unit || "nos"}</td>
+// //                       <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">
+// //                         {item.unit || "nos"}
+// //                       </td>
 
 // //                       <td className="px-4 py-3.5 text-center">
-// //                         {status === "shortage" ? (
-// //                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
+// //                         {/* ✅ Show DAMAGE badge in status column if damage exists */}
+// //                         {hasDamage ? (
+// //                           <div className="flex flex-col items-center gap-1">
+// //                             {status === "shortage" ? (
+// //                               <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">
+// //                                 SHORTAGE
+// //                               </span>
+// //                             ) : status === "low" ? (
+// //                               <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">
+// //                                 LOW
+// //                               </span>
+// //                             ) : status === "reorder" ? (
+// //                               <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
+// //                                 REORDER
+// //                               </span>
+// //                             ) : (
+// //                               <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
+// //                                 OK
+// //                               </span>
+// //                             )}
+// //                             <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+// //                               <FiAlertTriangle size={8} /> DAMAGE
+// //                             </span>
+// //                           </div>
+// //                         ) : status === "shortage" ? (
+// //                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">
+// //                             SHORTAGE
+// //                           </span>
 // //                         ) : status === "low" ? (
-// //                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
+// //                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">
+// //                             LOW
+// //                           </span>
 // //                         ) : status === "reorder" ? (
-// //                           <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
+// //                           <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
+// //                             REORDER
+// //                           </span>
 // //                         ) : (
-// //                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
+// //                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
+// //                             OK
+// //                           </span>
 // //                         )}
 // //                       </td>
 
@@ -277,7 +806,10 @@
 // //                 })}
 // //                 {filtered.length === 0 && (
 // //                   <tr>
-// //                     <td colSpan={10} className="text-center py-14 text-slate-400 text-sm">
+// //                     <td
+// //                       colSpan={10}
+// //                       className="text-center py-14 text-slate-400 text-sm"
+// //                     >
 // //                       {stockItems.length === 0
 // //                         ? "No stock data yet. Upload a PO to add stock."
 // //                         : "No items match your search"}
@@ -298,24 +830,87 @@
 // //           size="lg"
 // //         >
 // //           <div className="space-y-4">
+// //             {/* ✅ Damage alert banner at top of modal if damage exists */}
+// //             {getDamagedQty(ledgerItem) > 0 && (
+// //               <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+// //                 <FiAlertTriangle
+// //                   size={14}
+// //                   className="text-red-500 mt-0.5 flex-shrink-0"
+// //                 />
+// //                 <div>
+// //                   <p className="text-xs font-bold text-red-700">
+// //                     ⚠️ {getDamagedQty(ledgerItem)} Damaged Units Recorded
+// //                   </p>
+// //                   <p className="text-[11px] text-red-600 mt-0.5">
+// //                     These units were received damaged and are{" "}
+// //                     <strong>not counted</strong> in available stock. Pending
+// //                     vendor replacement.
+// //                   </p>
+// //                 </div>
+// //               </div>
+// //             )}
+
 // //             <div className="grid grid-cols-4 gap-3">
 // //               {[
-// //                 { label: "Available",   value: Math.max(0, ledgerItem.available ?? 0), color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600" },
-// //                 { label: "Reserved",    value: ledgerItem.reserved  || 0, color: "text-amber-600" },
-// //                 { label: "Reorder Qty", value: ledgerItem.reorder   || 0, color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400" },
-// //                 { label: "Part No.",    value: ledgerItem.productCode || "—", color: "text-slate-700" },
+// //                 {
+// //                   label: "Available",
+// //                   value: Math.max(0, ledgerItem.available ?? 0),
+// //                   color:
+// //                     (ledgerItem.available ?? 0) <= 0
+// //                       ? "text-red-600"
+// //                       : "text-teal-600",
+// //                 },
+// //                 {
+// //                   label: "Reserved",
+// //                   value: ledgerItem.reserved || 0,
+// //                   color: "text-amber-600",
+// //                 },
+// //                 {
+// //                   label: "Reorder Qty",
+// //                   value: ledgerItem.reorder || 0,
+// //                   color:
+// //                     (ledgerItem.reorder || 0) > 0
+// //                       ? "text-orange-600"
+// //                       : "text-slate-400",
+// //                 },
+// //                 {
+// //                   label: "Damaged",
+// //                   value: getDamagedQty(ledgerItem) || 0,
+// //                   color:
+// //                     getDamagedQty(ledgerItem) > 0
+// //                       ? "text-red-600"
+// //                       : "text-slate-400",
+// //                 },
 // //               ].map(({ label, value, color }) => (
-// //                 <div key={label} className={`rounded-lg p-3 text-center ${label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0 ? "bg-orange-50 border border-orange-200" : "bg-slate-50"}`}>
-// //                   <p className="text-[10px] text-slate-400 uppercase font-bold">{label}</p>
-// //                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>{value}</p>
+// //                 <div
+// //                   key={label}
+// //                   className={`rounded-lg p-3 text-center ${
+// //                     label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0
+// //                       ? "bg-orange-50 border border-orange-200"
+// //                       : label === "Damaged" && getDamagedQty(ledgerItem) > 0
+// //                         ? "bg-red-50 border border-red-200"
+// //                         : "bg-slate-50"
+// //                   }`}
+// //                 >
+// //                   <p className="text-[10px] text-slate-400 uppercase font-bold">
+// //                     {label}
+// //                   </p>
+// //                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>
+// //                     {value}
+// //                   </p>
 // //                 </div>
 // //               ))}
 // //             </div>
 
 // //             {(ledgerItem.reorder || 0) > 0 && (
 // //               <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-// //                 <p className="text-xs font-bold text-orange-700">🔄 Reorder: {ledgerItem.reorder} units pending</p>
-// //                 <p className="text-xs text-orange-600 mt-0.5">Stock is below reorder level. {ledgerItem.reorder} units need to be procured via PO.</p>
+// //                 <p className="text-xs font-bold text-orange-700">
+// //                   🔄 Reorder: {ledgerItem.reorder} units pending
+// //                 </p>
+// //                 <p className="text-xs text-orange-600 mt-0.5">
+// //                   Stock is below reorder level. {ledgerItem.reorder} units need
+// //                   to be procured via PO.
+// //                 </p>
 // //               </div>
 // //             )}
 
@@ -325,30 +920,80 @@
 // //               </p>
 // //               {(ledgerItem.ledger || []).length > 0 ? (
 // //                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-// //                   {[...(ledgerItem.ledger || [])].reverse().map((l, i) => (
-// //                     <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50">
-// //                       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" ? "bg-emerald-100" : "bg-red-100"}`}>
-// //                         {l.type === "IN"
-// //                           ? <FiArrowDown size={13} className="text-emerald-600" />
-// //                           : <FiArrowUp   size={13} className="text-red-600" />}
-// //                       </div>
-// //                       <div className="flex-1 min-w-0">
-// //                         <div className="flex items-center gap-2">
-// //                           <span className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}>
-// //                             {l.type} {l.qty} units
-// //                           </span>
-// //                           <span className="text-[10px] text-slate-400">· Ref: {l.ref || "—"}</span>
+// //                   {[...(ledgerItem.ledger || [])].reverse().map((l, i) => {
+// //                     // ✅ Parse damaged qty from remarks
+// //                     const dmgMatch = l.remarks?.match(/Damage:\s*(\d+)/i);
+// //                     const dmgQty = dmgMatch ? parseInt(dmgMatch[1], 10) : 0;
+// //                     const hasDmg = l.type === "IN" && dmgQty > 0;
+
+// //                     return (
+// //                       <div
+// //                         key={i}
+// //                         className={`flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 ${hasDmg ? "border-red-100 bg-red-50/30" : "border-slate-100"}`}
+// //                       >
+// //                         <div
+// //                           className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" ? "bg-emerald-100" : "bg-red-100"}`}
+// //                         >
+// //                           {l.type === "IN" ? (
+// //                             <FiArrowDown
+// //                               size={13}
+// //                               className="text-emerald-600"
+// //                             />
+// //                           ) : (
+// //                             <FiArrowUp size={13} className="text-red-600" />
+// //                           )}
 // //                         </div>
-// //                         <p className="text-[11px] text-slate-500 mt-0.5">
-// //                           Balance: <span className="font-bold">{Math.max(0, l.balance)}</span> · By: {l.by || "—"}
-// //                         </p>
+// //                         <div className="flex-1 min-w-0">
+// //                           <div className="flex items-center gap-2 flex-wrap">
+// //                             <span
+// //                               className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}
+// //                             >
+// //                               {l.type} {l.qty} units
+// //                             </span>
+// //                             {/* ✅ Inline damage note in ledger row */}
+// //                             {hasDmg && (
+// //                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">
+// //                                 <FiAlertTriangle size={8} />
+// //                                 {dmgQty} damaged
+// //                               </span>
+// //                             )}
+// //                             <span className="text-[10px] text-slate-400">
+// //                               · Ref: {l.ref || "—"}
+// //                             </span>
+// //                           </div>
+// //                           <p className="text-[11px] text-slate-500 mt-0.5">
+// //                             Balance:{" "}
+// //                             <span className="font-bold">
+// //                               {Math.max(0, l.balance)}
+// //                             </span>{" "}
+// //                             · By: {l.by || "—"}
+// //                           </p>
+// //                           {/* ✅ Show full remarks if they contain damage details */}
+// //                           {hasDmg && l.remarks && (
+// //                             <p className="text-[10px] text-red-500 mt-0.5 italic">
+// //                               {l.remarks}
+// //                             </p>
+// //                           )}
+// //                         </div>
+// //                         <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
+// //                           <div>
+// //                             {l.date
+// //                               ? new Date(l.date).toLocaleDateString("en-IN")
+// //                               : "—"}
+// //                           </div>
+// //                           <div>
+// //                             {l.date
+// //                               ? new Date(l.date).toLocaleTimeString("en-IN", {
+// //                                   hour: "2-digit",
+// //                                   minute: "2-digit",
+// //                                   hour12: true,
+// //                                 })
+// //                               : ""}
+// //                           </div>
+// //                         </span>
 // //                       </div>
-// //                       <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
-// //                         <div>{l.date ? new Date(l.date).toLocaleDateString("en-IN") : "—"}</div>
-// //                         <div>{l.date ? new Date(l.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : ""}</div>
-// //                       </span>
-// //                     </div>
-// //                   ))}
+// //                     );
+// //                   })}
 // //                 </div>
 // //               ) : (
 // //                 <div className="text-center py-8 text-slate-400">
@@ -363,6 +1008,7 @@
 // //     </div>
 // //   );
 // // }
+
 
 // import { useState, useMemo, useEffect } from "react";
 // import {
@@ -397,7 +1043,9 @@
 //   const [categoryFilter, setCategoryFilter] = useState("__ALL__");
 //   const [statusFilter, setStatusFilter] = useState("__ALL__");
 //   const [categoryList, setCategoryList] = useState([]);
-// const [vendorFilter, setVendorFilter] = useState("__ALL__");
+//   const [vendorFilter, setVendorFilter] = useState("__ALL__");   // ✅ NEW
+//   const [vendorList, setVendorList] = useState([]);              // ✅ NEW
+
 //   useEffect(() => {
 //     let unsubStock = null;
 
@@ -444,6 +1092,16 @@
 //         });
 //         setStockItems(data);
 //         setLoading(false);
+
+//         // ✅ Extract unique vendor names from all ledger "by" fields
+//         const vendors = [
+//           ...new Set(
+//             data
+//               .flatMap((item) => (item.ledger || []).map((l) => l.by))
+//               .filter(Boolean)
+//           ),
+//         ].sort();
+//         setVendorList(vendors);
 //       });
 //     });
 
@@ -466,7 +1124,6 @@
 //   const reorderCount = stockItems.filter(
 //     (s) => getItemStatus(s) === "reorder",
 //   ).length;
-//   const reorderQtyCount = stockItems.filter((s) => (s.reorder || 0) > 0).length;
 
 //   // ✅ Total damaged units across all ledger entries
 //   const getDamagedQty = (item) => {
@@ -491,21 +1148,19 @@
 //       const matchCategory =
 //         categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
 //       const matchAlert = !filterLow || getItemStatus(s) !== "ok";
-//       // const matchStatus   = statusFilter === "__ALL__" || getItemStatus(s) === statusFilter;
 //       const matchStatus =
 //         statusFilter === "__ALL__" ||
 //         (statusFilter === "damaged"
 //           ? getDamagedQty(s) > 0
 //           : getItemStatus(s) === statusFilter);
-//       return matchSearch && matchCategory && matchAlert && matchStatus;
+//       // ✅ Vendor filter: check if any ledger entry has matching "by" field
+//       const matchVendor =
+//         vendorFilter === "__ALL__" ||
+//         (s.ledger || []).some((l) => l.by === vendorFilter);
+//       return matchSearch && matchCategory && matchAlert && matchStatus && matchVendor;
 //     });
-//   }, [stockItems, search, filterLow, categoryFilter, statusFilter]);
+//   }, [stockItems, search, filterLow, categoryFilter, statusFilter, vendorFilter]);
 
-//   const vendors = [...new Set(
-//   data.flatMap(item => (item.ledger || []).map(l => l.by).filter(Boolean))
-// )].sort();
-// // Store in state — add this state: const [vendorList, setVendorList] = useState([]);
-// setVendorList(vendors);
 //   return (
 //     <div className="space-y-5">
 //       <div>
@@ -566,6 +1221,7 @@
 //       {/* Filters */}
 //       <Card>
 //         <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+//           {/* Search */}
 //           <div className="flex-1 min-w-[180px] max-w-xs relative">
 //             <FiSearch
 //               size={14}
@@ -578,6 +1234,8 @@
 //               className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
 //             />
 //           </div>
+
+//           {/* Category Filter */}
 //           <select
 //             value={categoryFilter}
 //             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -590,26 +1248,36 @@
 //               </option>
 //             ))}
 //           </select>
+
+//           {/* Status Filter */}
 //           <select
 //             value={statusFilter}
 //             onChange={(e) => setStatusFilter(e.target.value)}
 //             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
 //           >
 //             <option value="__ALL__">All Status</option>
-//             <option value="shortage"> Shortage</option>
-//             <option value="damaged"> Damage</option>
-//             <option value="low"> Low Stock</option>
-//             <option value="reorder"> Reorder</option>
+//             <option value="shortage">Shortage</option>
+//             <option value="damaged">Damage</option>
+//             <option value="low">Low Stock</option>
+//             <option value="reorder">Reorder</option>
+//             <option value="ok">OK</option>
+//           </select>
 
-//             <option value="ok"> OK</option>
-//           </select>
-//           <select
-//             value={statusFilter}
-//             onChange={(e) => setStatusFilter(e.target.value)}
-//             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
+//           {/* ✅ Vendor Filter — populated from real ledger data */}
+//           {/* <select
+//             value={vendorFilter}
+//             onChange={(e) => setVendorFilter(e.target.value)}
+//             className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
 //           >
-//             <option value="company">Vendors Name</option>
-//           </select>
+//             <option value="__ALL__">All Vendors</option>
+//             {vendorList.map((v) => (
+//               <option key={v} value={v}>
+//                 {v}
+//               </option>
+//             ))}
+//           </select> */}
+
+//           {/* Alerts Only Toggle */}
 //           <button
 //             onClick={() => setFilterLow(!filterLow)}
 //             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
@@ -620,7 +1288,7 @@
 //           >
 //             <FiAlertCircle size={13} /> Alerts Only
 //           </button>
-          
+
 //           <span className="ml-auto text-xs text-slate-400 font-medium">
 //             {filtered.length} results
 //           </span>
@@ -642,10 +1310,10 @@
 //             <p className="text-sm text-slate-400">Fetching stock data...</p>
 //           </div>
 //         ) : (
-//           <div className="overflow-x-auto">
+//           <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)]">
 //             <table className="w-full text-sm">
-//               <thead>
-//                 <tr className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+//               <thead className="sticky top-0 z-10 bg-white">
+//                 <tr className="bg-slate-50 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-200">
 //                   <th className="px-5 py-3 text-left">No</th>
 //                   <th className="px-4 py-3 text-left">Description</th>
 //                   <th className="px-4 py-3 text-center">Part No.</th>
@@ -664,7 +1332,6 @@
 //                   const reorderQty = item.reorder || 0;
 //                   const status = getItemStatus(item);
 //                   const hasReorder = reorderQty > 0;
-//                   // ✅ Calculate damaged qty from ledger remarks
 //                   const damagedQty = getDamagedQty(item);
 //                   const hasDamage = damagedQty > 0;
 
@@ -697,10 +1364,7 @@
 //                         {idx + 1}
 //                       </td>
 //                       <td className="px-4 py-3.5 text-slate-800 font-medium max-w-xs">
-//                         <div className="truncate">
-//                           {item.description || "—"}
-//                         </div>
-//                         {/* ✅ Damage badge under description */}
+//                         <div className="truncate">{item.description || "—"}</div>
 //                         {hasDamage && (
 //                           <div className="flex items-center gap-1 mt-1">
 //                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-600 border border-red-200">
@@ -718,23 +1382,19 @@
 //                       <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">
 //                         {item.hsnSac || "—"}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center">
 //                         <span className={`font-black text-base ${availColor}`}>
 //                           {avail}
 //                         </span>
-//                         {/* ✅ Damaged sub-note under available count */}
 //                         {hasDamage && (
 //                           <p className="text-[10px] text-red-400 font-bold mt-0.5 leading-none">
 //                             +{damagedQty} dmg
 //                           </p>
 //                         )}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">
 //                         {item.reserved || 0}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center">
 //                         {hasReorder ? (
 //                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
@@ -744,55 +1404,35 @@
 //                           <span className="text-slate-300 text-xs">—</span>
 //                         )}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">
 //                         {item.unit || "nos"}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center">
-//                         {/* ✅ Show DAMAGE badge in status column if damage exists */}
 //                         {hasDamage ? (
 //                           <div className="flex flex-col items-center gap-1">
 //                             {status === "shortage" ? (
-//                               <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">
-//                                 SHORTAGE
-//                               </span>
+//                               <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
 //                             ) : status === "low" ? (
-//                               <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">
-//                                 LOW
-//                               </span>
+//                               <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
 //                             ) : status === "reorder" ? (
-//                               <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
-//                                 REORDER
-//                               </span>
+//                               <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
 //                             ) : (
-//                               <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
-//                                 OK
-//                               </span>
+//                               <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
 //                             )}
 //                             <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-1">
 //                               <FiAlertTriangle size={8} /> DAMAGE
 //                             </span>
 //                           </div>
 //                         ) : status === "shortage" ? (
-//                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">
-//                             SHORTAGE
-//                           </span>
+//                           <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
 //                         ) : status === "low" ? (
-//                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">
-//                             LOW
-//                           </span>
+//                           <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
 //                         ) : status === "reorder" ? (
-//                           <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
-//                             REORDER
-//                           </span>
+//                           <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
 //                         ) : (
-//                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
-//                             OK
-//                           </span>
+//                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
 //                         )}
 //                       </td>
-
 //                       <td className="px-4 py-3.5 text-center">
 //                         <button
 //                           onClick={() => setLedgerItem(item)}
@@ -806,10 +1446,7 @@
 //                 })}
 //                 {filtered.length === 0 && (
 //                   <tr>
-//                     <td
-//                       colSpan={10}
-//                       className="text-center py-14 text-slate-400 text-sm"
-//                     >
+//                     <td colSpan={10} className="text-center py-14 text-slate-400 text-sm">
 //                       {stockItems.length === 0
 //                         ? "No stock data yet. Upload a PO to add stock."
 //                         : "No items match your search"}
@@ -830,21 +1467,16 @@
 //           size="lg"
 //         >
 //           <div className="space-y-4">
-//             {/* ✅ Damage alert banner at top of modal if damage exists */}
 //             {getDamagedQty(ledgerItem) > 0 && (
 //               <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
-//                 <FiAlertTriangle
-//                   size={14}
-//                   className="text-red-500 mt-0.5 flex-shrink-0"
-//                 />
+//                 <FiAlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
 //                 <div>
 //                   <p className="text-xs font-bold text-red-700">
 //                     ⚠️ {getDamagedQty(ledgerItem)} Damaged Units Recorded
 //                   </p>
 //                   <p className="text-[11px] text-red-600 mt-0.5">
 //                     These units were received damaged and are{" "}
-//                     <strong>not counted</strong> in available stock. Pending
-//                     vendor replacement.
+//                     <strong>not counted</strong> in available stock. Pending vendor replacement.
 //                   </p>
 //                 </div>
 //               </div>
@@ -855,10 +1487,7 @@
 //                 {
 //                   label: "Available",
 //                   value: Math.max(0, ledgerItem.available ?? 0),
-//                   color:
-//                     (ledgerItem.available ?? 0) <= 0
-//                       ? "text-red-600"
-//                       : "text-teal-600",
+//                   color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600",
 //                 },
 //                 {
 //                   label: "Reserved",
@@ -868,18 +1497,12 @@
 //                 {
 //                   label: "Reorder Qty",
 //                   value: ledgerItem.reorder || 0,
-//                   color:
-//                     (ledgerItem.reorder || 0) > 0
-//                       ? "text-orange-600"
-//                       : "text-slate-400",
+//                   color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400",
 //                 },
 //                 {
 //                   label: "Damaged",
 //                   value: getDamagedQty(ledgerItem) || 0,
-//                   color:
-//                     getDamagedQty(ledgerItem) > 0
-//                       ? "text-red-600"
-//                       : "text-slate-400",
+//                   color: getDamagedQty(ledgerItem) > 0 ? "text-red-600" : "text-slate-400",
 //                 },
 //               ].map(({ label, value, color }) => (
 //                 <div
@@ -892,12 +1515,8 @@
 //                         : "bg-slate-50"
 //                   }`}
 //                 >
-//                   <p className="text-[10px] text-slate-400 uppercase font-bold">
-//                     {label}
-//                   </p>
-//                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>
-//                     {value}
-//                   </p>
+//                   <p className="text-[10px] text-slate-400 uppercase font-bold">{label}</p>
+//                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>{value}</p>
 //                 </div>
 //               ))}
 //             </div>
@@ -908,8 +1527,7 @@
 //                   🔄 Reorder: {ledgerItem.reorder} units pending
 //                 </p>
 //                 <p className="text-xs text-orange-600 mt-0.5">
-//                   Stock is below reorder level. {ledgerItem.reorder} units need
-//                   to be procured via PO.
+//                   Stock is below reorder level. {ledgerItem.reorder} units need to be procured via PO.
 //                 </p>
 //               </div>
 //             )}
@@ -921,7 +1539,6 @@
 //               {(ledgerItem.ledger || []).length > 0 ? (
 //                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
 //                   {[...(ledgerItem.ledger || [])].reverse().map((l, i) => {
-//                     // ✅ Parse damaged qty from remarks
 //                     const dmgMatch = l.remarks?.match(/Damage:\s*(\d+)/i);
 //                     const dmgQty = dmgMatch ? parseInt(dmgMatch[1], 10) : 0;
 //                     const hasDmg = l.type === "IN" && dmgQty > 0;
@@ -935,52 +1552,33 @@
 //                           className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" ? "bg-emerald-100" : "bg-red-100"}`}
 //                         >
 //                           {l.type === "IN" ? (
-//                             <FiArrowDown
-//                               size={13}
-//                               className="text-emerald-600"
-//                             />
+//                             <FiArrowDown size={13} className="text-emerald-600" />
 //                           ) : (
 //                             <FiArrowUp size={13} className="text-red-600" />
 //                           )}
 //                         </div>
 //                         <div className="flex-1 min-w-0">
 //                           <div className="flex items-center gap-2 flex-wrap">
-//                             <span
-//                               className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}
-//                             >
+//                             <span className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}>
 //                               {l.type} {l.qty} units
 //                             </span>
-//                             {/* ✅ Inline damage note in ledger row */}
 //                             {hasDmg && (
 //                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">
 //                                 <FiAlertTriangle size={8} />
 //                                 {dmgQty} damaged
 //                               </span>
 //                             )}
-//                             <span className="text-[10px] text-slate-400">
-//                               · Ref: {l.ref || "—"}
-//                             </span>
+//                             <span className="text-[10px] text-slate-400">· Ref: {l.ref || "—"}</span>
 //                           </div>
 //                           <p className="text-[11px] text-slate-500 mt-0.5">
-//                             Balance:{" "}
-//                             <span className="font-bold">
-//                               {Math.max(0, l.balance)}
-//                             </span>{" "}
-//                             · By: {l.by || "—"}
+//                             Balance: <span className="font-bold">{Math.max(0, l.balance)}</span> · By: {l.by || "—"}
 //                           </p>
-//                           {/* ✅ Show full remarks if they contain damage details */}
 //                           {hasDmg && l.remarks && (
-//                             <p className="text-[10px] text-red-500 mt-0.5 italic">
-//                               {l.remarks}
-//                             </p>
+//                             <p className="text-[10px] text-red-500 mt-0.5 italic">{l.remarks}</p>
 //                           )}
 //                         </div>
 //                         <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
-//                           <div>
-//                             {l.date
-//                               ? new Date(l.date).toLocaleDateString("en-IN")
-//                               : "—"}
-//                           </div>
+//                           <div>{l.date ? new Date(l.date).toLocaleDateString("en-IN") : "—"}</div>
 //                           <div>
 //                             {l.date
 //                               ? new Date(l.date).toLocaleTimeString("en-IN", {
@@ -1009,42 +1607,34 @@
 //   );
 // }
 
-
 import { useState, useMemo, useEffect } from "react";
 import {
-  FiSearch,
-  FiEye,
-  FiClock,
-  FiArrowUp,
-  FiArrowDown,
-  FiAlertCircle,
-  FiRefreshCw,
-  FiAlertTriangle,
+  FiSearch, FiEye, FiClock, FiArrowUp, FiArrowDown,
+  FiAlertCircle, FiRefreshCw, FiAlertTriangle,
 } from "react-icons/fi";
 import { Card, CardHeader, Modal } from "../SalesComponent/ui/index";
 import { db } from "../../firebase";
 import { collection, onSnapshot, getDocs } from "firebase/firestore";
 
-// ✅ Same status logic as LowStockManagement & Dashboard
 const getStockStatus = (available, lowLevel, reorderLevel) => {
-  if (available <= 0) return "shortage";
+  if (available <= 0)             return "shortage";
   if (available < lowLevel * 0.5) return "shortage";
-  if (available < lowLevel) return "low";
-  if (available < reorderLevel) return "reorder";
+  if (available < lowLevel)       return "low";
+  if (available < reorderLevel)   return "reorder";
   return "ok";
 };
 
 export default function SalesStock() {
-  const [stockItems, setStockItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterLow, setFilterLow] = useState(false);
-  const [ledgerItem, setLedgerItem] = useState(null);
+  const [stockItems,     setStockItems]     = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [search,         setSearch]         = useState("");
+  const [filterLow,      setFilterLow]      = useState(false);
+  const [ledgerItem,     setLedgerItem]     = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("__ALL__");
-  const [statusFilter, setStatusFilter] = useState("__ALL__");
-  const [categoryList, setCategoryList] = useState([]);
-  const [vendorFilter, setVendorFilter] = useState("__ALL__");   // ✅ NEW
-  const [vendorList, setVendorList] = useState([]);              // ✅ NEW
+  const [statusFilter,   setStatusFilter]   = useState("__ALL__");
+  const [categoryList,   setCategoryList]   = useState([]);
+  const [vendorFilter,   setVendorFilter]   = useState("__ALL__");
+  const [vendorList,     setVendorList]     = useState([]);
 
   useEffect(() => {
     let unsubStock = null;
@@ -1058,34 +1648,29 @@ export default function SalesStock() {
         cats.push(cat.name);
         (cat.subcategories || []).forEach((sub) => {
           const key = (sub.name || "").trim().toLowerCase();
-          if (key)
-            thresholdMap[key] = {
-              lowLevel: sub.lowLevel ?? 100,
-              reorderLevel: sub.reorderLevel ?? 150,
-              categoryName: cat.name,
-            };
+          if (key) thresholdMap[key] = {
+            lowLevel:     sub.lowLevel     ?? 100,
+            reorderLevel: sub.reorderLevel ?? 150,
+            categoryName: cat.name,
+          };
         });
       });
 
       cats.sort((a, b) => {
         const order = (n = "") =>
-          n.toUpperCase().includes("PIPE")
-            ? 0
-            : n.toUpperCase().includes("FITTING")
-              ? 1
-              : 2;
+          n.toUpperCase().includes("PIPE") ? 0 : n.toUpperCase().includes("FITTING") ? 1 : 2;
         return order(a) - order(b) || a.localeCompare(b);
       });
       setCategoryList(cats);
 
       unsubStock = onSnapshot(collection(db, "stock"), (snapshot) => {
         const data = snapshot.docs.map((d) => {
-          const item = { id: d.id, ...d.data() };
-          const key = (item.description || "").trim().toLowerCase();
+          const item  = { id: d.id, ...d.data() };
+          const key   = (item.description || "").trim().toLowerCase();
           const thresh = thresholdMap[key] || {};
           return {
             ...item,
-            lowLevel: item.lowLevel ?? thresh.lowLevel ?? 100,
+            lowLevel:     item.lowLevel     ?? thresh.lowLevel     ?? 100,
             reorderLevel: item.reorderLevel ?? thresh.reorderLevel ?? 150,
             categoryName: thresh.categoryName ?? "Uncategorized",
           };
@@ -1093,67 +1678,38 @@ export default function SalesStock() {
         setStockItems(data);
         setLoading(false);
 
-        // ✅ Extract unique vendor names from all ledger "by" fields
         const vendors = [
-          ...new Set(
-            data
-              .flatMap((item) => (item.ledger || []).map((l) => l.by))
-              .filter(Boolean)
-          ),
+          ...new Set(data.flatMap((item) => (item.ledger || []).map((l) => l.by)).filter(Boolean)),
         ].sort();
         setVendorList(vendors);
       });
     });
 
-    return () => {
-      if (unsubStock) unsubStock();
-    };
+    return () => { if (unsubStock) unsubStock(); };
   }, []);
 
   const getItemStatus = (item) =>
-    getStockStatus(
-      item.available ?? 0,
-      item.lowLevel ?? 100,
-      item.reorderLevel ?? 150,
-    );
+    getStockStatus(item.available ?? 0, item.lowLevel ?? 100, item.reorderLevel ?? 150);
 
-  const shortageCount = stockItems.filter(
-    (s) => getItemStatus(s) === "shortage",
-  ).length;
-  const lowCount = stockItems.filter((s) => getItemStatus(s) === "low").length;
-  const reorderCount = stockItems.filter(
-    (s) => getItemStatus(s) === "reorder",
-  ).length;
+  // ── FIX 1: Use item.damagedQty field directly (set to 0 when replacement complete) ──
+  // Old: parsed ledger remarks — never cleared when replacement done
+  // New: reads Firestore damagedQty field — cleared to 0 by DebitCreditNotes on settlement
+  const getDamagedQty = (item) => parseFloat(item.damagedQty || 0);
 
-  // ✅ Total damaged units across all ledger entries
-  const getDamagedQty = (item) => {
-    return (item.ledger || []).reduce((sum, l) => {
-      if (
-        l.type === "IN" &&
-        l.remarks &&
-        l.remarks.toLowerCase().includes("damage:")
-      ) {
-        const match = l.remarks.match(/Damage:\s*(\d+)/i);
-        if (match) return sum + parseInt(match[1], 10);
-      }
-      return sum;
-    }, 0);
-  };
+  const shortageCount = stockItems.filter((s) => getItemStatus(s) === "shortage").length;
+  const lowCount      = stockItems.filter((s) => getItemStatus(s) === "low").length;
+  const reorderCount  = stockItems.filter((s) => getItemStatus(s) === "reorder").length;
 
   const filtered = useMemo(() => {
     return stockItems.filter((s) => {
       const matchSearch =
         (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
-        (s.productCode || "").toLowerCase().includes(search.toLowerCase());
-      const matchCategory =
-        categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
-      const matchAlert = !filterLow || getItemStatus(s) !== "ok";
+        (s.productCode  || "").toLowerCase().includes(search.toLowerCase());
+      const matchCategory = categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
+      const matchAlert    = !filterLow || getItemStatus(s) !== "ok";
       const matchStatus =
         statusFilter === "__ALL__" ||
-        (statusFilter === "damaged"
-          ? getDamagedQty(s) > 0
-          : getItemStatus(s) === statusFilter);
-      // ✅ Vendor filter: check if any ledger entry has matching "by" field
+        (statusFilter === "damaged" ? getDamagedQty(s) > 0 : getItemStatus(s) === statusFilter);
       const matchVendor =
         vendorFilter === "__ALL__" ||
         (s.ledger || []).some((l) => l.by === vendorFilter);
@@ -1164,56 +1720,36 @@ export default function SalesStock() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-black text-slate-800 tracking-tight">
-          Stock Management
-        </h2>
+        <h2 className="text-xl font-black text-slate-800 tracking-tight">Stock Management</h2>
         <p className="text-xs text-slate-400 mt-0.5">
-          {loading
-            ? "Loading..."
-            : `${stockItems.length} total SKUs · Live stock levels`}
+          {loading ? "Loading..." : `${stockItems.length} total SKUs · Live stock levels`}
         </p>
       </div>
 
-      {/* ✅ Summary Cards */}
+      {/* Summary Cards */}
       {!loading && (
         <div className="grid grid-cols-5 gap-4">
           <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <p className="text-md text-slate-400 uppercase font-bold">
-              Total SKUs
-            </p>
-            <p className="text-2xl font-black text-slate-800 mt-1">
-              {stockItems.length}
-            </p>
+            <p className="text-md text-slate-400 uppercase font-bold">Total SKUs</p>
+            <p className="text-2xl font-black text-slate-800 mt-1">{stockItems.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-emerald-200 p-4">
-            <p className="text-md text-emerald-500 uppercase font-bold">
-              Available
-            </p>
+            <p className="text-md text-emerald-500 uppercase font-bold">Available</p>
             <p className="text-2xl font-black text-emerald-600 mt-1">
               {stockItems.filter((s) => getItemStatus(s) === "ok").length}
             </p>
           </div>
           <div className="bg-white rounded-xl border border-red-200 p-4">
             <p className="text-md text-red-400 uppercase font-bold">Shortage</p>
-            <p className="text-2xl font-black text-red-600 mt-1">
-              {shortageCount}
-            </p>
+            <p className="text-2xl font-black text-red-600 mt-1">{shortageCount}</p>
           </div>
           <div className="bg-white rounded-xl border border-amber-200 p-4">
-            <p className="text-md text-amber-500 uppercase font-bold">
-              Low Stock
-            </p>
-            <p className="text-2xl font-black text-amber-600 mt-1">
-              {lowCount}
-            </p>
+            <p className="text-md text-amber-500 uppercase font-bold">Low Stock</p>
+            <p className="text-2xl font-black text-amber-600 mt-1">{lowCount}</p>
           </div>
           <div className="bg-white rounded-xl border border-orange-200 p-4">
-            <p className="text-md text-orange-400 uppercase font-bold">
-              Reorder
-            </p>
-            <p className="text-2xl font-black text-orange-600 mt-1">
-              {reorderCount}
-            </p>
+            <p className="text-md text-orange-400 uppercase font-bold">Reorder</p>
+            <p className="text-2xl font-black text-orange-600 mt-1">{reorderCount}</p>
           </div>
         </div>
       )}
@@ -1221,12 +1757,8 @@ export default function SalesStock() {
       {/* Filters */}
       <Card>
         <div className="px-5 py-4 flex flex-wrap items-center gap-3">
-          {/* Search */}
           <div className="flex-1 min-w-[180px] max-w-xs relative">
-            <FiSearch
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
+            <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               placeholder="Search description / part no..."
               value={search}
@@ -1234,27 +1766,13 @@ export default function SalesStock() {
               className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
-          {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
-          >
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]">
             <option value="__ALL__">All Categories</option>
-            {categoryList.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
+            {categoryList.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]"
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[140px]">
             <option value="__ALL__">All Status</option>
             <option value="shortage">Shortage</option>
             <option value="damaged">Damage</option>
@@ -1262,51 +1780,22 @@ export default function SalesStock() {
             <option value="reorder">Reorder</option>
             <option value="ok">OK</option>
           </select>
-
-          {/* ✅ Vendor Filter — populated from real ledger data */}
-          {/* <select
-            value={vendorFilter}
-            onChange={(e) => setVendorFilter(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
-          >
-            <option value="__ALL__">All Vendors</option>
-            {vendorList.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select> */}
-
-          {/* Alerts Only Toggle */}
-          <button
-            onClick={() => setFilterLow(!filterLow)}
+          <button onClick={() => setFilterLow(!filterLow)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
-              filterLow
-                ? "bg-red-500 text-white border-red-500"
-                : "bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600"
-            }`}
-          >
+              filterLow ? "bg-red-500 text-white border-red-500" : "bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600"
+            }`}>
             <FiAlertCircle size={13} /> Alerts Only
           </button>
-
-          <span className="ml-auto text-xs text-slate-400 font-medium">
-            {filtered.length} results
-          </span>
+          <span className="ml-auto text-xs text-slate-400 font-medium">{filtered.length} results</span>
         </div>
       </Card>
 
       {/* Stock Table */}
       <Card>
-        <CardHeader
-          title="All Stock Items"
-          subtitle="PO = stock increase, SO Invoice = stock decrease"
-        />
+        <CardHeader title="All Stock Items" subtitle="PO = stock increase, SO Invoice = stock decrease" />
         {loading ? (
           <div className="text-center py-16">
-            <FiRefreshCw
-              size={28}
-              className="animate-spin mx-auto text-teal-500 mb-3"
-            />
+            <FiRefreshCw size={28} className="animate-spin mx-auto text-teal-500 mb-3" />
             <p className="text-sm text-slate-400">Fetching stock data...</p>
           </div>
         ) : (
@@ -1328,41 +1817,27 @@ export default function SalesStock() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((item, idx) => {
-                  const avail = Math.max(0, item.available ?? 0);
+                  const avail      = Math.max(0, item.available ?? 0);
                   const reorderQty = item.reorder || 0;
-                  const status = getItemStatus(item);
+                  const status     = getItemStatus(item);
                   const hasReorder = reorderQty > 0;
-                  const damagedQty = getDamagedQty(item);
-                  const hasDamage = damagedQty > 0;
+                  const damagedQty = getDamagedQty(item); // ✅ reads item.damagedQty directly
+                  const hasDamage  = damagedQty > 0;
 
                   const rowBg =
-                    status === "shortage"
-                      ? "bg-red-50/40"
-                      : hasReorder
-                        ? "bg-orange-50/30"
-                        : status === "low"
-                          ? "bg-amber-50/30"
-                          : status === "reorder"
-                            ? "bg-orange-50/20"
-                            : "";
+                    status === "shortage" ? "bg-red-50/40"    :
+                    hasReorder            ? "bg-orange-50/30" :
+                    status === "low"      ? "bg-amber-50/30"  :
+                    status === "reorder"  ? "bg-orange-50/20" : "";
 
                   const availColor =
-                    status === "shortage"
-                      ? "text-red-500"
-                      : status === "low"
-                        ? "text-amber-600"
-                        : status === "reorder"
-                          ? "text-orange-500"
-                          : "text-teal-600";
+                    status === "shortage" ? "text-red-500"    :
+                    status === "low"      ? "text-amber-600"  :
+                    status === "reorder"  ? "text-orange-500" : "text-teal-600";
 
                   return (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}
-                    >
-                      <td className="px-5 py-3.5 text-slate-400 text-xs font-semibold">
-                        {idx + 1}
-                      </td>
+                    <tr key={item.id} className={`hover:bg-slate-50/60 transition-colors ${rowBg}`}>
+                      <td className="px-5 py-3.5 text-slate-400 text-xs font-semibold">{idx + 1}</td>
                       <td className="px-4 py-3.5 text-slate-800 font-medium max-w-xs">
                         <div className="truncate">{item.description || "—"}</div>
                         {hasDamage && (
@@ -1379,22 +1854,14 @@ export default function SalesStock() {
                           {item.productCode || "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">
-                        {item.hsnSac || "—"}
-                      </td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-500 font-mono">{item.hsnSac || "—"}</td>
                       <td className="px-4 py-3.5 text-center">
-                        <span className={`font-black text-base ${availColor}`}>
-                          {avail}
-                        </span>
+                        <span className={`font-black text-base ${availColor}`}>{avail}</span>
                         {hasDamage && (
-                          <p className="text-[10px] text-red-400 font-bold mt-0.5 leading-none">
-                            +{damagedQty} dmg
-                          </p>
+                          <p className="text-[10px] text-red-400 font-bold mt-0.5 leading-none">+{damagedQty} dmg</p>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">
-                        {item.reserved || 0}
-                      </td>
+                      <td className="px-4 py-3.5 text-center text-amber-600 font-semibold">{item.reserved || 0}</td>
                       <td className="px-4 py-3.5 text-center">
                         {hasReorder ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-50 text-orange-700 border border-orange-200">
@@ -1404,40 +1871,27 @@ export default function SalesStock() {
                           <span className="text-slate-300 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">
-                        {item.unit || "nos"}
-                      </td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-400 uppercase">{item.unit || "nos"}</td>
                       <td className="px-4 py-3.5 text-center">
                         {hasDamage ? (
                           <div className="flex flex-col items-center gap-1">
-                            {status === "shortage" ? (
-                              <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
-                            ) : status === "low" ? (
-                              <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
-                            ) : status === "reorder" ? (
-                              <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
-                            ) : (
-                              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
-                            )}
+                            {status === "shortage" ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
+                             : status === "low"     ? <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
+                             : status === "reorder" ? <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
+                             : <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>}
                             <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-1">
                               <FiAlertTriangle size={8} /> DAMAGE
                             </span>
                           </div>
-                        ) : status === "shortage" ? (
-                          <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
-                        ) : status === "low" ? (
-                          <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
-                        ) : status === "reorder" ? (
-                          <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
-                        ) : (
-                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
-                        )}
+                        ) : status === "shortage" ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full">SHORTAGE</span>
+                          : status === "low"       ? <span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-1 rounded-full">LOW</span>
+                          : status === "reorder"   ? <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full">REORDER</span>
+                          : <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">OK</span>
+                        }
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        <button
-                          onClick={() => setLedgerItem(item)}
-                          className="flex items-center gap-1 mx-auto text-teal-600 hover:text-teal-800 text-xs font-semibold bg-teal-50 hover:bg-teal-100 px-2.5 py-1.5 rounded-lg transition-colors"
-                        >
+                        <button onClick={() => setLedgerItem(item)}
+                          className="flex items-center gap-1 mx-auto text-teal-600 hover:text-teal-800 text-xs font-semibold bg-teal-50 hover:bg-teal-100 px-2.5 py-1.5 rounded-lg transition-colors">
                           <FiEye size={12} /> View
                         </button>
                       </td>
@@ -1447,9 +1901,7 @@ export default function SalesStock() {
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={10} className="text-center py-14 text-slate-400 text-sm">
-                      {stockItems.length === 0
-                        ? "No stock data yet. Upload a PO to add stock."
-                        : "No items match your search"}
+                      {stockItems.length === 0 ? "No stock data yet. Upload a PO to add stock." : "No items match your search"}
                     </td>
                   </tr>
                 )}
@@ -1471,66 +1923,28 @@ export default function SalesStock() {
               <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <FiAlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-red-700">
-                    ⚠️ {getDamagedQty(ledgerItem)} Damaged Units Recorded
-                  </p>
-                  <p className="text-[11px] text-red-600 mt-0.5">
-                    These units were received damaged and are{" "}
-                    <strong>not counted</strong> in available stock. Pending vendor replacement.
-                  </p>
+                  <p className="text-xs font-bold text-red-700">⚠️ {getDamagedQty(ledgerItem)} Damaged Units Pending Replacement</p>
+                  <p className="text-[11px] text-red-600 mt-0.5">These units are tracked for vendor follow-up. Pending debit note settlement.</p>
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-4 gap-3">
               {[
-                {
-                  label: "Available",
-                  value: Math.max(0, ledgerItem.available ?? 0),
-                  color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600",
-                },
-                {
-                  label: "Reserved",
-                  value: ledgerItem.reserved || 0,
-                  color: "text-amber-600",
-                },
-                {
-                  label: "Reorder Qty",
-                  value: ledgerItem.reorder || 0,
-                  color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400",
-                },
-                {
-                  label: "Damaged",
-                  value: getDamagedQty(ledgerItem) || 0,
-                  color: getDamagedQty(ledgerItem) > 0 ? "text-red-600" : "text-slate-400",
-                },
+                { label: "Available",   value: Math.max(0, ledgerItem.available ?? 0), color: (ledgerItem.available ?? 0) <= 0 ? "text-red-600" : "text-teal-600" },
+                { label: "Reserved",    value: ledgerItem.reserved || 0,               color: "text-amber-600" },
+                { label: "Reorder Qty", value: ledgerItem.reorder  || 0,               color: (ledgerItem.reorder || 0) > 0 ? "text-orange-600" : "text-slate-400" },
+                { label: "Damaged",     value: getDamagedQty(ledgerItem) || 0,         color: getDamagedQty(ledgerItem) > 0 ? "text-red-600" : "text-slate-400" },
               ].map(({ label, value, color }) => (
-                <div
-                  key={label}
-                  className={`rounded-lg p-3 text-center ${
-                    label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0
-                      ? "bg-orange-50 border border-orange-200"
-                      : label === "Damaged" && getDamagedQty(ledgerItem) > 0
-                        ? "bg-red-50 border border-red-200"
-                        : "bg-slate-50"
-                  }`}
-                >
+                <div key={label} className={`rounded-lg p-3 text-center ${
+                  label === "Reorder Qty" && (ledgerItem.reorder || 0) > 0 ? "bg-orange-50 border border-orange-200" :
+                  label === "Damaged" && getDamagedQty(ledgerItem) > 0     ? "bg-red-50 border border-red-200"       : "bg-slate-50"
+                }`}>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">{label}</p>
                   <p className={`text-xl font-black mt-0.5 ${color} break-all`}>{value}</p>
                 </div>
               ))}
             </div>
-
-            {(ledgerItem.reorder || 0) > 0 && (
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-xs font-bold text-orange-700">
-                  🔄 Reorder: {ledgerItem.reorder} units pending
-                </p>
-                <p className="text-xs text-orange-600 mt-0.5">
-                  Stock is below reorder level. {ledgerItem.reorder} units need to be procured via PO.
-                </p>
-              </div>
-            )}
 
             <div>
               <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
@@ -1540,54 +1954,44 @@ export default function SalesStock() {
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                   {[...(ledgerItem.ledger || [])].reverse().map((l, i) => {
                     const dmgMatch = l.remarks?.match(/Damage:\s*(\d+)/i);
-                    const dmgQty = dmgMatch ? parseInt(dmgMatch[1], 10) : 0;
-                    const hasDmg = l.type === "IN" && dmgQty > 0;
+                    const dmgQty   = dmgMatch ? parseInt(dmgMatch[1], 10) : 0;
+                    const hasDmg   = dmgQty > 0;
+                    const isReplacementIn = l.type === "replacement-in";
 
                     return (
-                      <div
-                        key={i}
-                        className={`flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 ${hasDmg ? "border-red-100 bg-red-50/30" : "border-slate-100"}`}
-                      >
-                        <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" ? "bg-emerald-100" : "bg-red-100"}`}
-                        >
-                          {l.type === "IN" ? (
-                            <FiArrowDown size={13} className="text-emerald-600" />
-                          ) : (
-                            <FiArrowUp size={13} className="text-red-600" />
-                          )}
+                      <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 ${
+                        hasDmg         ? "border-red-100 bg-red-50/30"     :
+                        isReplacementIn ? "border-emerald-100 bg-emerald-50/30" : "border-slate-100"
+                      }`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          l.type === "IN" || isReplacementIn ? "bg-emerald-100" : "bg-red-100"
+                        }`}>
+                          {l.type === "IN" || isReplacementIn
+                            ? <FiArrowDown size={13} className="text-emerald-600" />
+                            : <FiArrowUp   size={13} className="text-red-600" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs font-bold ${l.type === "IN" ? "text-emerald-600" : "text-red-600"}`}>
-                              {l.type} {l.qty} units
+                            <span className={`text-xs font-bold ${l.type === "IN" || isReplacementIn ? "text-emerald-600" : "text-red-600"}`}>
+                              {isReplacementIn ? "REPLACEMENT IN" : l.type} {l.qty} units
                             </span>
                             {hasDmg && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">
-                                <FiAlertTriangle size={8} />
-                                {dmgQty} damaged
+                                <FiAlertTriangle size={8} /> {dmgQty} damaged
                               </span>
                             )}
                             <span className="text-[10px] text-slate-400">· Ref: {l.ref || "—"}</span>
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Balance: <span className="font-bold">{Math.max(0, l.balance)}</span> · By: {l.by || "—"}
+                            Balance: <span className="font-bold">{Math.max(0, l.balance || 0)}</span> · By: {l.by || "—"}
                           </p>
-                          {hasDmg && l.remarks && (
-                            <p className="text-[10px] text-red-500 mt-0.5 italic">{l.remarks}</p>
+                          {l.remarks && (hasDmg || isReplacementIn) && (
+                            <p className="text-[10px] text-slate-400 mt-0.5 italic">{l.remarks}</p>
                           )}
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
                           <div>{l.date ? new Date(l.date).toLocaleDateString("en-IN") : "—"}</div>
-                          <div>
-                            {l.date
-                              ? new Date(l.date).toLocaleTimeString("en-IN", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })
-                              : ""}
-                          </div>
+                          <div>{l.date ? new Date(l.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : ""}</div>
                         </span>
                       </div>
                     );

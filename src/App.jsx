@@ -16,7 +16,6 @@ import CreatePurchaseOrder from "./Sales-ManagerPages/Sales-Pages/CreatePurchase
 import PurchaseOrderList from "./Sales-ManagerPages/Sales-Pages/PurchaseOrderList";
 import UploadVendorInvoice from "./Sales-ManagerPages/Sales-Pages/UploadVendorInvoice";
 import DebitCreditNotes from "./Sales-ManagerPages/Sales-Pages/DebitCreditNotes";
-import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
 import StockSummary from "./Sales-ManagerPages/Sales-Pages/StockSummary";
 import ItemsMaster from "./Sales-ManagerPages/Sales-Pages/ItemsMaster";
 import StockAlerts from "./Sales-ManagerPages/Sales-Pages/StockAlerts";
@@ -42,7 +41,7 @@ import StoreLayout from "./Store-ManagerPages/StoreComponent/Layout/StoreLayout"
 import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader";
 import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuality";
 import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChallan";
-
+import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
 const App = () => {
   return (
     <Routes>
