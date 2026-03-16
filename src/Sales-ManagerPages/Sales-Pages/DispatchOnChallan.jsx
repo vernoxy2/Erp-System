@@ -58,11 +58,6 @@ async function lookupStock(productCode) {
   return { description: "", hsn: "", unit: "", stock: 0, found: false };
 }
 
-function generateChallanNo() {
-  const d = new Date();
-  return `CH-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(Math.floor(Math.random() * 900) + 100)}`;
-}
-
 // ── PDF Export ────────────────────────────────────────────────────────────────
 function exportPDF(header, rows, challanNo) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
@@ -90,15 +85,14 @@ function exportPDF(header, rows, challanNo) {
       <div class="cell"><div class="cl">Customer</div><div class="cv">${header.customer || ""}</div></div>
       <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || ""}</div></div>
     </div>
-    <div class="g3">
-      <div class="cell"><div class="cl">GSTIN</div><div class="cv">${header.gstin || ""}</div></div>
+    <div class="g2">
       <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || ""}</div></div>
       <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
     </div>
     <div class="g3">
       <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
       <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
-      <div class="cell"><div class="cl">Transporter</div><div class="cv">${header.transporterName || "—"}</div></div>
+      <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
     </div>
   </div>
   <div class="stitle">ITEMS / PRODUCTS</div>
@@ -133,7 +127,7 @@ function exportCSV(header, rows, challanNo) {
     ["SO Reference", header.soReference],
     ["Vehicle No", header.vehicleNo],
     ["Driver", header.driverName],
-    ["Transporter", header.transporterName],
+    ["Driver Contact", header.driverContact],
     [""],
     [
       "SL",
@@ -195,24 +189,27 @@ function Field({
   );
 }
 
+// ── Today's date in YYYY-MM-DD for date input default ────────────────────────
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
+
 // ── Initial form state ────────────────────────────────────────────────────────
 const FORM_DEFAULTS = {
+  challanNo: "",
+  challanDate: todayISO(),
   soReference: "",
   customer: "",
   companyName: "",
   address: "",
-  gstin: "",
   stateName: "",
-  email: "",
-  voucherNo: "",
-  paymentTerms: "",
   consignee: "",
   destination: "",
   invoiceNos: "",
   approxInvoiceDate: "",
   vehicleNo: "",
   driverName: "",
-  transporterName: "",
+  driverContact: "",
   deliveryNote: "",
   rows: [
     {
@@ -235,8 +232,6 @@ export default function DispatchOnChallan() {
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
-  const [challanNo] = useState(generateChallanNo());
-  const [challanDate] = useState(new Date().toLocaleDateString("en-IN"));
 
   // Load from localStorage on first render, auto-save on every change
   const [form, setFormRaw] = useState(() => loadDraft(FORM_DEFAULTS));
@@ -244,7 +239,7 @@ export default function DispatchOnChallan() {
   const setForm = (updater) => {
     setFormRaw((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      saveDraft(next); 
+      saveDraft(next);
       return next;
     });
   };
@@ -254,22 +249,20 @@ export default function DispatchOnChallan() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const {
+    challanNo,
+    challanDate,
     soReference,
     customer,
     companyName,
     address,
-    gstin,
     stateName,
-    email,
-    voucherNo,
-    paymentTerms,
     consignee,
     destination,
     invoiceNos,
     approxInvoiceDate,
     vehicleNo,
     driverName,
-    transporterName,
+    driverContact,
     deliveryNote,
     rows,
   } = form;
@@ -343,23 +336,22 @@ export default function DispatchOnChallan() {
     customer,
     companyName,
     address,
-    gstin,
     stateName,
-    email,
-    voucherNo,
-    paymentTerms,
     consignee,
     destination,
     invoiceNos,
     approxInvoiceDate,
     vehicleNo,
     driverName,
-    transporterName,
+    driverContact,
     deliveryNote,
   });
 
   const canSave =
-    approxInvoiceDate && rows.some((r) => r.productCode && r.dispatchQty > 0);
+    challanNo.trim() &&
+    challanDate &&
+    approxInvoiceDate &&
+    rows.some((r) => r.productCode && r.dispatchQty > 0);
 
   // ── Back / Cancel — clears draft ──────────────────────────────────────────
   const handleBack = () => {
@@ -384,7 +376,7 @@ export default function DispatchOnChallan() {
         status: "dispatched",
         soReference,
       });
-      clearDraft(); // ✅ draft clear after successful save
+      clearDraft();
       setStep(2);
     } catch (e) {
       console.error(e);
@@ -422,7 +414,7 @@ export default function DispatchOnChallan() {
                 ["SO Reference", soReference || "—"],
                 ["Approx Invoice Date", approxInvoiceDate],
                 ["Vehicle No", vehicleNo || "—"],
-                ["Transporter", transporterName || "—"],
+                ["Driver Contact", driverContact || "—"],
               ].map(([label, val]) => (
                 <div key={label} className="bg-slate-50 rounded-lg px-3 py-2">
                   <p className="text-xs text-slate-400 font-semibold">
@@ -557,12 +549,6 @@ export default function DispatchOnChallan() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg">
-            {challanNo}
-          </span>
-          <span className="text-xs text-slate-400">{challanDate}</span>
-        </div>
       </div>
 
       {/* ── SECTION 1 ── */}
@@ -571,26 +557,25 @@ export default function DispatchOnChallan() {
           <h3 className="text-sm font-bold text-white">1. Challan Details</h3>
         </div>
         <div className="p-5 grid grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">
-              Challan No
-            </label>
-            <input
-              value={challanNo}
-              readOnly
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">
-              Challan Date
-            </label>
-            <input
-              value={challanDate}
-              readOnly
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500"
-            />
-          </div>
+          {/* Challan No — manually editable */}
+          <Field
+            label="Challan No"
+            value={challanNo}
+            onChange={set("challanNo")}
+            placeholder="e.g. CH-2526-001"
+            required
+            mono
+          />
+
+          {/* Challan Date — manually editable date picker */}
+          <Field
+            label="Challan Date"
+            value={challanDate}
+            onChange={set("challanDate")}
+            type="date"
+            required
+          />
+
           <Field
             label="SO / PO Reference"
             value={soReference}
@@ -623,39 +608,12 @@ export default function DispatchOnChallan() {
             />
           </div>
           <Field
-            label="GSTIN"
-            value={gstin}
-            onChange={set("gstin")}
-            placeholder="e.g. 24XXXXX"
-            mono
-          />
-
-          <Field
             label="State"
             value={stateName}
             onChange={set("stateName")}
             placeholder="e.g. Gujarat"
           />
-          <Field
-            label="Email"
-            value={email}
-            onChange={set("email")}
-            placeholder="email@example.com"
-          />
-          <Field
-            label="Payment Terms"
-            value={paymentTerms}
-            onChange={set("paymentTerms")}
-            placeholder="e.g. 45 DAYS"
-          />
 
-          <Field
-            label="PO / Voucher No"
-            value={voucherNo}
-            onChange={set("voucherNo")}
-            placeholder="e.g. 272"
-            mono
-          />
           <div className="col-span-2">
             <Field
               label="Consignee (Ship To)"
@@ -671,6 +629,7 @@ export default function DispatchOnChallan() {
             onChange={set("destination")}
             placeholder="e.g. VALSAD"
           />
+
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">
               Invoice Nos (Unbilled)
@@ -682,6 +641,7 @@ export default function DispatchOnChallan() {
               className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg bg-amber-50 text-amber-800 font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
             />
           </div>
+
           <Field
             label="Approx. Invoice Date"
             value={approxInvoiceDate}
@@ -881,10 +841,11 @@ export default function DispatchOnChallan() {
             placeholder="Driver name"
           />
           <Field
-            label="Transporter"
-            value={transporterName}
-            onChange={set("transporterName")}
-            placeholder="Transporter name"
+            label="Driver Contact No"
+            value={driverContact}
+            onChange={set("driverContact")}
+            placeholder="e.g. 98765 43210"
+            mono
           />
           <div className="col-span-3">
             <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">
@@ -924,6 +885,11 @@ export default function DispatchOnChallan() {
           Cancel
         </button>
         <div className="flex items-center gap-3">
+          {/* {!challanNo.trim() && (
+            <p className="text-xs text-amber-600 font-semibold">
+              ⚠ Enter Challan No
+            </p>
+          )}
           {!approxInvoiceDate && (
             <p className="text-xs text-amber-600 font-semibold">
               ⚠ Set Approx. Invoice Date
@@ -933,7 +899,7 @@ export default function DispatchOnChallan() {
             <p className="text-xs text-amber-600 font-semibold">
               ⚠ Add at least 1 item
             </p>
-          )}
+          )} */}
           <button
             onClick={handleSave}
             disabled={!canSave || saving}

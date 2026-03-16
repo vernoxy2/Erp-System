@@ -7,7 +7,7 @@ import LowStockManagement from "./Sales-ManagerPages/Sales-Pages/LowStockManagem
 import CategoryManagement from "./Sales-ManagerPages/Sales-Pages/CategoryManagement";
 import ProductManagement from "./Sales-ManagerPages/Sales-Pages/ProductManagement";
 import SalesOrders from "./Sales-ManagerPages/Sales-Pages/SalesOrders";
-import ReadyToDispatch from "./Sales-ManagerPages/Sales-Pages/ReadyToDispatch";
+import ReadyForDispatch from "./Sales-ManagerPages/Sales-Pages/ReadyForDispatch";
 import DispatchOnChallan from "./Sales-ManagerPages/Sales-Pages/DispatchOnChallan";
 import DispatchOnInvoice from "./Sales-ManagerPages/Sales-Pages/DispatchOnInvoice";
 import UnbilledChallans from "./Sales-ManagerPages/Sales-Pages/UnbilledChallans";
@@ -61,7 +61,7 @@ const App = () => {
         <Route path="sales-orders" element={<SalesOrders />} />
         <Route path="sales-orders/upload" element={<UploadSalesOrder />} />
         {/* <Route path="viewExcelSheet" element={<ViewExcelSheetData />} /> */}
-        <Route path="ready-to-dispatch" element={<ReadyToDispatch />} />
+        <Route path="ready-for-dispatch" element={<ReadyForDispatch />} />
         <Route path="sales-orders/create" element={<CreateSalesOrder />} />
         <Route path="sales-orders/list" element={<SalesOrderList />} />
         <Route path="sales-orders/:id" element={<SalesOrderDetails />} />

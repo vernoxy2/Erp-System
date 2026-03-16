@@ -64,7 +64,7 @@ export default function ReadyToDispatchDeatils() {
   const [so, setSo] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [challanExists, setChallanExists] = useState(false); // ← key state
+  const [challanExists, setChallanExists] = useState(false);
 
   useEffect(() => {
     if (!soId) return;
@@ -134,6 +134,23 @@ export default function ReadyToDispatchDeatils() {
   const totalPending  = Math.max(0, totalOrdered - totalInvoiced);
   const soNumber = so.soNumber || so.woNumber || h.voucherNo || so.id;
 
+  // ── Field fallbacks based on actual excelHeader keys ────────────────────
+  // companyName is not stored separately — buyer field is the company name
+  const companyName =
+    h.companyName || h.company || h.firmName ||
+    so.companyName || so.company ||
+    h.buyer || so.customer || "";   // ← fallback to buyer/customer
+
+  // dated & destination exist in h but may be empty — no further fallback needed
+  const dated =
+    h.dated || h.date || h.orderDate || h.voucherDate ||
+    so.dated || so.date || so.orderDate || "";
+
+  const destination =
+    h.destination || h.deliverTo || h.dispatchTo ||
+    h.shipTo || h.placeOfSupply || h.place ||
+    so.destination || so.deliverTo || "";
+
   // Navigate to challan form — create or edit
   const handleChallanAction = () => {
     if (challanExists) {
@@ -159,7 +176,6 @@ export default function ReadyToDispatchDeatils() {
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-black text-slate-800">{soNumber}</h2>
               <StatusBadge status={so.soStatus} />
-              {/* Challan status indicator */}
               {challanExists && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
                   ✅ Challan Generated
@@ -171,31 +187,14 @@ export default function ReadyToDispatchDeatils() {
             </p>
           </div>
         </div>
-
-        {/* ── Conditional Action Button ── */}
-        {/* {challanExists ? (
-          <button
-            onClick={handleChallanAction}
-            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow transition-all"
-          >
-            ✏️ Edit Challan
-          </button>
-        ) : (
-        )} */}
-          {/* <button
-            onClick={handleChallanAction}
-            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl shadow transition-all"
-          >
-            🚚 Create Dispatch Challan
-          </button> */}
       </div>
 
       {/* ── Summary Stats ── */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "Total Ordered",  value: totalOrdered,  icon: "📦", color: "bg-slate-700" },
-          { label: "Total Invoiced", value: totalInvoiced, icon: "🧾", color: "bg-indigo-600" },
-          { label: "Pending",        value: totalPending,  icon: "⏳", color: totalPending > 0 ? "bg-orange-500" : "bg-emerald-600" },
+          { label: "Total Ordered",  value: totalOrdered,    icon: "📦", color: "bg-slate-700" },
+          { label: "Total Invoiced", value: totalInvoiced,   icon: "🧾", color: "bg-indigo-600" },
+          { label: "Pending",        value: totalPending,    icon: "⏳", color: totalPending > 0 ? "bg-orange-500" : "bg-emerald-600" },
           { label: "Invoices",       value: invoices.length, icon: "📄", color: "bg-purple-600" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
@@ -211,24 +210,22 @@ export default function ReadyToDispatchDeatils() {
       {/* ── Section 1: Header Info ── */}
       <Section title="Header Information" icon="📋" color="bg-indigo-600">
         <div className="grid grid-cols-3 gap-x-6 gap-y-4">
-          <InfoField label="SO Number"       value={soNumber}                                highlight />
-          <InfoField label="Company Name"    value={h.companyName} />
-          <InfoField label="Dated"           value={h.dated} />
+          <InfoField label="SO Number"        value={soNumber}                                   highlight />
+          <InfoField label="Company Name"     value={companyName} />
+          <InfoField label="Dated"            value={dated} />
           <InfoField label="Customer / Buyer" value={so.customer || h.buyer} />
-          <InfoField label="Address"         value={h.address} />
-          <InfoField label="GSTIN"           value={h.gstin}           mono />
-          <InfoField label="State"           value={h.state || "Gujarat, Code: 24"} />
-          <InfoField label="Email"           value={h.email} />
-          <InfoField label="Voucher No / PO" value={h.voucherNo}       mono />
-          <InfoField label="Payment Terms"   value={h.paymentTerms} />
-          <InfoField label="Consignee"       value={h.consignee} />
-          <InfoField label="Destination"     value={h.destination} />
-          <InfoField label="Reference"       value={h.reference} />
-          <InfoField label="SO Status"       value={so.soStatus?.toUpperCase()} />
-          <InfoField label="Priority"        value={so.priority} />
-          <InfoField label="Notes"           value={so.notes} />
-          <InfoField label="Remarks"         value={so.remarks} />
-          <InfoField label="Created At"      value={so.createdAt ? new Date(so.createdAt).toLocaleString("en-IN") : "—"} />
+          <InfoField label="Address"          value={h.address} />
+          <InfoField label="GSTIN"            value={h.gstin}                                    mono />
+          <InfoField label="State"            value={h.state || "Gujarat, Code: 24"} />
+          <InfoField label="Email"            value={h.email} />
+          <InfoField label="Voucher No / PO"  value={h.voucherNo}                                mono />
+          {/* <InfoField label="Payment Terms"    value={h.paymentTerms} /> */}
+          <InfoField label="Consignee"        value={h.consignee} />
+          <InfoField label="Destination"      value={destination} />
+          <InfoField label="Reference"        value={h.reference} />
+          <InfoField label="SO Status"        value={so.soStatus?.toUpperCase()} />
+          <InfoField label="Remarks"          value={so.remarks} />
+          <InfoField label="Created At"       value={so.createdAt ? new Date(so.createdAt).toLocaleString("en-IN") : "—"} />
         </div>
       </Section>
 
@@ -268,9 +265,9 @@ export default function ReadyToDispatchDeatils() {
                   { label: "Description",  align: "text-left"   },
                   { label: "HSN/SAC",      align: "text-left"   },
                   { label: "Unit",         align: "text-center" },
-                  { label: "Ordered Qty",  align: "text-right"  },
-                  { label: "Invoiced Qty", align: "text-right"  },
-                  { label: "Shortage",     align: "text-right"  },
+                  { label: "Ordered Qty",  align: "text-center"  },
+                  { label: "Invoiced Qty", align: "text-center"  },
+                  { label: "Shortage",     align: "text-center"  },
                   { label: "Status",       align: "text-center" },
                 ].map((col) => (
                   <th key={col.label} className={`px-3 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider ${col.align}`}>
@@ -296,15 +293,15 @@ export default function ReadyToDispatchDeatils() {
                     </td>
                     <td className="px-3 py-3 font-mono text-xs text-slate-500 text-left">{item.hsnSac || item.hsn || "—"}</td>
                     <td className="px-3 py-3 text-xs text-slate-500 text-center">{item.unit || "—"}</td>
-                    <td className="px-3 py-3 text-sm font-bold text-slate-700 text-right">{ordered}</td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-3 py-3 text-sm font-bold text-slate-700 text-center">{ordered}</td>
+                    <td className="px-3 py-3 text-center">
                       <span className="text-sm font-bold text-indigo-600">{invoiced}</span>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full mt-1.5">
                         <div className={`h-1.5 rounded-full transition-all ${pct >= 100 ? "bg-emerald-500" : pct > 0 ? "bg-orange-400" : "bg-slate-300"}`}
                           style={{ width: `${pct}%` }} />
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-3 py-3 text-center">
                       <span className={`text-sm font-bold ${shortage > 0 ? "text-orange-600" : "text-emerald-600"}`}>
                         {shortage > 0 ? `-${shortage}` : "✓"}
                       </span>
@@ -319,9 +316,9 @@ export default function ReadyToDispatchDeatils() {
             <tfoot>
               <tr className="border-t-2 border-slate-200 bg-slate-50">
                 <td colSpan={5} className="px-3 py-3 text-xs font-bold text-slate-500 text-right">TOTAL</td>
-                <td className="px-3 py-3 text-sm font-black text-slate-800 text-right">{totalOrdered}</td>
-                <td className="px-3 py-3 text-sm font-black text-indigo-700 text-right">{totalInvoiced}</td>
-                <td className="px-3 py-3 text-sm font-black text-right">
+                <td className="px-3 py-3 text-sm font-black text-slate-800 text-center">{totalOrdered}</td>
+                <td className="px-3 py-3 text-sm font-black text-indigo-700 text-center">{totalInvoiced}</td>
+                <td className="px-3 py-3 text-sm font-black text-center">
                   <span className={totalPending > 0 ? "text-orange-600" : "text-emerald-600"}>
                     {totalPending > 0 ? `-${totalPending}` : "✓"}
                   </span>
@@ -333,93 +330,12 @@ export default function ReadyToDispatchDeatils() {
         </div>
       </Section>
 
-      {/* ── Section 4: Invoice History ── */}
-      {/* <Section title={`Invoice History (${invoices.length})`} icon="🕐" color="bg-slate-700">
-        {invoices.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-4">No invoices uploaded yet</p>
-        ) : (
-          <div className="space-y-3">
-            {invoices.map((inv, i) => {
-              const invItems = inv.items || [];
-              const invQty = invItems.reduce((s, it) => s + (it.newInvoiced || 0), 0);
-              return (
-                <div key={inv.id} className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">{i + 1}</div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 font-mono">{inv.invoiceNo || "—"}</p>
-                        <p className="text-xs text-slate-400">{inv.invoiceDate || "—"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-indigo-600">{invQty} units</span>
-                      <StatusBadge status={inv.soStatus} />
-                    </div>
-                  </div>
-                  {invItems.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
-                        <colgroup>
-                          <col style={{ width: "100px" }} /><col style={{ width: "auto" }} />
-                          <col style={{ width: "80px" }} /><col style={{ width: "90px" }} />
-                          <col style={{ width: "110px" }} /><col style={{ width: "80px" }} />
-                        </colgroup>
-                        <thead>
-                          <tr className="border-b border-slate-100">
-                            {[
-                              { label: "Part No", align: "text-left" }, { label: "Description", align: "text-left" },
-                              { label: "Ordered", align: "text-right" }, { label: "This Invoice", align: "text-right" },
-                              { label: "Total Invoiced", align: "text-right" }, { label: "Shortage", align: "text-right" },
-                            ].map((col) => (
-                              <th key={col.label} className={`px-2 py-1.5 text-[10px] font-bold text-slate-400 uppercase ${col.align}`}>{col.label}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {invItems.map((it, j) => (
-                            <tr key={j}>
-                              <td className="px-2 py-1.5 font-mono font-bold text-indigo-700">{it.productCode}</td>
-                              <td className="px-2 py-1.5 text-slate-600 truncate">{it.description}</td>
-                              <td className="px-2 py-1.5 text-right text-slate-700">{it.orderedQty}</td>
-                              <td className="px-2 py-1.5 text-right font-bold text-indigo-600">{it.newInvoiced}</td>
-                              <td className="px-2 py-1.5 text-right text-slate-700">{it.totalInvoicedQty}</td>
-                              <td className="px-2 py-1.5 text-right">
-                                <span className={`font-bold ${it.shortage > 0 ? "text-orange-600" : "text-emerald-600"}`}>
-                                  {it.shortage > 0 ? `-${it.shortage}` : "✓"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {inv.remarks && <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-100">📝 {inv.remarks}</p>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Section> */}
-
       {/* ── Bottom Action ── */}
       <div className="flex items-center justify-between pt-2">
         <button onClick={() => navigate(-1)}
           className="px-5 py-2.5 border border-slate-300 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-all">
           ← Back to List
         </button>
-        {/* {challanExists ? (
-          <button onClick={handleChallanAction}
-            className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow transition-all">
-            ✏️ Edit Challan
-          </button>
-        ) : (
-          <button onClick={handleChallanAction}
-            className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl shadow transition-all">
-            🚚 Create Dispatch Challan
-          </button>
-        )} */}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
-export default function ReadyToDispatch() {
+export default function ReadyForDispatch() {
   const navigate = useNavigate();
   const [orders, setOrders]         = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -11,6 +11,7 @@ export default function ReadyToDispatch() {
   const [challanMap, setChallanMap] = useState({});
 
   useEffect(() => { fetchData(); }, []);
+
 
   const fetchData = async () => {
     try {
@@ -59,7 +60,7 @@ export default function ReadyToDispatch() {
   if (loading) {
     return (
       <div className="space-y-5">
-        <h2 className="text-2xl font-black text-slate-800">Ready to Dispatch</h2>
+        <h2 className="text-2xl font-black text-slate-800">Ready for Dispatch</h2>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-16 text-center">
           <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-slate-500">Fetching from Firebase...</p>
@@ -77,7 +78,7 @@ export default function ReadyToDispatch() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-slate-800">Ready to Dispatch</h2>
+          <h2 className="text-2xl font-black text-slate-800">Ready for Dispatch</h2>
           <p className="text-sm text-slate-500 mt-0.5">
             {filtered.length} order{filtered.length !== 1 ? "s" : ""} ready • All items invoiced
           </p>
@@ -140,7 +141,7 @@ export default function ReadyToDispatch() {
               <tr>
                 <td colSpan={8} className="px-4 py-16 text-center">
                   <div className="text-4xl mb-3">📭</div>
-                  <p className="text-slate-500 font-semibold">No orders ready to dispatch</p>
+                  <p className="text-slate-500 font-semibold">No orders ready for dispatch</p>
                 </td>
               </tr>
             ) : (
