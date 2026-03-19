@@ -350,7 +350,18 @@
 //             const already=soItem.totalInvoicedQty||0;
 //             const orderedQty=soItem.orderedQty||soItem.quantity||0;
 //             const matched=invoiceItems.find(inv=>inv.productCode&&soItem.productCode&&inv.productCode.toLowerCase().trim()===soItem.productCode.toLowerCase().trim());
-//             return { ...soItem, orderedQty, alreadyInvoiced:already, newInvoiced:matched?matched.invoiceQty:0, matchedFromExcel:!!matched };
+//             const remaining = Math.max(0, orderedQty - already);
+//             // ✅ Cap at remaining — cannot invoice more than SO ordered
+//             const rawInvoiced = matched ? (matched.invoiceQty || 0) : 0;
+//             const cappedInvoiced = Math.min(rawInvoiced, remaining);
+//             const isExcess = rawInvoiced > remaining;
+//             return {
+//               ...soItem, orderedQty, alreadyInvoiced: already,
+//               newInvoiced:      cappedInvoiced,   // ✅ capped at remaining
+//               _rawInvoiceQty:   rawInvoiced,       // original Excel qty (for display)
+//               _excessBlocked:   isExcess ? rawInvoiced - remaining : 0, // how much was blocked
+//               matchedFromExcel: !!matched,
+//             };
 //           });
 //           setInvoicedItems(updated);
 //           setExcelParsed(true);
@@ -368,8 +379,13 @@
 //     setDuplicateWarning(isDupe?`⚠️ Invoice "${val}" already uploaded for this SO.`:"");
 //   };
 
-//   const updateInvoicedQty = (idx,qty) => {
-//     const updated=[...invoicedItems]; updated[idx].newInvoiced=qty; setInvoicedItems(updated);
+//   const updateInvoicedQty = (idx, qty) => {
+//     const updated = [...invoicedItems];
+//     const item = updated[idx];
+//     const remaining = Math.max(0, (item.orderedQty||0) - (item.alreadyInvoiced||0));
+//     // ✅ Cap manual entry at remaining ordered qty
+//     updated[idx].newInvoiced = Math.min(qty, remaining);
+//     setInvoicedItems(updated);
 //   };
 
 //   // ✅ PATCH 2: deductStock — properly handles reserved + sets shortage badge
@@ -718,6 +734,12 @@
 //                           <p className="text-sm font-bold text-slate-800 font-mono">{item.productCode}</p>
 //                           <StatusPill status={itemStatus}/>
 //                           {item.matchedFromExcel&&<span className="text-[10px] text-emerald-600 font-bold">✓ Excel</span>}
+//                           {/* ✅ Show warning if Excel qty was capped */}
+//                           {(item._excessBlocked||0) > 0 && (
+//                             <span className="text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">
+//                               ⚠ Excel had {item._rawInvoiceQty} — capped to {item.newInvoiced} (SO limit)
+//                             </span>
+//                           )}
 //                         </div>
 //                         <p className="text-xs text-slate-500 truncate">{item.description}</p>
 //                       </div>
@@ -808,11 +830,11 @@
 //   );
 // }
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiFileText, FiCheck, FiPackage, FiAlertTriangle,
-  FiPlus, FiUpload, FiClock,
+  FiPlus, FiUpload, FiClock, FiShield,
 } from "react-icons/fi";
 import {
   Card, CardHeader, Input, Select, Textarea,
@@ -821,7 +843,7 @@ import {
 import { db } from "../../firebase";
 import {
   collection, getDocs, query, orderBy, addDoc,
-  updateDoc, doc, where, arrayUnion,
+  updateDoc, doc, where, arrayUnion, onSnapshot,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
@@ -961,6 +983,127 @@ function SOHistoryTimeline({ selectedSO, linkedInvoices, loadingHistory }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ✅ CHANGE 1: Waiting for QC Screen
+// soStatus === "waiting_for_qc" hoy tyare show thase
+// onSnapshot thhi real-time watch — QC approve thay tyare auto-unlock
+// ─────────────────────────────────────────────────────────────────────────────
+function WaitingForQCScreen({ selectedSO, onUnlocked, onBack }) {
+  const [dots, setDots] = useState(".");
+
+  // Animate dots
+  useEffect(() => {
+    const t = setInterval(() => setDots(d => d.length >= 3 ? "." : d + "."), 600);
+    return () => clearInterval(t);
+  }, []);
+
+  // onSnapshot — real-time SO doc watch
+  // Jyare soStatus "waiting_for_qc" thhi badlay tyare onUnlocked call thase
+  useEffect(() => {
+    if (!selectedSO?.id) return;
+    const unsubscribe = onSnapshot(
+      doc(db, "excelupload", selectedSO.id),
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        const newStatus = data.soStatus || "";
+        // Any status != waiting_for_qc means QC is done → unlock invoice upload
+        if (newStatus !== "waiting_for_qc") {
+          onUnlocked({
+            ...selectedSO,
+            status: newStatus,
+            items: (data.items || []).map(item => ({
+              ...item,
+              orderedQty:       item.orderedQty       || item.quantity || 0,
+              totalInvoicedQty: item.totalInvoicedQty || 0,
+              unit:             item.unit              || "nos",
+            })),
+          });
+        }
+      },
+      (err) => console.error("onSnapshot error:", err)
+    );
+    return () => unsubscribe();
+  }, [selectedSO?.id]);
+
+  const soNo       = selectedSO?.soNumber || "—";
+  const customer   = selectedSO?.customer || "—";
+  const totalItems = selectedSO?.items?.length || 0;
+  const totalQty   = selectedSO?.items?.reduce((s, i) => s + (i.orderedQty || i.quantity || 0), 0) || 0;
+
+  return (
+    <Card>
+      <div className="p-10 text-center">
+        {/* Animated shield */}
+        <div className="relative w-24 h-24 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full bg-violet-100 animate-ping opacity-30" />
+          <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center shadow-lg shadow-violet-100">
+            <FiShield size={40} className="text-violet-600" />
+          </div>
+        </div>
+
+        <h3 className="text-xl font-black text-slate-800 mb-2">
+          Waiting for Store QC Approval{dots}
+        </h3>
+        <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto">
+          Store team is verifying stock availability and quality for this Sales Order.
+          This page will <strong>automatically unlock</strong> once they approve — no need to refresh.
+        </p>
+
+        {/* SO info chips */}
+        <div className="flex items-center justify-center gap-3 flex-wrap mb-8">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">SO</span>
+            <span className="text-xs font-black text-slate-800">{soNo}</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Customer</span>
+            <span className="text-xs font-black text-slate-800 max-w-[200px] truncate">{customer}</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Items</span>
+            <span className="text-xs font-black text-slate-800">{totalItems} · {totalQty} units</span>
+          </div>
+        </div>
+
+        {/* Progress checklist */}
+        <div className="max-w-sm mx-auto text-left space-y-3 mb-8">
+          {[
+            { done: true,  active: false, label: "Sales Order created",               sub: `${totalItems} items · SO ${soNo}` },
+            { done: true,  active: false, label: "Store team notified for QC",        sub: "Notification sent to Store Manager" },
+            { done: false, active: true,  label: "Store QC inspection in progress",   sub: "Store team is verifying stock & quality" },
+            { done: false, active: false, label: "QC Approved — Invoice can be uploaded", sub: "Will unlock automatically here" },
+          ].map((item, i) => (
+            <div key={i} className={`flex items-start gap-3 p-3 rounded-xl transition-all ${item.active ? "bg-violet-50 border border-violet-200" : "bg-slate-50"}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${item.done ? "bg-emerald-500" : item.active ? "bg-violet-500 animate-pulse" : "bg-slate-200"}`}>
+                {item.done
+                  ? <FiCheck size={12} className="text-white" />
+                  : item.active
+                  ? <FiClock size={11} className="text-white" />
+                  : <span className="w-2 h-2 rounded-full bg-slate-400" />}
+              </div>
+              <div>
+                <p className={`text-xs font-bold ${item.done ? "text-slate-700" : item.active ? "text-violet-700" : "text-slate-400"}`}>{item.label}</p>
+                <p className={`text-[11px] mt-0.5 ${item.active ? "text-violet-500" : "text-slate-400"}`}>{item.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Info note */}
+        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl max-w-sm mx-auto text-left">
+          <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-blue-700 text-xs font-black">i</span>
+          </div>
+          <p className="text-xs text-blue-700">
+            <strong>Store team</strong> will verify from their QC panel. Once approved, invoice upload will automatically appear here.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function UploadSalesInvoice() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
@@ -995,9 +1138,6 @@ export default function UploadSalesInvoice() {
       try {
         const snap = await getDocs(query(collection(db,"excelupload"),orderBy("createdAt","desc")));
         const all = snap.docs.map(d=>({id:d.id,...d.data()}));
-
-        // ✅ PATCH 1: Accept both "SALES_ORDER" (old) and "so" (new) types
-        // Include: waiting_for_qc, ready_for_dispatch, reserved, partial — exclude: complete
         const sos = all.filter(doc => {
           const t = (doc.type||"").toUpperCase().replace(/[_\s]/g,"");
           const isSO = t==="SALESORDER" || t==="SO";
@@ -1005,7 +1145,6 @@ export default function UploadSalesInvoice() {
           if (doc.soStatus==="complete") return false;
           return true;
         });
-
         const mapped = sos.map(so=>({
           id: so.id,
           soNumber: so.woNumber||so.excelHeader?.voucherNo||so.id.slice(0,8).toUpperCase(),
@@ -1057,6 +1196,18 @@ export default function UploadSalesInvoice() {
     setStep(2);
   };
 
+  // ✅ CHANGE 1: QC approved thay tyare WaitingForQCScreen aa function call karse
+  // selectedSO update thase with new status → waiting screen hide, upload form show
+  const handleQCUnlocked = (updatedSO) => {
+    setSelectedSO(updatedSO);
+    setInvoicedItems(updatedSO.items.map(item => ({
+      ...item,
+      newInvoiced:     0,
+      alreadyInvoiced: item.totalInvoicedQty || 0,
+      orderedQty:      item.orderedQty || item.quantity || 0,
+    })));
+  };
+
   const handleInvoiceExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1070,7 +1221,6 @@ export default function UploadSalesInvoice() {
         const workbook = XLSX.read(data,{type:"array"});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const range = XLSX.utils.decode_range(sheet["!ref"]);
-
         let docType = "";
         for (let col=0;col<=range.e.c;col++) {
           const cell = sheet[XLSX.utils.encode_cell({r:0,c:col})];
@@ -1081,7 +1231,6 @@ export default function UploadSalesInvoice() {
           }
         }
         if (docType==="PURCHASE_INVOICE") { alert("This is a Purchase Invoice!"); setParsingExcel(false); return; }
-
         const findVal = (keywords) => {
           for (let row=0;row<=Math.min(40,range.e.r);row++) {
             for (let col=0;col<=range.e.c;col++) {
@@ -1103,7 +1252,6 @@ export default function UploadSalesInvoice() {
           }
           return "";
         };
-
         const header = {
           invoiceNo:  findVal(["Invoice No.","Invoice No","Bill No","Voucher No"]),
           dated:      findVal(["Dated","Invoice Date","Bill Date"]),
@@ -1111,7 +1259,6 @@ export default function UploadSalesInvoice() {
           consignee:  findVal(["Consignee","Ship to"]),
           gstin:      findVal(["GSTIN/UIN","GSTIN"]),
         };
-
         if (header.invoiceNo) {
           setInvoiceNo(header.invoiceNo);
           const isDupe = linkedInvoices.some(inv=>inv.invoiceNo?.toLowerCase().trim()===header.invoiceNo?.toLowerCase().trim());
@@ -1119,7 +1266,6 @@ export default function UploadSalesInvoice() {
         }
         if (header.dated) { const converted=toInputDate(header.dated); setInvoiceDate(converted||header.dated); }
         setInvoiceHeader(header);
-
         let tableStartRow=-1;
         for (let row=0;row<=range.e.r;row++) {
           for (let col=0;col<=range.e.c;col++) {
@@ -1132,7 +1278,6 @@ export default function UploadSalesInvoice() {
           if (tableStartRow!==-1) break;
         }
         if (tableStartRow===-1) { alert("Table not found in Invoice Excel"); setParsingExcel(false); return; }
-
         let descCol=-1,hsnCol=-1,partCol=-1,qtyCol=-1;
         for (let col=0;col<=range.e.c;col++) {
           const cell=sheet[XLSX.utils.encode_cell({r:tableStartRow,c:col})];
@@ -1144,7 +1289,6 @@ export default function UploadSalesInvoice() {
             if (val.includes("quantity"))    qtyCol=col;
           }
         }
-
         const invoiceItems=[];
         for (let row=tableStartRow+2;row<=range.e.r;row++) {
           const descCell=sheet[XLSX.utils.encode_cell({r:row,c:descCol})];
@@ -1153,24 +1297,16 @@ export default function UploadSalesInvoice() {
           const qty=qtyCol>=0?parseFloat(sheet[XLSX.utils.encode_cell({r:row,c:qtyCol})]?.v||0):0;
           invoiceItems.push({ productCode:String(partCode).trim(), description:String(descCell.v), invoiceQty:qty, hsnSac:hsnCol>=0?sheet[XLSX.utils.encode_cell({r:row,c:hsnCol})]?.v||"":"" });
         }
-
         if (selectedSO) {
           const updated = selectedSO.items.map(soItem=>{
             const already=soItem.totalInvoicedQty||0;
             const orderedQty=soItem.orderedQty||soItem.quantity||0;
             const matched=invoiceItems.find(inv=>inv.productCode&&soItem.productCode&&inv.productCode.toLowerCase().trim()===soItem.productCode.toLowerCase().trim());
             const remaining = Math.max(0, orderedQty - already);
-            // ✅ Cap at remaining — cannot invoice more than SO ordered
             const rawInvoiced = matched ? (matched.invoiceQty || 0) : 0;
             const cappedInvoiced = Math.min(rawInvoiced, remaining);
             const isExcess = rawInvoiced > remaining;
-            return {
-              ...soItem, orderedQty, alreadyInvoiced: already,
-              newInvoiced:      cappedInvoiced,   // ✅ capped at remaining
-              _rawInvoiceQty:   rawInvoiced,       // original Excel qty (for display)
-              _excessBlocked:   isExcess ? rawInvoiced - remaining : 0, // how much was blocked
-              matchedFromExcel: !!matched,
-            };
+            return { ...soItem, orderedQty, alreadyInvoiced: already, newInvoiced: cappedInvoiced, _rawInvoiceQty: rawInvoiced, _excessBlocked: isExcess ? rawInvoiced - remaining : 0, matchedFromExcel: !!matched };
           });
           setInvoicedItems(updated);
           setExcelParsed(true);
@@ -1192,87 +1328,48 @@ export default function UploadSalesInvoice() {
     const updated = [...invoicedItems];
     const item = updated[idx];
     const remaining = Math.max(0, (item.orderedQty||0) - (item.alreadyInvoiced||0));
-    // ✅ Cap manual entry at remaining ordered qty
     updated[idx].newInvoiced = Math.min(qty, remaining);
     setInvoicedItems(updated);
   };
 
-  // ✅ PATCH 2: deductStock — properly handles reserved + sets shortage badge
   const deductStock = async (items, soNumber, customer, finalSoStatus) => {
     const alerts = [];
     const now = new Date().toISOString();
-
     for (const item of items) {
       const qty = item.newInvoiced || 0;
       if (qty <= 0) continue;
       const key = item.productCode?.toString().trim() || item.description?.trim();
       if (!key) continue;
-
       const q = query(collection(db,"stock"),where("productCode","==",key));
       const snap = await getDocs(q);
-
       if (snap.empty) {
         alerts.push({productCode:key,needed:qty,available:0,shortage:qty});
-        await addDoc(collection(db,"stock"),{
-          productCode:key, description:item.description||"", hsnSac:item.hsnSac||"",
-          unit:item.unit||"nos", available:0, reserved:0, backorder:qty, minLevel:0,
-          lastUpdated:now, soShortage:qty, hasSOPending:true,
-          ledger:[{type:"OUT",qty,ref:soNumber,by:customer,balance:0,date:now,remarks:`SO shortage: ${qty} pending`}],
-        });
+        await addDoc(collection(db,"stock"),{ productCode:key, description:item.description||"", hsnSac:item.hsnSac||"", unit:item.unit||"nos", available:0, reserved:0, backorder:qty, minLevel:0, lastUpdated:now, soShortage:qty, hasSOPending:true, ledger:[{type:"OUT",qty,ref:soNumber,by:customer,balance:0,date:now,remarks:`SO shortage: ${qty} pending`}] });
       } else {
-        const sd    = snap.docs[0];
+        const sd = snap.docs[0];
         const sdata = sd.data();
         const current = sdata.available||0;
-
-        // ✅ Reserved decreases when invoice fulfills reservation
         const currentReserved = sdata.reserved||0;
         const reservedFulfilled = Math.min(currentReserved,qty);
         const newReserved = Math.max(0,currentReserved-reservedFulfilled);
-
         const newAvail = current-qty;
-
-        // ✅ Badge logic per item
         const orderedQty = item.orderedQty||qty;
         const alreadyInvoiced = item.alreadyInvoiced||0;
         const totalInvoiced = alreadyInvoiced+qty;
         const shortageQty = Math.max(0,orderedQty-totalInvoiced);
         const isItemComplete = totalInvoiced>=orderedQty;
-
         if (newAvail>=0) {
-          await updateDoc(doc(db,"stock",sd.id),{
-            available:   newAvail,
-            reserved:    newReserved,             // ✅ decreases (fulfilled)
-            backorder:   0,
-            lastUpdated: now,
-            soShortage:  isItemComplete?0:shortageQty,    // ✅ badge: clear if done
-            hasSOPending:!isItemComplete,
-            ledger:[...(sdata.ledger||[]),{
-              type:"OUT",qty,ref:soNumber,by:customer,balance:newAvail,date:now,
-              remarks:isItemComplete?"SO Fulfilled ✅":`SO Partial — ${shortageQty} units pending`,
-            }],
-          });
+          await updateDoc(doc(db,"stock",sd.id),{ available:newAvail, reserved:newReserved, backorder:0, lastUpdated:now, soShortage:isItemComplete?0:shortageQty, hasSOPending:!isItemComplete, ledger:[...(sdata.ledger||[]),{type:"OUT",qty,ref:soNumber,by:customer,balance:newAvail,date:now,remarks:isItemComplete?"SO Fulfilled ✅":`SO Partial — ${shortageQty} units pending`}] });
         } else {
           const backorderQty=Math.abs(newAvail);
           alerts.push({productCode:key,needed:qty,available:current,shortage:backorderQty});
-          await updateDoc(doc(db,"stock",sd.id),{
-            available:   0,
-            reserved:    newReserved,
-            backorder:   (sdata.backorder||0)+backorderQty,
-            lastUpdated: now,
-            soShortage:  shortageQty,
-            hasSOPending:true,
-            ledger:[...(sdata.ledger||[]),{
-              type:"OUT",qty,ref:soNumber,by:customer,balance:0,date:now,
-              remarks:`SO Partial — ${shortageQty} pending | Stock shortage: ${backorderQty}`,
-            }],
-          });
+          await updateDoc(doc(db,"stock",sd.id),{ available:0, reserved:newReserved, backorder:(sdata.backorder||0)+backorderQty, lastUpdated:now, soShortage:shortageQty, hasSOPending:true, ledger:[...(sdata.ledger||[]),{type:"OUT",qty,ref:soNumber,by:customer,balance:0,date:now,remarks:`SO Partial — ${shortageQty} pending | Stock shortage: ${backorderQty}`}] });
         }
       }
     }
     return alerts;
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setUploading(true);
     try {
@@ -1285,14 +1382,9 @@ export default function UploadSalesInvoice() {
         const itemStatus=getItemStatus(orderedQty,totalInvoicedQty);
         return {...item,totalInvoicedQty,orderedQty,itemStatus,shortage:Math.max(0,orderedQty-totalInvoicedQty)};
       });
-
       const soStatus = calcSoStatus(updatedItems.map(i=>({orderedQty:i.orderedQty,totalInvoicedQty:i.totalInvoicedQty})));
-
-      // ✅ PATCH 3: Pass finalSoStatus to deductStock for badge logic
       const alerts = await deductStock(invoicedItems,selectedSO.soNumber,selectedSO.customer,soStatus);
       setStockAlerts(alerts);
-
-      // ✅ If SO complete → clear all reserved/shortage badges from stock
       if (soStatus==="complete"||soStatus==="ready") {
         for (const item of invoicedItems) {
           const key = item.productCode?.toString().trim();
@@ -1300,39 +1392,12 @@ export default function UploadSalesInvoice() {
           const q = query(collection(db,"stock"),where("productCode","==",key));
           const snap = await getDocs(q);
           if (!snap.empty) {
-            const sd = snap.docs[0];
-            await updateDoc(doc(db,"stock",sd.id),{
-              reserved:     0,        // ✅ Fully fulfilled — clear reservation
-              soShortage:   0,        // ✅ Clear shortage badge
-              hasSOPending: false,    // ✅ Clear SO pending badge
-              lastUpdated:  now,
-            });
+            await updateDoc(doc(db,"stock",snap.docs[0].id),{ reserved:0, soShortage:0, hasSOPending:false, lastUpdated:now });
           }
         }
       }
-
-      await updateDoc(doc(db,"excelupload",selectedSO.id),{
-        items:updatedItems, soStatus, lastInvoiceAt:now,
-        invoiceNo, invoiceNos:arrayUnion(invoiceNo), invoiceDate, remarks,
-        invoiceCount:linkedInvoices.length+1,
-        totalInvoicedQty:updatedItems.reduce((s,i)=>s+i.totalInvoicedQty,0),
-      });
-
-      await addDoc(collection(db,"excelupload"),{
-        type:"SALES_INVOICE", linkedSoId:selectedSO.id, linkedSoNo:selectedSO.soNumber,
-        invoiceNo, invoiceDate, customer:selectedSO.customer, invoiceHeader:invoiceHeader||{},
-        items:updatedItems.map(i=>({
-          productCode:i.productCode||"", description:i.description||"",
-          orderedQty:i.orderedQty||0, totalInvoicedQty:i.totalInvoicedQty||0,
-          newInvoiced:i.newInvoiced||0, alreadyInvoiced:i.alreadyInvoiced||0,
-          itemStatus:i.itemStatus||"", shortage:i.shortage||0,
-          unit:i.unit||"nos", hsnSac:i.hsnSac||"",
-        })),
-        soStatus, remarks:remarks||"",
-        stockAlerts:(alerts||[]).map(a=>({productCode:a.productCode||"",needed:a.needed||0,available:a.available||0,shortage:a.shortage||0})),
-        invoiceIndex:linkedInvoices.length+1, createdAt:now,
-      });
-
+      await updateDoc(doc(db,"excelupload",selectedSO.id),{ items:updatedItems, soStatus, lastInvoiceAt:now, invoiceNo, invoiceNos:arrayUnion(invoiceNo), invoiceDate, remarks, invoiceCount:linkedInvoices.length+1, totalInvoicedQty:updatedItems.reduce((s,i)=>s+i.totalInvoicedQty,0) });
+      await addDoc(collection(db,"excelupload"),{ type:"SALES_INVOICE", linkedSoId:selectedSO.id, linkedSoNo:selectedSO.soNumber, invoiceNo, invoiceDate, customer:selectedSO.customer, invoiceHeader:invoiceHeader||{}, items:updatedItems.map(i=>({productCode:i.productCode||"",description:i.description||"",orderedQty:i.orderedQty||0,totalInvoicedQty:i.totalInvoicedQty||0,newInvoiced:i.newInvoiced||0,alreadyInvoiced:i.alreadyInvoiced||0,itemStatus:i.itemStatus||"",shortage:i.shortage||0,unit:i.unit||"nos",hsnSac:i.hsnSac||""})), soStatus, remarks:remarks||"", stockAlerts:(alerts||[]).map(a=>({productCode:a.productCode||"",needed:a.needed||0,available:a.available||0,shortage:a.shortage||0})), invoiceIndex:linkedInvoices.length+1, createdAt:now });
       setUploading(false);
       setStep(5);
     } catch(err) { console.error("Submit error:",err); setUploading(false); alert("Error: "+err.message); }
@@ -1341,6 +1406,9 @@ export default function UploadSalesInvoice() {
   const getTotalShortage = () => invoicedItems.reduce((sum,item)=>{const total=(item.alreadyInvoiced||0)+(item.newInvoiced||0);return sum+Math.max(0,(item.orderedQty||0)-total);},0);
   const getTotalNewInvoiced = () => invoicedItems.reduce((sum,item)=>sum+(item.newInvoiced||0),0);
   const liveSoStatus = calcSoStatus(invoicedItems.map(i=>({orderedQty:i.orderedQty||0,totalInvoicedQty:(i.alreadyInvoiced||0)+(i.newInvoiced||0)})));
+
+  // ✅ CHANGE 1: waiting_for_qc check
+  const isWaitingForQC = selectedSO?.status === "waiting_for_qc";
 
   const steps = [{num:1,label:"Select SO"},{num:2,label:"Upload Invoice"},{num:3,label:"Verify Qty"},{num:4,label:"Confirm"},{num:5,label:"Done"}];
   const soTotalPages    = Math.ceil(pendingSOs.length/SO_PAGE_SIZE);
@@ -1394,11 +1462,12 @@ export default function UploadSalesInvoice() {
                   const totalOrdered=so.items.reduce((s,i)=>s+(i.orderedQty||0),0);
                   const totalInvoiced=so.items.reduce((s,i)=>s+(i.totalInvoicedQty||0),0);
                   const remaining=totalOrdered-totalInvoiced;
+                  const isQCPending = so.status === "waiting_for_qc";
                   return (
-                    <div key={so.id} className={`px-6 py-4 hover:bg-slate-50 cursor-pointer ${so.status==="partial"?"bg-orange-50/40":so.status==="ready_for_dispatch"?"bg-emerald-50/40":""}`} onClick={()=>handleSelectSO(so)}>
+                    <div key={so.id} className={`px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors ${so.status==="partial"?"bg-orange-50/40":isQCPending?"bg-violet-50/30":""}`} onClick={()=>handleSelectSO(so)}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
+                          <div className="flex items-center gap-3 mb-1 flex-wrap">
                             <p className="text-sm font-bold text-slate-800">{so.soNumber}</p>
                             <StatusPill status={so.status}/>
                           </div>
@@ -1413,9 +1482,16 @@ export default function UploadSalesInvoice() {
                               <p className="text-xs font-bold text-orange-700">{remaining} units still pending</p>
                             </div>
                           )}
+                          {/* ✅ QC pending indicator in list */}
+                          {isQCPending&&(
+                            <div className="mt-2 flex items-center gap-2 bg-violet-100 border border-violet-200 rounded-lg px-3 py-1 w-fit">
+                              <FiShield size={11} className="text-violet-600"/>
+                              <p className="text-xs font-bold text-violet-700">Store QC Pending — Invoice locked until approved</p>
+                            </div>
+                          )}
                         </div>
-                        <button className="ml-4 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 whitespace-nowrap">
-                          {so.status==="partial"?"Invoice Remaining →":"Create Invoice →"}
+                        <button className={`ml-4 px-3 py-1.5 text-white text-xs font-bold rounded-lg whitespace-nowrap transition-colors ${isQCPending?"bg-violet-600 hover:bg-violet-700":so.status==="partial"?"bg-orange-500 hover:bg-orange-600":"bg-indigo-600 hover:bg-indigo-700"}`}>
+                          {isQCPending?"View QC Status →":so.status==="partial"?"Invoice Remaining →":"Create Invoice →"}
                         </button>
                       </div>
                     </div>
@@ -1428,8 +1504,21 @@ export default function UploadSalesInvoice() {
         </Card>
       )}
 
-      {/* STEP 2 */}
-      {step===2&&selectedSO&&(
+      {/* ✅ CHANGE 1: STEP 2 — waiting_for_qc → Waiting screen */}
+      {step===2&&selectedSO&&isWaitingForQC&&(
+        <>
+          <WaitingForQCScreen
+            selectedSO={selectedSO}
+            onUnlocked={handleQCUnlocked}
+          />
+          <div className="flex justify-start">
+            <BtnSecondary onClick={()=>{setStep(1);setSelectedSO(null);}}>← Back to SO List</BtnSecondary>
+          </div>
+        </>
+      )}
+
+      {/* STEP 2 — Normal upload (QC done or not required) */}
+      {step===2&&selectedSO&&!isWaitingForQC&&(
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
@@ -1543,12 +1632,7 @@ export default function UploadSalesInvoice() {
                           <p className="text-sm font-bold text-slate-800 font-mono">{item.productCode}</p>
                           <StatusPill status={itemStatus}/>
                           {item.matchedFromExcel&&<span className="text-[10px] text-emerald-600 font-bold">✓ Excel</span>}
-                          {/* ✅ Show warning if Excel qty was capped */}
-                          {(item._excessBlocked||0) > 0 && (
-                            <span className="text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">
-                              ⚠ Excel had {item._rawInvoiceQty} — capped to {item.newInvoiced} (SO limit)
-                            </span>
-                          )}
+                          {(item._excessBlocked||0) > 0 && (<span className="text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">⚠ Excel had {item._rawInvoiceQty} — capped to {item.newInvoiced} (SO limit)</span>)}
                         </div>
                         <p className="text-xs text-slate-500 truncate">{item.description}</p>
                       </div>
@@ -1557,14 +1641,9 @@ export default function UploadSalesInvoice() {
                       <div><p className="text-[10px] text-slate-400 font-bold mb-1">Ordered</p><p className="text-sm font-bold text-slate-800">{ordered}</p></div>
                       <div><p className="text-[10px] text-slate-400 font-bold mb-1">Prior Inv</p><p className="text-sm font-bold text-blue-600">{already}</p></div>
                       <div><p className="text-[10px] text-slate-400 font-bold mb-1">This Invoice</p><input type="number" min="0" value={thisInv} readOnly disabled className="w-full border border-slate-200 rounded px-2 py-1 text-sm font-bold focus:outline-none"/></div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold mb-1">{remaining>0?"Remaining":excess>0?"Excess":"Status"}</p>
-                        <p className={`text-sm font-bold ${remaining>0?"text-orange-600":excess>0?"text-purple-600":"text-emerald-600"}`}>{remaining>0?`-${remaining}`:excess>0?`+${excess}`:"✓"}</p>
-                      </div>
+                      <div><p className="text-[10px] text-slate-400 font-bold mb-1">{remaining>0?"Remaining":excess>0?"Excess":"Status"}</p><p className={`text-sm font-bold ${remaining>0?"text-orange-600":excess>0?"text-purple-600":"text-emerald-600"}`}>{remaining>0?`-${remaining}`:excess>0?`+${excess}`:"✓"}</p></div>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5">
-                      <div className={`h-1.5 rounded-full transition-all ${itemStatus==="ready"?"bg-emerald-500":itemStatus==="excess"?"bg-purple-500":itemStatus==="partial"?"bg-orange-500":"bg-blue-300"}`} style={{width:`${Math.min(pct,100)}%`}}/>
-                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5"><div className={`h-1.5 rounded-full transition-all ${itemStatus==="ready"?"bg-emerald-500":itemStatus==="excess"?"bg-purple-500":itemStatus==="partial"?"bg-orange-500":"bg-blue-300"}`} style={{width:`${Math.min(pct,100)}%`}}/></div>
                   </div>
                 );
               })}
@@ -1599,7 +1678,8 @@ export default function UploadSalesInvoice() {
       )}
 
       {/* Action Buttons */}
-      {step===2&&<div className="flex justify-end gap-3"><BtnSecondary onClick={()=>setStep(1)}>← Back</BtnSecondary><BtnPrimary onClick={()=>{setItemsPage(1);setStep(3);}} disabled={!excelParsed||!invoiceNo}>Next: Verify Quantities →</BtnPrimary></div>}
+      {/* ✅ CHANGE 1: "Next" button only show when NOT waiting for QC */}
+      {step===2&&!isWaitingForQC&&<div className="flex justify-end gap-3"><BtnSecondary onClick={()=>setStep(1)}>← Back</BtnSecondary><BtnPrimary onClick={()=>{setItemsPage(1);setStep(3);}} disabled={!excelParsed||!invoiceNo}>Next: Verify Quantities →</BtnPrimary></div>}
       {step===3&&<div className="flex justify-end gap-3"><BtnSecondary onClick={()=>setStep(2)}>← Back</BtnSecondary><BtnPrimary onClick={()=>setStep(4)}>Next: Confirm →</BtnPrimary></div>}
       {step===4&&<div className="flex justify-end gap-3"><BtnSecondary onClick={()=>setStep(3)}>← Back</BtnSecondary><BtnPrimary onClick={handleSubmit} disabled={uploading}>{uploading?"Processing...":"Confirm & Deduct Stock"}</BtnPrimary></div>}
 
