@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiBell, FiX, FiPackage, FiShoppingCart, FiTruck,
-  FiFileText, FiAlertTriangle, FiCheckCircle, FiClock,
-  FiChevronRight, FiRefreshCw
+  FiBell,
+  FiX,
+  FiPackage,
+  FiShoppingCart,
+  FiTruck,
+  FiFileText,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiClock,
+  FiChevronRight,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -42,27 +50,110 @@ function timeAgo(timestamp) {
 
 function isPO(type) {
   if (!type) return false;
-  const t = type.trim().toLowerCase().replace(/[\s_\-\.]/g, "");
+  const t = type
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_\-\.]/g, "");
   return ["po", "purchaseorder", "purchase"].includes(t);
 }
 
 function isSalesOrder(type) {
   if (!type) return false;
-  const t = type.trim().toLowerCase().replace(/[\s_\-\.]/g, "");
-  return ["salesorder", "so", "workorder", "wo", "sales", "sales_order"].includes(t);
+  const t = type
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_\-\.]/g, "");
+  return [
+    "salesorder",
+    "so",
+    "workorder",
+    "wo",
+    "sales",
+    "sales_order",
+  ].includes(t);
 }
 
 // ─── Notification Config ───────────────────────────────────────────────────────
 
 const NOTIF_CONFIG = {
-  po_overdue:       { color: "bg-red-100 text-red-700 border-red-200",         dot: "bg-red-500",    icon: FiAlertTriangle, label: "PO Overdue"       },
-  po_warning:       { color: "bg-orange-100 text-orange-700 border-orange-200", dot: "bg-orange-400", icon: FiClock,         label: "Due Soon"         },
-  po_complete:      { color: "bg-green-100 text-green-700 border-green-200",    dot: "bg-green-500",  icon: FiCheckCircle,   label: "PO Complete"      },
-  po_created:       { color: "bg-blue-100 text-blue-700 border-blue-200",       dot: "bg-blue-400",   icon: FiShoppingCart,  label: "PO Created"       },
-  so_created:       { color: "bg-indigo-100 text-indigo-700 border-indigo-200", dot: "bg-indigo-400", icon: FiPackage,       label: "SO Created"       },
-  so_complete:      { color: "bg-green-100 text-green-700 border-green-200",    dot: "bg-green-500",  icon: FiCheckCircle,   label: "SO Complete"      },
-  challan_pending:  { color: "bg-yellow-100 text-yellow-700 border-yellow-200", dot: "bg-yellow-400", icon: FiTruck,         label: "Invoice Pending"  },
-  invoice_uploaded: { color: "bg-teal-100 text-teal-700 border-teal-200",       dot: "bg-teal-500",   icon: FiFileText,      label: "Invoice Uploaded" },
+  po_overdue: {
+    color: "bg-red-100 text-red-700 border-red-200",
+    dot: "bg-red-500",
+    icon: FiAlertTriangle,
+    label: "PO Overdue",
+  },
+  po_warning: {
+    color: "bg-orange-100 text-orange-700 border-orange-200",
+    dot: "bg-orange-400",
+    icon: FiClock,
+    label: "Due Soon",
+  },
+  po_complete: {
+    color: "bg-green-100 text-green-700 border-green-200",
+    dot: "bg-green-500",
+    icon: FiCheckCircle,
+    label: "PO Complete",
+  },
+  po_created: {
+    color: "bg-blue-100 text-blue-700 border-blue-200",
+    dot: "bg-blue-400",
+    icon: FiShoppingCart,
+    label: "PO Created",
+  },
+  so_created: {
+    color: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    dot: "bg-indigo-400",
+    icon: FiPackage,
+    label: "SO Created",
+  },
+  so_complete: {
+    color: "bg-green-100 text-green-700 border-green-200",
+    dot: "bg-green-500",
+    icon: FiCheckCircle,
+    label: "SO Complete",
+  },
+  challan_pending: {
+    color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    dot: "bg-yellow-400",
+    icon: FiTruck,
+    label: "Invoice Pending",
+  },
+  invoice_uploaded: {
+    color: "bg-teal-100 text-teal-700 border-teal-200",
+    dot: "bg-teal-500",
+    icon: FiFileText,
+    label: "Invoice Uploaded",
+  },
+  damage: {
+    color: "bg-red-100 text-red-700 border-red-200",
+    dot: "bg-red-500",
+    icon: FiAlertTriangle,
+    label: "Damage",
+  },
+  shortage: {
+    color: "bg-orange-100 text-orange-700 border-orange-200",
+    dot: "bg-orange-400",
+    icon: FiAlertTriangle,
+    label: "Shortage",
+  },
+  fulfilled: {
+    color: "bg-green-100 text-green-700 border-green-200",
+    dot: "bg-green-500",
+    icon: FiCheckCircle,
+    label: "Fulfilled",
+  },
+  replacement: {
+    color: "bg-blue-100 text-blue-700 border-blue-200",
+    dot: "bg-blue-400",
+    icon: FiRefreshCw,
+    label: "Replacement",
+  },
+  excess: {
+    color: "bg-purple-100 text-purple-700 border-purple-200",
+    dot: "bg-purple-400",
+    icon: FiAlertTriangle,
+    label: "Excess",
+  },
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -76,13 +167,14 @@ export default function NotificationBell() {
   const [cleared, setCleared] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ─── Load dismissed IDs from localStorage ────────────────────────────────
   const [dismissedIds, setDismissedIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("dismissedNotifs") || "[]"); }
-    catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem("dismissedNotifs") || "[]");
+    } catch {
+      return [];
+    }
   });
 
-  // ─── Click outside close ─────────────────────────────────────────────────
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -97,9 +189,10 @@ export default function NotificationBell() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const [ordersSnap, challansSnap] = await Promise.all([
+      const [ordersSnap, challansSnap, notifsSnap] = await Promise.all([
         getDocs(collection(db, "excelupload")),
         getDocs(collection(db, "challans")),
+        getDocs(collection(db, "notifications")),
       ]);
 
       const notifs = [];
@@ -111,8 +204,17 @@ export default function NotificationBell() {
 
         const header = d.excelHeader || d.invoiceHeader || {};
         const deliveryRaw = d.deliveryDate || header.dated || d.eta || "";
-        const poNumber = d.invoiceNo || header.reference || d.poNumber || `PO-${doc.id.slice(0, 6).toUpperCase()}`;
-        const vendor = header.buyer || d.vendor || header.companyName || header.consignee || "Unknown Vendor";
+        const poNumber =
+          d.invoiceNo ||
+          header.reference ||
+          d.poNumber ||
+          `PO-${doc.id.slice(0, 6).toUpperCase()}`;
+        const vendor =
+          header.buyer ||
+          d.vendor ||
+          header.companyName ||
+          header.consignee ||
+          "Unknown Vendor";
         const days = getDaysFromToday(deliveryRaw);
         const poStatus = d.poStatus || "";
 
@@ -169,7 +271,11 @@ export default function NotificationBell() {
         if (!isSalesOrder(d.type)) return;
 
         const header = d.excelHeader || d.invoiceHeader || {};
-        const soNumber = header.reference || d.invoiceNo || d.woNumber || `SO-${doc.id.slice(0, 6).toUpperCase()}`;
+        const soNumber =
+          header.reference ||
+          d.invoiceNo ||
+          d.woNumber ||
+          `SO-${doc.id.slice(0, 6).toUpperCase()}`;
         const customer = d.customer || header.consignee || "Unknown Customer";
         const soStatus = d.soStatus || "";
 
@@ -228,16 +334,67 @@ export default function NotificationBell() {
         }
       });
 
-      // ── Sort: urgent first ────────────────────────────────────────────────
+      // ── QC / Stock Notifications ──────────────────────────────────────────
+      // ✅ Sales bell → sales ના જ pages પર જાય — invoice/ref filter સાથે
+      notifsSnap.docs.forEach((doc) => {
+        const d = doc.data();
+        if (d.isResolved) return;
+
+        const titleMap = {
+          damage: "🔴 Damage Reported",
+          shortage: "🟠 Shortage Noted",
+          fulfilled: "✅ Order Fulfilled",
+          replacement: "🔁 Replacement Received",
+          excess: "🟣 Excess Received",
+        };
+
+        // ✅ Sales bell → /sales/stock-alerts with invoice or ref filter
+        // const stockAction = d.invoiceNo
+        //   ? `/sales/stock-alerts?invoice=${encodeURIComponent(d.invoiceNo)}`
+        //   : d.refNo
+        //     ? `/sales/stock-alerts?ref=${encodeURIComponent(d.refNo)}`
+        //     : "/sales/stock-alerts";
+        const stockAction = d.refNo
+          ? `/sales/stock-alerts?ref=${encodeURIComponent(d.refNo)}`
+          : "/sales/stock-alerts";
+
+        notifs.push({
+          id: `notif_${doc.id}`,
+          kind: d.type || "damage",
+          title: titleMap[d.type] || "Stock Alert",
+          message: d.message || "",
+          time: d.createdAt,
+          tag: d.refNo || d.productCode || "",
+          action: stockAction,
+          docId: doc.id,
+          damagedQty: d.damagedQty || 0,
+          pendingQty: d.pendingQty || 0,
+          productCode: d.productCode || "",
+          source: d.source || "",
+        });
+      });
+
+      // ✅ Sort: damage/shortage સૌથી ઉપર
       const PRIORITY = {
-        po_overdue: 0, po_warning: 1, challan_pending: 2,
-        po_created: 3, so_created: 4, po_complete: 5,
-        so_complete: 6, invoice_uploaded: 7,
+        damage: 0,
+        shortage: 1,
+        po_overdue: 2,
+        po_warning: 3,
+        challan_pending: 4,
+        excess: 5,
+        po_created: 6,
+        so_created: 7,
+        replacement: 8,
+        po_complete: 9,
+        so_complete: 10,
+        fulfilled: 11,
+        invoice_uploaded: 12,
       };
       notifs.sort((a, b) => (PRIORITY[a.kind] ?? 9) - (PRIORITY[b.kind] ?? 9));
 
-      // ── Filter out dismissed IDs ──────────────────────────────────────────
-      const savedDismissed = JSON.parse(localStorage.getItem("dismissedNotifs") || "[]");
+      const savedDismissed = JSON.parse(
+        localStorage.getItem("dismissedNotifs") || "[]",
+      );
       const filtered = notifs.filter((n) => !savedDismissed.includes(n.id));
 
       setNotifications(filtered);
@@ -250,7 +407,6 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Fetch on mount + when opened
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
@@ -261,13 +417,20 @@ export default function NotificationBell() {
 
   // ─── Derived ────────────────────────────────────────────────────────────
   const urgentCount = notifications.filter(
-    (n) => n.kind === "po_overdue" || n.kind === "po_warning" || n.kind === "challan_pending"
+    (n) =>
+      n.kind === "po_overdue" ||
+      n.kind === "po_warning" ||
+      n.kind === "challan_pending" ||
+      n.kind === "damage" ||
+      n.kind === "shortage",
   ).length;
 
   // ─── Dismiss all ─────────────────────────────────────────────────────────
   const handleDismissAll = () => {
     const allIds = notifications.map((n) => n.id);
-    const existing = JSON.parse(localStorage.getItem("dismissedNotifs") || "[]");
+    const existing = JSON.parse(
+      localStorage.getItem("dismissedNotifs") || "[]",
+    );
     const merged = [...new Set([...existing, ...allIds])];
     localStorage.setItem("dismissedNotifs", JSON.stringify(merged));
     setDismissedIds(merged);
@@ -302,7 +465,9 @@ export default function NotificationBell() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
             <div className="flex items-center gap-2">
               <FiBell size={16} className="text-indigo-600" />
-              <span className="font-bold text-slate-800 text-sm">Notifications</span>
+              <span className="font-bold text-slate-800 text-sm">
+                Notifications
+              </span>
               {notifications.length > 0 && (
                 <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   {notifications.length} total
@@ -320,7 +485,10 @@ export default function NotificationBell() {
                 className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
                 title="Refresh"
               >
-                <FiRefreshCw size={13} className={`text-slate-500 ${loading ? "animate-spin" : ""}`} />
+                <FiRefreshCw
+                  size={13}
+                  className={`text-slate-500 ${loading ? "animate-spin" : ""}`}
+                />
               </button>
               <button
                 onClick={() => setOpen(false)}
@@ -332,11 +500,16 @@ export default function NotificationBell() {
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto" style={{ maxHeight: "calc(80vh - 110px)" }}>
+          <div
+            className="overflow-y-auto"
+            style={{ maxHeight: "calc(80vh - 110px)" }}
+          >
             {loading ? (
               <div className="flex items-center justify-center py-12 gap-3">
                 <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-slate-400">Fetching updates...</span>
+                <span className="text-xs text-slate-400">
+                  Fetching updates...
+                </span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 gap-2">
@@ -347,7 +520,6 @@ export default function NotificationBell() {
                 <p className="text-xs text-slate-400">No new notifications</p>
               </div>
             ) : (
-              /* ── Card List ── */
               <div className="divide-y divide-slate-50">
                 {notifications.map((n) => {
                   const cfg = NOTIF_CONFIG[n.kind] || NOTIF_CONFIG.so_created;
@@ -356,22 +528,57 @@ export default function NotificationBell() {
                     <div
                       key={n.id}
                       className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
-                      onClick={() => { navigate(n.action); setOpen(false); }}
+                      onClick={() => {
+                        navigate(n.action);
+                        setOpen(false);
+                      }}
                     >
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.color} border`}>
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.color} border`}
+                      >
                         <Icon size={14} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-bold text-slate-800 truncate">{n.title}</p>
-                          <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0">{timeAgo(n.time)}</span>
+                          <p className="text-xs font-bold text-slate-800 truncate">
+                            {n.title}
+                          </p>
+                          <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0">
+                            {timeAgo(n.time)}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+                          {n.message}
+                        </p>
                         <span className="inline-block mt-1 font-mono text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
                           {n.tag}
                         </span>
+
+                        {/* Damage / Shortage extra info chips */}
+                        {(n.damagedQty > 0 || n.pendingQty > 0) && (
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {n.damagedQty > 0 && (
+                              <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
+                                🔴 {n.damagedQty} damaged
+                              </span>
+                            )}
+                            {n.pendingQty > 0 && (
+                              <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded">
+                                ⏳ {n.pendingQty} pending
+                              </span>
+                            )}
+                            {n.source && (
+                              <span className="text-[10px] text-slate-400 uppercase font-bold">
+                                {n.source === "po" ? "📦 PO" : "🚚 SO"}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <FiChevronRight size={12} className="text-slate-300 group-hover:text-slate-500 mt-1 flex-shrink-0 transition-colors" />
+                      <FiChevronRight
+                        size={12}
+                        className="text-slate-300 group-hover:text-slate-500 mt-1 flex-shrink-0 transition-colors"
+                      />
                     </div>
                   );
                 })}
@@ -390,7 +597,8 @@ export default function NotificationBell() {
                   onClick={handleDismissAll}
                   className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
-                  <FiChevronRight size={11} /> See all {notifications.length} notifications
+                  <FiChevronRight size={11} /> See all {notifications.length}{" "}
+                  notifications
                 </button>
               )}
             </div>

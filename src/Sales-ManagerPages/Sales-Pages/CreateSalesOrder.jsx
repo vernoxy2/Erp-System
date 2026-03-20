@@ -154,6 +154,19 @@ export default function CreateSalesOrder() {
           },
         ],
       });
+      await addDoc(collection(db, "notifications"), {
+        type: "so_qc_pending",
+        source: "so",
+        target: "store",
+        refNo: form.woNumber,
+        invoiceNo: "",
+        productCode: "",
+        message: `🚚 New SO waiting for QC — ${form.woNumber} · ${form.customer}`,
+        isRead: false,
+        isResolved: false,
+        createdAt: now,
+        resolvedAt: null,
+      });
       if (!isDraft) {
         for (const item of items) {
           if (!item.stockDocId || !item.qty) continue;
