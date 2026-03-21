@@ -15,7 +15,7 @@ import InvoiceHistory from "./Sales-ManagerPages/Sales-Pages/InvoiceHistory";
 import CreatePurchaseOrder from "./Sales-ManagerPages/Sales-Pages/CreatePurchaseOrder";
 import PurchaseOrderList from "./Sales-ManagerPages/Sales-Pages/PurchaseOrderList";
 import UploadVendorInvoice from "./Sales-ManagerPages/Sales-Pages/UploadVendorInvoice";
-import DebitCreditNotes from "./Sales-ManagerPages/Sales-Pages/DebitCreditNotes";
+import SalesDebitNotes from "./Sales-ManagerPages/Sales-Pages/SalesDebitNotes";
 import StockSummary from "./Sales-ManagerPages/Sales-Pages/StockSummary";
 import ItemsMaster from "./Sales-ManagerPages/Sales-Pages/ItemsMaster";
 import StockAlerts from "./Sales-ManagerPages/Sales-Pages/StockAlerts";
@@ -42,6 +42,7 @@ import StoreHeader from "./Store-ManagerPages/StoreComponent/Layout/StoreHeader"
 import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuality";
 import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChallan";
 import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
+import StoreDebitNotes from "./Store-ManagerPages/Store-Page/StoreDebitNotes";
 const App = () => {
   return (
     <Routes>
@@ -73,7 +74,7 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
-        <Route path="debit-credit-notes" element={<DebitCreditNotes />} />
+        <Route path="store-debit-notes" element={<StoreDebitNotes />} />
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />
@@ -102,7 +103,7 @@ const App = () => {
         />
         <Route path="upload-vendor-invoice" element={<UploadVendorInvoice />} />
         <Route path="upload-sales-invoice" element={<UploadSalesInvoice />} />
-        <Route path="debit-credit-notes" element={<DebitCreditNotes />} />
+        <Route path="debit-credit-notes" element={<SalesDebitNotes />} />
         <Route path="recieved-on-challan" element={<ReceivedOnChallan />} />
         <Route
           path="vendor-invoice-history"
@@ -122,6 +123,7 @@ const App = () => {
       <Route path="/store/*" element={<StoreLayout />}>
         <Route path="dashboard" element={<StoreDashboard />} />
         <Route path="verify-quality" element={<StoreVerifyQuality />} />
+        <Route path="debit-notes" element={<StoreDebitNotes />} />
         <Route path="stock-alerts" element={<StockAlerts />} />
         <Route
           path="low-stock-management"
