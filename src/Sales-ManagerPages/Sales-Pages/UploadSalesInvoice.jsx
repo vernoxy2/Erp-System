@@ -2538,7 +2538,7 @@ export default function UploadSalesInvoice() {
                         </p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 mb-3">
+                    <div className="grid grid-cols-3 gap-10 mb-3">
                       <div>
                         <p className="text-[10px] text-slate-400 font-bold mb-1">
                           Ordered
@@ -2547,14 +2547,7 @@ export default function UploadSalesInvoice() {
                           {ordered}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold mb-1">
-                          Prior Inv
-                        </p>
-                        <p className="text-sm font-bold text-blue-600">
-                          {already}
-                        </p>
-                      </div>
+                      
                       <div>
                         <p className="text-[10px] text-slate-400 font-bold mb-1">
                           This Invoice

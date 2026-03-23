@@ -92,7 +92,7 @@ function InvoiceDetail({
       hsnSac: item.hsnSac || "",
       unit: item.unit || "pcs",
       invoiceQty: parseFloat(
-        item.physicalQty || item.newReceived || item.quantity || 0,
+        item.totalInvoicedQty || item.newInvoiced || item.quantity || 0,
       ),
       returnQty: 0,
       issueQty: 0,
@@ -315,8 +315,14 @@ function InvoiceDetail({
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {invoiceItems.map((item, i) => {
+                  // const qty = parseFloat(
+                  //   item.physicalQty || item.newReceived || item.quantity || 0,
+                  // );
                   const qty = parseFloat(
-                    item.physicalQty || item.newReceived || item.quantity || 0,
+                    item.totalInvoicedQty ||
+                      item.newInvoiced ||
+                      item.quantity ||
+                      0,
                   );
                   return (
                     <tr key={i} className="hover:bg-slate-50/60">
@@ -698,9 +704,8 @@ export default function SalesDebitNotes() {
       setInvoices(
         allDocs.filter(
           (d) =>
-            d.type === "INVOICE" &&
-            d.storeQcStatus === "approved" &&
-            d.linkedSoId,
+            d.type === "SALES_INVOICE" && // ← type change
+            d.linkedSoId, // ← Sales Order
         ),
       );
       const notesSnap = await getDocs(collection(db, DB_NOTES));

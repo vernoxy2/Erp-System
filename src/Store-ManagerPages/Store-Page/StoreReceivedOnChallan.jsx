@@ -85,19 +85,27 @@ async function updateStockForItem(item, ref, challanNo, qty, isIssue = false) {
 function ChallanQCDetail({ challan, onBack, onApprove, onReject, onPassWithIssues, saving }) {
   const [storeRemarks, setStoreRemarks] = useState("");
   const items = challan.items || [];
+const source = (challan.verifiedItems && challan.verifiedItems.length > 0)
+    ? challan.verifiedItems
+    : items;
 
-  const [verifyRows, setVerifyRows] = useState(
-    items.map(item => ({
-      partNo:      item.partNo || item.productCode || "",
-      description: item.description || item.itemName || "",
-      hsnSac:      item.hsnSac || item.hsn || "",
-      unit:        item.unit || "pcs",
-      dispatchQty: parseFloat(item.dispatchQty || item.qty || 0),
-      verifyQty:   parseFloat(item.dispatchQty || item.qty || 0), // default = full dispatch
-      issue:       "",
-      issueQty:    0,
-    }))
-  );
+  const [verifyRows, setVerifyRows] = useState(() => {
+  // ✅ If already processed, use verifiedItems which has issue/issueQty data
+  const source = (challan.verifiedItems && challan.verifiedItems.length > 0)
+    ? challan.verifiedItems
+    : items;
+
+  return source.map(item => ({
+    partNo:      item.partNo || item.productCode || "",
+    description: item.description || item.itemName || "",
+    hsnSac:      item.hsnSac || item.hsn || "",
+    unit:        item.unit || "pcs",
+    dispatchQty: parseFloat(item.dispatchQty || item.qty || 0),
+    verifyQty:   parseFloat(item.verifyQty ?? item.dispatchQty ?? item.qty ?? 0),
+    issue:       item.issue || "",
+    issueQty:    parseFloat(item.issueQty || 0),
+  }));
+});
 
   const updateRow = (idx, field, value) => {
     setVerifyRows(prev => prev.map((row, i) => {
@@ -107,6 +115,7 @@ function ChallanQCDetail({ challan, onBack, onApprove, onReject, onPassWithIssue
         return { ...row, verifyQty: v, issue: v === 0 ? "" : row.issue, issueQty: v === 0 ? 0 : row.issueQty };
       }
       if (field === "issueQty")
+        
         return { ...row, issueQty: Math.min(parseFloat(value) || 0, row.verifyQty) };
       if (field === "issue")
         return { ...row, issue: value, issueQty: value === "" ? 0 : row.issueQty };
@@ -216,7 +225,7 @@ function ChallanQCDetail({ challan, onBack, onApprove, onReject, onPassWithIssue
                 <th className="px-3 py-2.5 text-left font-bold text-slate-400 w-28">Part No</th>
                 <th className="px-3 py-2.5 text-center font-bold text-slate-500 w-14">Dispatch</th>
                 <th className="px-3 py-2.5 text-center font-bold text-red-500 w-16">Verify Qty ✏️</th>
-                <th className="px-3 py-2.5 text-center font-bold text-emerald-600 w-12">OK</th>
+                <th className="px-3 py-2.5 text-center font-bold text-emerald-600 w-12">Physical OK</th>
                 <th className="px-3 py-2.5 text-left font-bold text-orange-500 w-24">Issue</th>
                 <th className="px-3 py-2.5 text-center font-bold text-amber-600 w-14">Issue Qty</th>
               </tr>
@@ -226,7 +235,8 @@ function ChallanQCDetail({ challan, onBack, onApprove, onReject, onPassWithIssue
                 const dispatchQty = row.dispatchQty || 0;
                 const verifyQty   = parseFloat(row.verifyQty) || 0;
                 const issueQty    = parseFloat(row.issueQty) || 0;
-                const okQty       = dispatchQty - verifyQty;
+                // const okQty       = dispatchQty - verifyQty;
+                const okQty = verifyQty - issueQty;
                 const hasVerify   = verifyQty > 0;
                 const hasIssue    = !!(row.issue);
                 const isMismatch  = !isProcessed && verifyQty !== dispatchQty && hasVerify;

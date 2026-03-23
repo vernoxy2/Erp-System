@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../firebase";
 import {
@@ -13,7 +13,73 @@ import logo from "../../../assets/logo.svg";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const [userData, setUserData] = useState({ name: "Loading...", email: "" });
+  const [lowStockCount,        setLowStockCount]        = useState(0);
+const [readyDispatchCount,   setReadyDispatchCount]   = useState(0);
+const [unbilledCount,        setUnbilledCount]         = useState(0);
+const [debitNotesCount,      setDebitNotesCount]       = useState(0);
+const [purchaseOrderBadge,   setPurchaseOrderBadge]   = useState(null);
+const [receivedChallanCount, setReceivedChallanCount] = useState(0);
+const [stockAlertsCount,     setStockAlertsCount]     = useState(0);
+useEffect(() => {
+  return onSnapshot(collection(db, "stock"), (snap) => {
+    setLowStockCount(snap.docs.filter(d => {
+      const { available, reorderQty, minStock } = d.data();
+      const a = parseFloat(available) || 0, r = parseFloat(reorderQty || minStock || 0);
+      return r > 0 && a <= r;
+    }).length);
+  });
+}, []);
 
+useEffect(() => {
+  return onSnapshot(collection(db, "salesOrders"), (snap) => {
+    setReadyDispatchCount(snap.docs.filter(d =>
+      ["ready_for_dispatch","ready"].includes(d.data().status)
+    ).length);
+  });
+}, []);
+
+useEffect(() => {
+  return onSnapshot(collection(db, "dispatchChallans"), (snap) => {
+    setUnbilledCount(snap.docs.filter(d => {
+      const data = d.data();
+      return !data.invoiced && !data.invoiceCreated && data.storeQcStatus;
+    }).length);
+    setReceivedChallanCount(snap.docs.filter(d =>
+      ["approved","passed_with_issues"].includes(d.data().storeQcStatus)
+    ).length);
+  });
+}, []);
+
+useEffect(() => {
+  return onSnapshot(collection(db, "SalesDebitNotes"), (snap) => {
+    setDebitNotesCount(snap.docs.filter(d =>
+      ["waiting_store_qc","passed_with_issues"].includes(d.data().status)
+    ).length);
+  });
+}, []);
+
+useEffect(() => {
+  return onSnapshot(collection(db, "purchaseOrders"), (snap) => {
+    const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    const overdue = snap.docs.filter(d => {
+      const data = d.data();
+      if (["completed","cancelled"].includes(data.status)) return false;
+      const t = data.createdAt?.seconds ? data.createdAt.seconds * 1000 : null;
+      return t && t < twoDaysAgo;
+    }).length;
+    setPurchaseOrderBadge(overdue > 0 ? "2d" : null);
+  });
+}, []);
+
+useEffect(() => {
+  return onSnapshot(collection(db, "stock"), (snap) => {
+    setStockAlertsCount(snap.docs.filter(d => {
+      const { available, minStock, safetyStock } = d.data();
+      const a = parseFloat(available) || 0, m = parseFloat(minStock || safetyStock || 0);
+      return m > 0 && a < m;
+    }).length);
+  });
+}, []);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -38,7 +104,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     {
       title: "STOCK MANAGEMENT",
       items: [
-        { to: "/sales/low-stock-management", icon: FiAlertTriangle, label: "Low Stock Alerts",   badge: 45,  badgeColor: "red" },
+        { to: "/sales/low-stock-management", icon: FiAlertTriangle, label: "Low Stock Alerts",   badge: lowStockCount || null,  badgeColor: "red" },
         { to: "/sales/category-management",  icon: FiLayers,        label: "Manage Categories" },
         { to: "/sales/product-management",   icon: FiSettings,      label: "Manage Products" },
         { to: "/sales/stock-summary",        icon: FiBarChart2,     label: "Stock Summary" },
@@ -50,19 +116,19 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         { to: "/sales/sales-orders",          icon: FiClipboard,   label: "Sales Orders",          end: true },
         { to: "/sales/sales-orders/List",     icon: FiFileText,    label: "Sales Orders List" },
         { to: "/sales/upload-sales-invoice",  icon: FiUpload,      label: "Upload Sales Invoice" },
-        { to: "/sales/ready-for-dispatch",    icon: FiBell,        label: "Ready for Dispatch",    badge: 2,   badgeColor: "emerald" },
+        { to: "/sales/ready-for-dispatch",    icon: FiBell,        label: "Ready for Dispatch",       badgeColor: "emerald" },
         { to: "/sales/dispatch-on-challan",   icon: FiTruck,       label: "Dispatch on Challan" },
-        { to: "/sales/unbilled-challans",     icon: FiClock,       label: "Unbilled Challans",     badge: 5,   badgeColor: "red" },
+        { to: "/sales/unbilled-challans",     icon: FiClock,       label: "Unbilled Challans",     badge: unbilledCount || null,    badgeColor: "red" },
         { to: "/sales/invoice-history",       icon: FiArchive,     label: "Sales Invoice History" },
-        { to: "/sales/debit-credit-notes",    icon: FiRefreshCw,   label: "Debit/Credit Notes",    badge: 2,   badgeColor: "amber" },
+        { to: "/sales/debit-credit-notes",    icon: FiRefreshCw,   label: "Debit/Credit Notes",    badge: debitNotesCount || null,    badgeColor: "amber" },
       ],
     },
     {
       title: "INWARD",
       items: [
-        { to: "/sales/purchase-orders",        icon: FiShoppingCart, label: "Purchase Orders",       badge: "2d", badgeColor: "orange" },
+        { to: "/sales/purchase-orders",        icon: FiShoppingCart, label: "Purchase Orders",     badge: purchaseOrderBadge, badgeColor: "orange" },
         { to: "/sales/upload-vendor-invoice",  icon: FiUpload,       label: "Upload Vendor Invoice" },
-        { to: "/sales/recieved-on-challan",    icon: FiInbox,        label: "Received on Challan",   badge: 2,   badgeColor: "amber" },
+        { to: "/sales/recieved-on-challan",    icon: FiInbox,        label: "Received on Challan",  badge: receivedChallanCount || null,   badgeColor: "amber" },
         { to: "/sales/vendor-invoice-history", icon: FiArchive,      label: "Vendor Invoice History" },
       ],
     },
@@ -70,7 +136,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       title: "INVENTORY",
       items: [
         { to: "/sales/items-master", icon: FiPackage,      label: "Items Master" },
-        { to: "/sales/stock-alerts", icon: FiAlertTriangle, label: "Stock Alerts", badge: 3, badgeColor: "red" },
+        { to: "/sales/stock-alerts", icon: FiAlertTriangle, label: "Stock Alerts", badge: stockAlertsCount || null,  badgeColor: "red" },
       ],
     },
     {
