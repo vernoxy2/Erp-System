@@ -1,557 +1,285 @@
-// import React, { useEffect, useState } from "react";
-// import { collection, getDocs } from "firebase/firestore";
-// import { db } from "../../firebase";
-// import {
-//   FiAlertTriangle, FiPackage, FiChevronRight,
-//   FiArrowLeft, FiCalendar, FiTruck, FiFileText,
-// } from "react-icons/fi";
-
-// const ISSUE_COLORS = {
-//   damage:     { bg: "bg-red-100",    text: "text-red-700",    dot: "bg-red-500",    label: "Damage"     },
-//   shortage:   { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", label: "Shortage"   },
-//   excess:     { bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   label: "Excess"     },
-//   quality:    { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", label: "Quality"    },
-//   wrong_item: { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", label: "Wrong Item" },
-//   other:      { bg: "bg-gray-100",   text: "text-gray-700",   dot: "bg-gray-500",   label: "Other"      },
-// };
-
-// const getIssueStyle = (issue) => ISSUE_COLORS[issue?.toLowerCase()] || ISSUE_COLORS.other;
-
-// const IssueBadge = ({ issue }) => {
-//   const s = getIssueStyle(issue);
-//   return (
-//     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
-//       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-//       {s.label}
-//     </span>
-//   );
-// };
-
-// const StatusBadge = ({ status }) => {
-//   const map = {
-//     partial:  "bg-orange-100 text-orange-700",
-//     received: "bg-green-100 text-green-700",
-//     excess:   "bg-blue-100 text-blue-700",
-//     ordered:  "bg-gray-100 text-gray-600",
-//   };
-//   return (
-//     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${map[status?.toLowerCase()] || "bg-gray-100 text-gray-600"}`}>
-//       {status || "—"}
-//     </span>
-//   );
-// };
-
-// const InfoField = ({ label, value, highlight }) => (
-//   <div className="flex flex-col">
-//     <span className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">{label}</span>
-//     <span className={`font-semibold text-sm ${highlight ? "text-indigo-700" : "text-gray-800"}`}>
-//       {value || "—"}
-//     </span>
-//   </div>
-// );
-
-// // ─── Detail View ─────────────────────────────────────────────────────────────
-
-// const ChallanDetail = ({ challan, onBack }) => {
-//   const { excelHeader, poStatus, totalItems, totalReceivedQty, items = [] } = challan;
-//   const issueItems = items.filter((i) => i.issue && i.issue !== "none" && i.issue !== "");
-//   const okItems    = items.filter((i) => !i.issue || i.issue === "none" || i.issue === "");
-
-//   return (
-//     <div className="p-6 max-w-6xl mx-auto">
-//       <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-//         <FiArrowLeft /> Back to list
-//       </button>
-
-//       {/* ── Challan Information Card ── */}
-//       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
-//         <div className="flex items-center gap-3 mb-5">
-//           <h2 className="text-xl font-bold text-gray-800">{excelHeader?.reference || "—"}</h2>
-//           <StatusBadge status={poStatus} />
-//         </div>
-
-//         {/* 6 fields grid */}
-//         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 border-t border-gray-100 pt-5">
-//           <InfoField label="Challan No"        value={excelHeader?.reference} />
-//           <InfoField label="Vendor Challan No" value={excelHeader?.voucherNo} />
-//           <InfoField label="Challan Date"      value={excelHeader?.dated} />
-//           <InfoField label="Linked Invoice"    value={excelHeader?.reference}  highlight />
-//           <InfoField label="Linked PO"         value={excelHeader?.voucherNo}  highlight />
-//           <InfoField label="Supplier"          value={excelHeader?.supplier} />
-//         </div>
-
-//         {/* Stats */}
-//         <div className="grid grid-cols-2 gap-6 border-t border-gray-100 pt-4 mt-4">
-//           <InfoField label="Total Items"        value={String(totalItems ?? "—")} />
-//           <InfoField label="Total Received Qty" value={String(totalReceivedQty ?? "—")} />
-//         </div>
-//       </div>
-
-//       {/* Issue Items */}
-//       {issueItems.length > 0 && (
-//         <div className="mb-6">
-//           <div className="flex items-center gap-2 mb-3">
-//             <FiAlertTriangle className="text-red-500" />
-//             <h3 className="font-semibold text-gray-800">Issue Items ({issueItems.length})</h3>
-//           </div>
-//           <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
-//             <table className="w-full text-sm">
-//               <thead>
-//                 <tr className="bg-red-50 text-left text-xs uppercase tracking-wide text-gray-500">
-//                   <th className="px-4 py-3">Product</th>
-//                   <th className="px-4 py-3">Part No</th>
-//                   <th className="px-4 py-3 text-center">Ordered</th>
-//                   <th className="px-4 py-3 text-center">Invoice Qty</th>
-//                   <th className="px-4 py-3 text-center">Physical</th>
-//                   <th className="px-4 py-3 text-center">Damaged / Short</th>
-//                   <th className="px-4 py-3 text-center">Issue</th>
-//                   <th className="px-4 py-3">Details</th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-100">
-//                 {issueItems.map((item, idx) => (
-//                   <tr key={idx} className="hover:bg-red-50/40 transition-colors">
-//                     <td className="px-4 py-3 font-medium text-gray-800 max-w-[200px]">{item.description}</td>
-//                     <td className="px-4 py-3 text-gray-500 font-mono text-xs">{item.productCode}</td>
-//                     <td className="px-4 py-3 text-center text-gray-700">{item.orderedQty}</td>
-//                     <td className="px-4 py-3 text-center text-gray-700">{item.quantity || item.orderedQty}</td>
-//                     <td className="px-4 py-3 text-center font-semibold text-green-700">{item.physicalQty}</td>
-//                     <td className="px-4 py-3 text-center font-semibold text-red-600">
-//                       {item.damagedQty > 0
-//                         ? item.damagedQty
-//                         : item.shortage > 0
-//                           ? item.shortage
-//                           : (item.orderedQty - item.physicalQty) > 0
-//                             ? (item.orderedQty - item.physicalQty)
-//                             : "—"}
-//                     </td>
-//                     <td className="px-4 py-3 text-center"><IssueBadge issue={item.issue} /></td>
-//                     <td className="px-4 py-3 text-xs text-gray-500 max-w-[180px]">{item.issueDetail || "—"}</td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-    
-//     </div>
-//   );
-// };
-
-// // ─── List View ────────────────────────────────────────────────────────────────
-
-// const ReceivedOnChallan = () => {
-//   const [challans, setChallans]        = useState([]);
-//   const [loading, setLoading]          = useState(true);
-//   const [selectedChallan, setSelected] = useState(null);
-//   const [filter, setFilter]            = useState("issues");
-//   const [search, setSearch]            = useState("");
-
-//   useEffect(() => {
-//     const fetchChallans = async () => {
-//       try {
-//         const snap = await getDocs(collection(db, "excelupload"));
-//         const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-//         const received = data.filter((d) => d.storeQcStatus === "approved" || d.receivedAt);
-//         setChallans(received);
-//       } catch (err) {
-//         console.error("Error fetching challans:", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     fetchChallans();
-//   }, []);
-
-//   const getIssueCount = (challan) =>
-//     (challan.items || []).filter((i) => i.issue && i.issue !== "none" && i.issue !== "").length;
-
-//   const getIssueTypes = (challan) => {
-//     const types = new Set();
-//     (challan.items || []).forEach((i) => { if (i.issue && i.issue !== "none") types.add(i.issue); });
-//     return [...types];
-//   };
-
-//   const filtered = challans
-//     .filter((c) => filter === "all" || getIssueCount(c) > 0)
-//     .filter((c) => {
-//       if (!search) return true;
-//       const s = search.toLowerCase();
-//       return (
-//         c.excelHeader?.reference?.toLowerCase().includes(s) ||
-//         c.excelHeader?.supplier?.toLowerCase().includes(s) ||
-//         c.excelHeader?.voucherNo?.toLowerCase().includes(s)
-//       );
-//     });
-
-//   if (selectedChallan) {
-//     return <ChallanDetail challan={selectedChallan} onBack={() => setSelected(null)} />;
-//   }
-
-//   return (
-//     <div className="p-6 max-w-6xl mx-auto">
-//       <div className="mb-6">
-//         <h1 className="text-2xl font-bold text-gray-800">Received on Challan</h1>
-//         <p className="text-sm text-gray-500 mt-1">All inward challans with damage / shortage / quality issues</p>
-//       </div>
-
-//       <div className="flex flex-wrap items-center gap-3 mb-6">
-//         <input
-//           type="text"
-//           placeholder="Search by invoice no, supplier..."
-//           value={search}
-//           onChange={(e) => setSearch(e.target.value)}
-//           className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-//         />
-//         <div className="flex rounded-lg overflow-hidden border border-gray-200">
-//           <button
-//             onClick={() => setFilter("issues")}
-//             className={`px-4 py-2 text-sm font-medium transition-colors ${filter === "issues" ? "bg-indigo-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-//           >
-//             Issues Only
-//           </button>
-//           <button
-//             onClick={() => setFilter("all")}
-//             className={`px-4 py-2 text-sm font-medium transition-colors ${filter === "all" ? "bg-indigo-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-//           >
-//             All Challans
-//           </button>
-//         </div>
-//         <span className="text-sm text-gray-400">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
-//       </div>
-
-//       {loading ? (
-//         <div className="flex items-center justify-center h-48 text-gray-400">Loading challans...</div>
-//       ) : filtered.length === 0 ? (
-//         <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-//           <FiPackage size={32} />
-//           <p>No challans found</p>
-//         </div>
-//       ) : (
-//         <div className="space-y-3">
-//           {filtered.map((challan) => {
-//             const issueCount = getIssueCount(challan);
-//             const issueTypes = getIssueTypes(challan);
-//             const hasIssues  = issueCount > 0;
-//             return (
-//               <div
-//                 key={challan.id}
-//                 onClick={() => setSelected(challan)}
-//                 className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition-all flex flex-wrap items-center justify-between gap-4 ${hasIssues ? "border-red-200 hover:border-red-300" : "border-gray-200 hover:border-gray-300"}`}
-//               >
-//                 <div className="flex items-center gap-4">
-//                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${hasIssues ? "bg-red-100" : "bg-green-100"}`}>
-//                     {hasIssues ? <FiAlertTriangle className="text-red-500" /> : <FiPackage className="text-green-500" />}
-//                   </div>
-//                   <div>
-//                     <div className="flex items-center gap-2 flex-wrap">
-//                       <span className="font-semibold text-gray-800">{challan.excelHeader?.reference || "—"}</span>
-//                       <StatusBadge status={challan.poStatus} />
-//                       {hasIssues && (
-//                         <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
-//                           {issueCount} issue{issueCount > 1 ? "s" : ""}
-//                         </span>
-//                       )}
-//                     </div>
-//                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
-//                       <span className="flex items-center gap-1"><FiTruck size={11} /> {challan.excelHeader?.supplier || "—"}</span>
-//                       <span className="flex items-center gap-1"><FiFileText size={11} /> {challan.excelHeader?.voucherNo || "—"}</span>
-//                       <span className="flex items-center gap-1"><FiCalendar size={11} /> {challan.excelHeader?.dated || "—"}</span>
-//                     </div>
-//                   </div>
-//                 </div>
-//                 <div className="flex items-center gap-4">
-//                   <div className="flex gap-1 flex-wrap">
-//                     {issueTypes.map((type) => <IssueBadge key={type} issue={type} />)}
-//                   </div>
-//                   <div className="text-right text-xs text-gray-500 hidden sm:block">
-//                     <div>{challan.totalItems} items</div>
-//                     <div>{challan.totalReceivedQty} qty received</div>
-//                   </div>
-//                   <FiChevronRight className="text-gray-400" />
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ReceivedOnChallan;
-
-
-import React, { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import {
+  collection, getDocs, serverTimestamp,
+  query, orderBy,
+} from "firebase/firestore";
 import { db } from "../../firebase";
 import {
-  FiAlertTriangle, FiPackage, FiChevronRight,
-  FiArrowLeft, FiCalendar, FiTruck, FiFileText,
+  FiAlertTriangle, FiClock, FiCheckCircle,
+  FiRefreshCw, FiPackage, FiUser,
+  FiMapPin, FiFileText, FiEye, FiX,
 } from "react-icons/fi";
 
-const ISSUE_COLORS = {
-  damage:     { bg: "bg-red-100",    text: "text-red-700",    dot: "bg-red-500",    label: "Damage"     },
-  shortage:   { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", label: "Shortage"   },
-  excess:     { bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   label: "Excess"     },
-  quality:    { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", label: "Quality"    },
-  wrong_item: { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", label: "Wrong Item" },
-  other:      { bg: "bg-gray-100",   text: "text-gray-700",   dot: "bg-gray-500",   label: "Other"      },
-};
+const DB_CHALLANS = "dispatchChallans";
 
-const getIssueStyle = (issue) => ISSUE_COLORS[issue?.toLowerCase()] || ISSUE_COLORS.other;
+function formatDate(val) {
+  if (!val) return "—";
+  try {
+    const d = val?.seconds ? new Date(val.seconds * 1000) : new Date(val);
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  } catch { return "—"; }
+}
 
-const IssueBadge = ({ issue }) => {
-  const s = getIssueStyle(issue);
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {s.label}
-    </span>
-  );
-};
-
-const StatusBadge = ({ status }) => {
+function StatusPill({ status }) {
   const map = {
-    partial:  "bg-orange-100 text-orange-700",
-    received: "bg-green-100 text-green-700",
-    excess:   "bg-blue-100 text-blue-700",
-    ordered:  "bg-gray-100 text-gray-600",
+    approved:           "bg-emerald-100 text-emerald-700 border-emerald-200",
+    passed_with_issues: "bg-orange-100 text-orange-700 border-orange-200",
+    pending_qc:         "bg-amber-100 text-amber-700 border-amber-200",
+    rejected:           "bg-red-100 text-red-700 border-red-200",
   };
+  const labels = {
+    approved:           "✅ Received",
+    passed_with_issues: "⚠️ Issues Pending",
+    pending_qc:         "⏳ Waiting Store QC",
+    rejected:           "❌ Rejected",
+  };
+  if (!status) return null;
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${map[status?.toLowerCase()] || "bg-gray-100 text-gray-600"}`}>
-      {status || "—"}
+    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${map[status] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+      {labels[status] || status}
     </span>
   );
-};
+}
 
-const InfoField = ({ label, value, highlight }) => (
-  <div className="flex flex-col">
-    <span className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">{label}</span>
-    <span className={`font-semibold text-sm ${highlight ? "text-indigo-700" : "text-gray-800"}`}>
-      {value || "—"}
-    </span>
-  </div>
-);
-
-// ─── Detail View ─────────────────────────────────────────────────────────────
-
-const ChallanDetail = ({ challan, onBack }) => {
-  const { excelHeader, poStatus, totalItems, totalReceivedQty, items = [] } = challan;
-  const issueItems = items.filter((i) => i.issue && i.issue !== "none" && i.issue !== "");
-  const okItems    = items.filter((i) => !i.issue || i.issue === "none" || i.issue === "");
+// ── View Details Modal ────────────────────────────────────────────────────
+function ViewDetailsModal({ challan, onClose }) {
+  const h = challan.challanHeader || challan;
+  const verifiedItems = challan.verifiedItems || challan.items || [];
+  const totalDispatched = (challan.items || []).reduce((s, i) => s + (parseFloat(i.dispatchQty || i.qty) || 0), 0);
+  const totalVerified   = verifiedItems.reduce((s, i) => s + (parseFloat(i.verifyQty || i.dispatchQty || i.qty) || 0), 0);
+  const totalIssue      = verifiedItems.reduce((s, i) => s + (parseFloat(i.issueQty) || 0), 0);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-        <FiArrowLeft /> Back to list
-      </button>
-
-      {/* ── Challan Information Card ── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-5">
-          <h2 className="text-xl font-bold text-gray-800">{excelHeader?.reference || "—"}</h2>
-          <StatusBadge status={poStatus} />
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+          <div>
+            <p className="text-xs text-emerald-200 font-bold uppercase tracking-wider">Challan — Received Details</p>
+            <h2 className="text-lg font-black text-white mt-0.5">{h.customer || challan.customer || "—"}</h2>
+            <p className="text-xs text-emerald-200 mt-0.5">Challan: {challan.challanNo || "—"}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <StatusPill status={challan.storeQcStatus} />
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg text-white"><FiX /></button>
+          </div>
         </div>
 
-        {/* 6 fields grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4 border-t border-gray-100 pt-5">
-          <InfoField label="Challan No"        value={excelHeader?.reference} />
-          <InfoField label="Vendor Challan No" value={excelHeader?.voucherNo} />
-          <InfoField label="Challan Date"      value={excelHeader?.dated} />
-          <InfoField label="Linked Invoice"    value={excelHeader?.reference}  highlight />
-          <InfoField label="Linked PO"         value={excelHeader?.voucherNo}  highlight />
-          <InfoField label="Supplier"          value={excelHeader?.supplier} />
-        </div>
+        <div className="p-6 space-y-5">
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Total Dispatched", value: totalDispatched, color: "text-indigo-600", bg: "bg-indigo-50 border-indigo-200" },
+              { label: "Store Verified",   value: totalVerified,   color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+              { label: "Issue Qty",        value: totalIssue,      color: "text-orange-600", bg: totalIssue > 0 ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200" },
+            ].map(({ label, value, color, bg }) => (
+              <div key={label} className={`border rounded-xl p-4 text-center ${bg}`}>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{label}</p>
+                <p className={`text-2xl font-black ${color}`}>{value}</p>
+              </div>
+            ))}
+          </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-6 border-t border-gray-100 pt-4 mt-4">
-          <InfoField label="Total Items"        value={String(totalItems ?? "—")} />
-          <InfoField label="Total Received Qty" value={String(totalReceivedQty ?? "—")} />
+          {/* Challan info */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Challan Details</p>
+            <div className="grid grid-cols-3 gap-4 text-xs">
+              {[
+                ["Challan No",    challan.challanNo],
+                ["Customer",      h.customer || challan.customer],
+                ["Date",          challan.challanDate || formatDate(challan.createdAt)],
+                ["SO/PO Ref",     h.soPoRef || challan.soPoRef],
+                ["Store Approved",formatDate(challan.storeApprovedAt)],
+                ["Store Remarks", challan.storeRemarks || "—"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <p className="text-slate-400 font-bold mb-0.5">{k}</p>
+                  <p className="text-slate-800 font-semibold">{v || "—"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Items */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Items — Store Verified</p>
+            <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    {["No","Description","Part No","Dispatched","Verified","Issue","Issue Qty"].map(h => (
+                      <th key={h} className="px-3 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {verifiedItems.map((item, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-3 py-2.5 text-slate-400 font-bold">{i + 1}</td>
+                      <td className="px-3 py-2.5 font-medium text-slate-700 max-w-[150px]"><p className="truncate">{item.description || item.itemName || "—"}</p></td>
+                      <td className="px-3 py-2.5"><span className="font-mono text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold">{item.partNo || item.productCode || "—"}</span></td>
+                      <td className="px-3 py-2.5 text-center font-bold text-slate-600">{item.dispatchQty || item.qty || "—"}</td>
+                      <td className="px-3 py-2.5 text-center font-bold text-emerald-600">{item.verifyQty || item.dispatchQty || item.qty || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        {item.issue ? (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            item.issue === "damage" ? "bg-red-100 text-red-700" :
+                            item.issue === "shortage" ? "bg-orange-100 text-orange-700" :
+                            "bg-amber-100 text-amber-700"
+                          }`}>{item.issue?.replace(/_/g, " ")}</span>
+                        ) : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-bold text-orange-600">{(parseFloat(item.issueQty) || 0) > 0 ? item.issueQty : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {challan.storeRemarks && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+              <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Store Remarks</p>
+              <p className="text-sm text-slate-700">{challan.storeRemarks}</p>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Issue Items */}
-      {issueItems.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <FiAlertTriangle className="text-red-500" />
-            <h3 className="font-semibold text-gray-800">Issue Items ({issueItems.length})</h3>
-          </div>
-          <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-red-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Part No</th>
-                  <th className="px-4 py-3 text-center">Ordered</th>
-                  <th className="px-4 py-3 text-center">Invoice Qty</th>
-                  <th className="px-4 py-3 text-center">Physical</th>
-                  <th className="px-4 py-3 text-center">Damaged / Short</th>
-                  <th className="px-4 py-3 text-center">Issue</th>
-                  <th className="px-4 py-3">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {issueItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-red-50/40 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-800 max-w-[200px]">{item.description}</td>
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">{item.productCode}</td>
-                    <td className="px-4 py-3 text-center text-gray-700">{item.orderedQty}</td>
-                    <td className="px-4 py-3 text-center text-gray-700">{item.quantity || item.orderedQty}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-green-700">{item.physicalQty}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-red-600">
-                      {item.damagedQty > 0
-                        ? item.damagedQty
-                        : item.shortage > 0
-                          ? item.shortage
-                          : (item.orderedQty - item.physicalQty) > 0
-                            ? (item.orderedQty - item.physicalQty)
-                            : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-center"><IssueBadge issue={item.issue} /></td>
-                    <td className="px-4 py-3 text-xs text-gray-500 max-w-[180px]">{item.issueDetail || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
+}
 
-// ─── List View ────────────────────────────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────────────
+export default function ReceivedOnChallan() {
+  const [challans, setChallans] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [viewChallan, setViewChallan] = useState(null);
+  const [tab, setTab]           = useState("all");
 
-const ReceivedOnChallan = () => {
-  const [challans, setChallans]        = useState([]);
-  const [loading, setLoading]          = useState(true);
-  const [selectedChallan, setSelected] = useState(null);
-  const [filter, setFilter]            = useState("issues");
-  const [search, setSearch]            = useState("");
+  useEffect(() => { fetchData(); }, []);
 
-  useEffect(() => {
-    const fetchChallans = async () => {
-      try {
-        const snap = await getDocs(collection(db, "excelupload"));
-        const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        const received = data.filter((d) => 
-          (d.storeQcStatus === "approved" || d.receivedAt) &&
-          !d.replacementComplete  // ✅ hide once replacement is done
-        );
-        setChallans(received);
-      } catch (err) {
-        console.error("Error fetching challans:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchChallans();
-  }, []);
-
-  const getIssueCount = (challan) =>
-    (challan.items || []).filter((i) => i.issue && i.issue !== "none" && i.issue !== "").length;
-
-  const getIssueTypes = (challan) => {
-    const types = new Set();
-    (challan.items || []).forEach((i) => { if (i.issue && i.issue !== "none") types.add(i.issue); });
-    return [...types];
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const snap = await getDocs(query(collection(db, DB_CHALLANS), orderBy("createdAt", "desc")));
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // ✅ Show only store-approved (or with issues) challans
+      const received = all.filter(c =>
+        c.storeQcStatus === "approved" || c.storeQcStatus === "passed_with_issues"
+      );
+      setChallans(received);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const filtered = challans
-    .filter((c) => filter === "all" || getIssueCount(c) > 0)
-    .filter((c) => {
-      if (!search) return true;
-      const s = search.toLowerCase();
-      return (
-        c.excelHeader?.reference?.toLowerCase().includes(s) ||
-        c.excelHeader?.supplier?.toLowerCase().includes(s) ||
-        c.excelHeader?.voucherNo?.toLowerCase().includes(s)
-      );
-    });
-
-  if (selectedChallan) {
-    return <ChallanDetail challan={selectedChallan} onBack={() => setSelected(null)} />;
-  }
+  const approved    = challans.filter(c => c.storeQcStatus === "approved");
+  const withIssues  = challans.filter(c => c.storeQcStatus === "passed_with_issues");
+  const displayChallans = tab === "approved" ? approved : tab === "issues" ? withIssues : challans;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Received on Challan</h1>
-        <p className="text-sm text-gray-500 mt-1">All inward challans with damage / shortage / quality issues</p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-black text-slate-800">Received on Challan</h2>
+        <p className="text-xs text-slate-400 mt-0.5">Store-verified dispatch challans</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <input
-          type="text"
-          placeholder="Search by invoice no, supplier..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        />
-        <span className="text-sm text-gray-400">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Total Received",  value: challans.length,   color: "text-indigo-600",  border: "border-indigo-200",  bg: "bg-indigo-50",  icon: FiPackage },
+          { label: "Clean Approved",  value: approved.length,   color: "text-emerald-600", border: "border-emerald-200", bg: "bg-emerald-50", icon: FiCheckCircle },
+          { label: "With Issues",     value: withIssues.length, color: "text-orange-600",  border: "border-orange-200",  bg: "bg-orange-50",  icon: FiAlertTriangle },
+        ].map(({ label, value, color, border, bg, icon: Icon }) => (
+          <div key={label} className={`${bg} border ${border} rounded-xl p-4 flex items-center gap-3`}>
+            <div className={`w-10 h-10 rounded-lg bg-white flex items-center justify-center ${color}`}><Icon size={18} /></div>
+            <div>
+              <p className="text-xs text-slate-500 font-medium">{label}</p>
+              <p className={`text-2xl font-black ${color}`}>{value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
+      {/* Filter */}
+      <div className="flex items-center justify-end">
+        <select value={tab} onChange={(e) => setTab(e.target.value)}
+          className="px-3 py-2.5 text-sm font-bold border border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          <option value="all">All ({challans.length})</option>
+          <option value="approved">✅ Approved ({approved.length})</option>
+          <option value="issues">⚠️ With Issues ({withIssues.length})</option>
+        </select>
+      </div>
+
+      {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">Loading challans...</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-          <FiPackage size={32} />
-          <p>No challans found</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <FiRefreshCw size={24} className="animate-spin mx-auto mb-3 text-indigo-400" />
+          <p className="text-sm text-slate-400">Loading received challans...</p>
+        </div>
+      ) : displayChallans.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <FiPackage size={40} className="mx-auto mb-3 text-slate-200" />
+          <p className="text-sm font-bold text-slate-500">No Challans Received Yet</p>
+          <p className="text-xs text-slate-400 mt-1">Challans appear here after Store QC approves them</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((challan) => {
-            const issueCount = getIssueCount(challan);
-            const issueTypes = getIssueTypes(challan);
-            const hasIssues  = issueCount > 0;
+          {withIssues.length > 0 && tab !== "approved" && (
+            <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+              <FiAlertTriangle size={14} className="text-orange-500 flex-shrink-0" />
+              <p className="text-xs text-orange-700">
+                <strong>{withIssues.length} challan(s)</strong> received with issues — follow-up required.
+              </p>
+            </div>
+          )}
+
+          {displayChallans.map(challan => {
+            const h = challan.challanHeader || challan;
+            const customer = h.customer || h.buyer || challan.customer || "—";
+            const items = challan.items || [];
+            const totalQty = items.reduce((s, i) => s + (parseFloat(i.dispatchQty || i.qty) || 0), 0);
+            const isWithIssues = challan.storeQcStatus === "passed_with_issues";
+
             return (
-              <div
-                key={challan.id}
-                onClick={() => setSelected(challan)}
-                className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition-all flex flex-wrap items-center justify-between gap-4 ${hasIssues ? "border-red-200 hover:border-red-300" : "border-gray-200 hover:border-gray-300"}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${hasIssues ? "bg-red-100" : "bg-green-100"}`}>
-                    {hasIssues ? <FiAlertTriangle className="text-red-500" /> : <FiPackage className="text-green-500" />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-800">{challan.excelHeader?.reference || "—"}</span>
-                      <StatusBadge status={challan.poStatus} />
-                      {hasIssues && (
-                        <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
-                          {issueCount} issue{issueCount > 1 ? "s" : ""}
-                        </span>
-                      )}
+              <div key={challan.id}
+                className={`bg-white border rounded-xl p-4 transition-all ${
+                  isWithIssues ? "border-l-4 border-l-orange-400 border-orange-200 bg-orange-50/10" : "border-emerald-200 bg-emerald-50/10"
+                }`}>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <FiUser size={13} className="text-slate-400" />
+                      <p className="text-sm font-black text-slate-800">{customer}</p>
+                      <StatusPill status={challan.storeQcStatus} />
+                      {isWithIssues && <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-300 rounded-full animate-pulse">⚠️ Follow-up Required</span>}
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
-                      <span className="flex items-center gap-1"><FiTruck size={11} /> {challan.excelHeader?.supplier || "—"}</span>
-                      <span className="flex items-center gap-1"><FiFileText size={11} /> {challan.excelHeader?.voucherNo || "—"}</span>
-                      <span className="flex items-center gap-1"><FiCalendar size={11} /> {challan.excelHeader?.dated || "—"}</span>
+                    <p className="text-xs text-slate-500">
+                      Challan: <strong className="text-slate-700">{challan.challanNo || "—"}</strong>
+                      {(h.soPoRef || challan.soPoRef) && <> · SO/PO: <strong className="text-slate-700">{h.soPoRef || challan.soPoRef}</strong></>}
+                    </p>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-slate-400">
+                      <span>{items.length} items · {totalQty} units dispatched</span>
+                      <span>Date: {challan.challanDate || formatDate(challan.createdAt)}</span>
+                      <span>Approved: {formatDate(challan.storeApprovedAt || challan.storeActionAt)}</span>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex gap-1 flex-wrap">
-                    {issueTypes.map((type) => <IssueBadge key={type} issue={type} />)}
-                  </div>
-                  <div className="text-right text-xs text-gray-500 hidden sm:block">
-                    <div>{challan.totalItems} items</div>
-                    <div>{challan.totalReceivedQty} qty received</div>
-                  </div>
-                  <FiChevronRight className="text-gray-400" />
+                  <button
+                    onClick={() => setViewChallan(challan)}
+                    className="w-9 h-9 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-200 transition-colors"
+                    title="View Details"
+                  >
+                    <FiEye size={16} />
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* View Modal */}
+      {viewChallan && (
+        <ViewDetailsModal challan={viewChallan} onClose={() => setViewChallan(null)} />
+      )}
     </div>
   );
-};
-
-export default ReceivedOnChallan;
+}

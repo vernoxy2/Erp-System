@@ -124,7 +124,8 @@ function NoteDetail({ note, onBack, onApprove, onReject, onPassWithIssues, savin
   const totalVerified   = verifyRows.reduce((s, r) => s + (parseFloat(r.verifyQty) || 0), 0);
   const totalIssue      = verifyRows.reduce((s, r) => s + (parseFloat(r.issueQty) || 0), 0);
   const totalClean      = totalVerified - totalIssue;
-  const totalOk         = totalDispatched - totalVerified;
+  // const totalOk         = totalDispatched - totalVerified;
+  const totalOk = totalReturn - totalVerified;
   const hasIssues       = verifyRows.some(r => r.issue && r.issueQty > 0);
   const isProcessed     = note.status !== "waiting_store_qc";
 
@@ -398,7 +399,8 @@ function NoteDetail({ note, onBack, onApprove, onReject, onPassWithIssues, savin
                         <span className={`text-sm font-black ${
                           hasVerify ? "text-emerald-600" : "text-slate-300"
                         }`}>
-                          {hasVerify ? Math.max(0, verifyQty - issueQty) : "—"}
+                          {/* {hasVerify ? Math.max(0, verifyQty - issueQty) : "—"} */}
+                          {hasVerify ? Math.max(0, returnQty - verifyQty) : "—"}
                         </span>
                       </td>
                     </tr>

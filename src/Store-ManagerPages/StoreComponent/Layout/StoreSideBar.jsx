@@ -1,18 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  FiHome, FiAlertTriangle, FiLayers, FiSettings,
-  FiBarChart2, FiPackage, FiShield, FiMenu, FiChevronLeft,
+  FiHome,
+  FiAlertTriangle,
+  FiLayers,
+  FiSettings,
+  FiBarChart2,
+  FiShield,
+  FiMenu,
+  FiChevronLeft,
+  FiInbox,
+  FiFileText,
+  FiActivity,
 } from "react-icons/fi";
-import { doc, getDoc, collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../firebase";
 import logo from "../../../assets/logo.svg";
 
 export default function StoreSidebar({ collapsed, setCollapsed }) {
-  const [userData, setUserData] = useState({ name: "Loading...", email: "", department: "", role: "" });
+  const [userData, setUserData] = useState({
+    name: "Loading...",
+    email: "",
+    department: "",
+    role: "",
+  });
   const [qcPendingCount, setQcPendingCount] = useState(0);
   const [debitNotesCount, setDebitNotesCount] = useState(0); // ✅ dynamic
+  const [ReceivedOnChallan, setReceivedOnChallan] = useState(0);
 
   // ── QC Pending count ────────────────────────────────────────────────────
   useEffect(() => {
@@ -32,7 +54,10 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       for (const d of pending) {
         const data = d.data();
         const key = `${data.linkedPoId}_${data.invoiceNo}`;
-        if (!seen.has(key)) { seen.add(key); count++; }
+        if (!seen.has(key)) {
+          seen.add(key);
+          count++;
+        }
       }
       setQcPendingCount(count);
     });
@@ -48,6 +73,20 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       });
       setDebitNotesCount(pending.length);
     });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, "SalesReceivedOnChallan"),
+      (snap) => {
+        const pending = snap.docs.filter((d) => {
+          const data = d.data();
+          return data.status === "waiting_store_qc"; 
+        });
+        setReceivedOnChallan(pending.length);
+      },
+    );
     return () => unsub();
   }, []);
 
@@ -68,7 +107,12 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
   }, []);
 
   const initials = userData.name
-    ? userData.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    ? userData.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "??";
 
   const navSections = [
@@ -88,47 +132,71 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
         },
         {
           to: "/store/debit-notes",
-          icon: FiPackage,
+          icon: FiFileText,
           label: "Debit Notes",
           badge: debitNotesCount > 0 ? debitNotesCount : null,
           badgeColor: "amber",
         },
-         {
+        {
+          to: "/store/store-Received-On-Challan",
+          icon: FiInbox,
+          label: "Received On Challan",
+          badge: ReceivedOnChallan > 0 ? ReceivedOnChallan : null,
+          badgeColor: "amber",
+        },
+        {
           to: "/store/low-stock-management",
           icon: FiAlertTriangle,
           label: "Low Stock Alerts",
           badge: 45,
           badgeColor: "red",
         },
-        { to: "/store/category-management", icon: FiLayers, label: "Manage Categories" },
-        { to: "/store/product-management", icon: FiSettings, label: "Manage Products" },
-        { to: "/store/stock-summary", icon: FiBarChart2, label: "Stock Summary" },
-        { to: "/store/stock-alerts", icon: FiBarChart2, label: "Stock Alerts" },
+        {
+          to: "/store/category-management",
+          icon: FiLayers,
+          label: "Manage Categories",
+        },
+        {
+          to: "/store/product-management",
+          icon: FiSettings,
+          label: "Manage Products",
+        },
+        {
+          to: "/store/stock-summary",
+          icon: FiBarChart2,
+          label: "Stock Summary",
+        },
+        { to: "/store/stock-alerts", icon: FiActivity, label: "Stock Alerts" },
       ],
     },
   ];
 
   const getBadgeClasses = (color) => {
     const colors = {
-      red:     "bg-red-100 text-red-700 border-red-200",
+      red: "bg-red-100 text-red-700 border-red-200",
       emerald: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      orange:  "bg-orange-100 text-orange-700 border-orange-200",
-      amber:   "bg-amber-100 text-amber-700 border-amber-200",
+      orange: "bg-orange-100 text-orange-700 border-orange-200",
+      amber: "bg-amber-100 text-amber-700 border-amber-200",
     };
     return colors[color] || "bg-slate-100 text-slate-700 border-slate-200";
   };
 
   return (
-    <aside className={`relative bg-white border-r border-slate-200 flex flex-col h-screen transition-all duration-300 ease-in-out flex-shrink-0 ${collapsed ? "w-[64px]" : "w-64"}`}>
-
+    <aside
+      className={`relative bg-white border-r border-slate-200 flex flex-col h-screen transition-all duration-300 ease-in-out flex-shrink-0 ${collapsed ? "w-[64px]" : "w-64"}`}
+    >
       {/* Header */}
       <div className="h-16 border-b border-slate-200 flex items-center flex-shrink-0 relative px-3">
         {!collapsed && (
           <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-8">
             <img src={logo} alt="Fib2Fab" className="h-9 flex-shrink-0" />
             <div className="min-w-0">
-              <h2 className="text-sm font-black text-indigo-600 whitespace-nowrap">ERP System</h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">Sales & Distribution</p>
+              <h2 className="text-sm font-black text-indigo-600 whitespace-nowrap">
+                ERP System
+              </h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
+                Sales & Distribution
+              </p>
             </div>
           </div>
         )}
@@ -151,7 +219,9 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
           <div key={idx} className={idx > 0 ? "mt-5" : ""}>
             {section.title && !collapsed && (
               <div className="px-3 mb-2">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {section.title}
+                </h3>
               </div>
             )}
             {section.title && collapsed && idx > 0 && (
@@ -172,25 +242,40 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
                 >
                   {({ isActive }) => (
                     <>
-                      <div className={`flex items-center gap-3 ${collapsed ? "" : "flex-1 min-w-0"}`}>
-                        <item.icon size={18} className={`flex-shrink-0 ${isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"}`} />
-                        {!collapsed && <span className="truncate">{item.label}</span>}
+                      <div
+                        className={`flex items-center gap-3 ${collapsed ? "" : "flex-1 min-w-0"}`}
+                      >
+                        <item.icon
+                          size={18}
+                          className={`flex-shrink-0 ${isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"}`}
+                        />
+                        {!collapsed && (
+                          <span className="truncate">{item.label}</span>
+                        )}
                       </div>
 
                       {/* Badge — expanded */}
                       {!collapsed && item.badge != null && (
-                        <span className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border flex-shrink-0 ${getBadgeClasses(item.badgeColor)}`}>
+                        <span
+                          className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border flex-shrink-0 ${getBadgeClasses(item.badgeColor)}`}
+                        >
                           {item.badge}
                         </span>
                       )}
 
                       {/* Badge dot — collapsed */}
                       {collapsed && item.badge != null && (
-                        <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                          item.badgeColor === "red" ? "bg-red-500" :
-                          item.badgeColor === "emerald" ? "bg-emerald-500" :
-                          item.badgeColor === "orange" ? "bg-orange-500" : "bg-amber-500"
-                        }`} />
+                        <span
+                          className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
+                            item.badgeColor === "red"
+                              ? "bg-red-500"
+                              : item.badgeColor === "emerald"
+                                ? "bg-emerald-500"
+                                : item.badgeColor === "orange"
+                                  ? "bg-orange-500"
+                                  : "bg-amber-500"
+                          }`}
+                        />
                       )}
                     </>
                   )}
@@ -202,15 +287,25 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       </nav>
 
       {/* User */}
-      <div className={`p-3 border-t border-slate-200 flex-shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
-        <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+      <div
+        className={`p-3 border-t border-slate-200 flex-shrink-0 ${collapsed ? "flex justify-center" : ""}`}
+      >
+        <div
+          className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
+        >
           <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-emerald-600">{initials}</span>
+            <span className="text-sm font-bold text-emerald-600">
+              {initials}
+            </span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-800 truncate">{userData.name}</p>
-              <p className="text-xs text-slate-400 truncate">{userData.email}</p>
+              <p className="text-sm font-bold text-slate-800 truncate">
+                {userData.name}
+              </p>
+              <p className="text-xs text-slate-400 truncate">
+                {userData.email}
+              </p>
             </div>
           )}
         </div>

@@ -700,7 +700,7 @@ export default function SalesDebitNotes() {
           (d) =>
             d.type === "INVOICE" &&
             d.storeQcStatus === "approved" &&
-            d.linkedPoId,
+            d.linkedSoId,
         ),
       );
       const notesSnap = await getDocs(collection(db, DB_NOTES));

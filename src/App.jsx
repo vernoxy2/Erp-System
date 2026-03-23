@@ -43,6 +43,7 @@ import StoreVerifyQuality from "./Store-ManagerPages/Store-Page/StoreVerifyQuali
 import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChallan";
 import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
 import StoreDebitNotes from "./Store-ManagerPages/Store-Page/StoreDebitNotes";
+import StoreReceivedOnChallan from "./Store-ManagerPages/Store-Page/StoreReceivedOnChallan";
 const App = () => {
   return (
     <Routes>
@@ -74,10 +75,10 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
-        <Route path="store-debit-notes" element={<StoreDebitNotes />} />
+       
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
-        <Route path="dispatch-on-challan" element={<DispatchOnChallan />} />
+        <Route path="dispatch-on-challan" element={<DispatchOnChallanList  />} />
         <Route
           path="dispatch-on-challan-list"
           element={<DispatchOnChallanList />}
@@ -118,7 +119,7 @@ const App = () => {
         {/* Catch all */}
         {/* <Route path="*" element={<Navigate to="/sales/dashboard" replace />} /> */}
       </Route>
-    
+
       {/* STORE ROUTES */}
       <Route path="/store/*" element={<StoreLayout />}>
         <Route path="dashboard" element={<StoreDashboard />} />
@@ -134,8 +135,12 @@ const App = () => {
           element={<StoreCategoryManagement />}
         />
         <Route path="product-management" element={<StoreProductManagement />} />
-        
-      {/* <Route path="store-header" element={<StoreHeader />} /> */}
+ <Route path="store-debit-notes" element={<StoreDebitNotes />} />
+        <Route
+          path="store-Received-On-Challan"
+          element={<StoreReceivedOnChallan />}
+        />
+        {/* <Route path="store-header" element={<StoreHeader />} /> */}
       </Route>
     </Routes>
   );

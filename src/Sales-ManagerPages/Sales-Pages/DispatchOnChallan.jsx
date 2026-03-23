@@ -368,7 +368,7 @@ export default function DispatchOnChallan() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await addDoc(collection(db, "challans"), {
+      await addDoc(collection(db, "dispatchChallans"), {
         challanNo,
         createdAt: serverTimestamp(),
         header: getHeader(),
