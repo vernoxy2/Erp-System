@@ -140,10 +140,10 @@ useEffect(() => {
       ],
     },
     {
-      title: "AUDITMENU",
+      title: "STOCK AUDIT",
       items: [
         { to: "/sales/stock-verification", icon: FiSettings, label: "Stock Verification" },
-        { to: "/sales/manual-adjustment",  icon: FiEdit,     label: "Manual Adjustment" },
+        { to: "/sales/manual-adjustment",  icon: FiEdit,     label: "Manual Stock Adjustment" },
         { to: "/sales/approval-queue",     icon: FiCheckSquare, label: "Approval Queue" },
         { to: "/sales/adjustment-history", icon: FiClock,    label: "Adjustment History" },
         { to: "/sales/verification-reports", icon: FiFileText, label: "Verification Reports" },
