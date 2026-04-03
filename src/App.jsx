@@ -44,6 +44,12 @@ import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChalla
 import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
 import StoreDebitNotes from "./Store-ManagerPages/Store-Page/StoreDebitNotes";
 import StoreReceivedOnChallan from "./Store-ManagerPages/Store-Page/StoreReceivedOnChallan";
+
+import StockVerification from "./Sales-ManagerPages/Sales-Pages/Audit/StockVerification";
+import ManualStockAdjustment from "./Sales-ManagerPages/Sales-Pages/Audit/ManualStockAdjustment";
+import ApprovalQueue from "./Sales-ManagerPages/Sales-Pages/Audit/ApprovalQueue";
+import AdjustmentHistory from "./Sales-ManagerPages/Sales-Pages/Audit/AdjustmentHistory";
+import VerificationReports from "./Sales-ManagerPages/Sales-Pages/Audit/VerificationReports";
 const App = () => {
   return (
     <Routes>
@@ -75,10 +81,10 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
-       
+
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
-        <Route path="dispatch-on-challan" element={<DispatchOnChallanList  />} />
+        <Route path="dispatch-on-challan" element={<DispatchOnChallanList />} />
         <Route
           path="dispatch-on-challan-list"
           element={<DispatchOnChallanList />}
@@ -115,9 +121,15 @@ const App = () => {
         <Route path="stock-alerts" element={<StockAlerts />} />
         {/* REPORTS */}
         <Route path="reports" element={<ReportsAnalytics />} />
+
+        {/* Audit Routes */}
+        <Route path="stock-verification" element={<StockVerification />} />
+        <Route path="manual-adjustment" element={<ManualStockAdjustment />} />
+        <Route path="approval-queue" element={<ApprovalQueue />} />
+        <Route path="adjustment-history" element={<AdjustmentHistory />} />
+        <Route path="verification-reports" element={<VerificationReports />} />
+
         <Route path="*" element={<Navigate to="/Login" replace />} />
-        {/* Catch all */}
-        {/* <Route path="*" element={<Navigate to="/sales/dashboard" replace />} /> */}
       </Route>
 
       {/* STORE ROUTES */}
@@ -135,12 +147,16 @@ const App = () => {
           element={<StoreCategoryManagement />}
         />
         <Route path="product-management" element={<StoreProductManagement />} />
- <Route path="store-debit-notes" element={<StoreDebitNotes />} />
+        <Route path="store-debit-notes" element={<StoreDebitNotes />} />
         <Route
           path="store-Received-On-Challan"
           element={<StoreReceivedOnChallan />}
         />
         {/* <Route path="store-header" element={<StoreHeader />} /> */}
+
+        {/* Audit Routes for Store */}
+        <Route path="stock-verification" element={<StockVerification />} />
+        <Route path="manual-adjustment" element={<ManualStockAdjustment />} />
       </Route>
     </Routes>
   );

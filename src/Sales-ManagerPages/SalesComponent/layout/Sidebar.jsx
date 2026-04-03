@@ -7,7 +7,7 @@ import {
   FiHome, FiFileText, FiBell, FiTruck, FiClock, FiArchive,
   FiShoppingCart, FiUpload, FiBarChart2, FiPackage, FiAlertTriangle,
   FiTrendingUp, FiLayers, FiSettings, FiClipboard, FiInbox,
-  FiRefreshCw, FiMenu, FiChevronLeft,
+  FiRefreshCw, FiMenu, FiChevronLeft, FiEdit, FiCheckSquare
 } from "react-icons/fi";
 import logo from "../../../assets/logo.svg";
 
@@ -137,6 +137,16 @@ useEffect(() => {
       items: [
         { to: "/sales/items-master", icon: FiPackage,      label: "Items Master" },
         { to: "/sales/stock-alerts", icon: FiAlertTriangle, label: "Stock Alerts", badge: stockAlertsCount || null,  badgeColor: "red" },
+      ],
+    },
+    {
+      title: "AUDITMENU",
+      items: [
+        { to: "/sales/stock-verification", icon: FiSettings, label: "Stock Verification" },
+        { to: "/sales/manual-adjustment",  icon: FiEdit,     label: "Manual Adjustment" },
+        { to: "/sales/approval-queue",     icon: FiCheckSquare, label: "Approval Queue" },
+        { to: "/sales/adjustment-history", icon: FiClock,    label: "Adjustment History" },
+        { to: "/sales/verification-reports", icon: FiFileText, label: "Verification Reports" },
       ],
     },
     {

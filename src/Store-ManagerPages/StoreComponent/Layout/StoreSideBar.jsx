@@ -12,6 +12,7 @@ import {
   FiInbox,
   FiFileText,
   FiActivity,
+  FiEdit,
 } from "react-icons/fi";
 import {
   doc,
@@ -167,6 +168,13 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
           label: "Stock Summary",
         },
         { to: "/store/stock-alerts", icon: FiActivity, label: "Stock Alerts" },
+      ],
+    },
+    {
+      title: "AUDITMENU",
+      items: [
+        { to: "/store/stock-verification", icon: FiSettings, label: "Stock Verification" },
+        { to: "/store/manual-adjustment",  icon: FiEdit,     label: "Manual Adjustment" },
       ],
     },
   ];

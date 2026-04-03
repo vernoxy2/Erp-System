@@ -232,7 +232,7 @@ export default function SalesStock() {
 
   const getSOPending = (item) => soPartialMap[item.productCode] || null;
   const getSOShortage = (item) => parseFloat(item.soShortage || 0);
-
+  const [unitFilter, setUnitFilter] = useState("__ALL__");
   const shortageCount = stockItems.filter(
     (s) => getItemStatus(s) === "shortage",
   ).length;
@@ -241,8 +241,54 @@ export default function SalesStock() {
     (s) => getItemStatus(s) === "reorder",
   ).length;
 
-  const filtered = useMemo(() => {
-    return stockItems.filter((s) => {
+  // const filtered = useMemo(() => {
+  //   return stockItems.filter((s) => {
+  //     const matchSearch =
+  //       (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
+  //       (s.productCode || "").toLowerCase().includes(search.toLowerCase()) ||
+  //       (s.ledger || []).some((l) =>
+  //         (l.ref || "").toLowerCase().includes(search.toLowerCase()),
+  //       );
+  //     const matchCategory =
+  //       categoryFilter === "__ALL__" || s.categoryName === categoryFilter;
+  //     const matchAlert = !filterLow || getItemStatus(s) !== "ok";
+  //     const matchStatus =
+  //       statusFilter === "__ALL__" ||
+  //       (statusFilter === "damaged"
+  //         ? getDamagedQty(s) > 0
+  //         : statusFilter === "partial"
+  //           ? !!getSOPending(s)
+  //           : statusFilter === "shortage_qc"
+  //             ? s.qcIssue === "shortage"
+  //             : statusFilter === "quality"
+  //               ? s.qcIssue === "quality"
+  //               : statusFilter === "excess"
+  //                 ? s.qcIssue === "excess"
+  //                 : getItemStatus(s) === statusFilter);
+  //     const matchUnit =
+  //       unitFilter === "__ALL__" ||
+  //       (s.unit || "").toLowerCase() === unitFilter.toLowerCase();
+  //     return (
+  //       matchSearch &&
+  //       matchCategory &&
+  //       matchAlert &&
+  //       matchStatus &&
+  //       matchVendor &&
+  //       matchUnit
+  //     );
+  //   });
+  // }, [
+  //   stockItems,
+  //   search,
+  //   filterLow,
+  //   categoryFilter,
+  //   statusFilter,
+  //   vendorFilter,
+  //   qcDamageMap,
+  //   soPartialMap,
+  // ]);
+
+  const filtered = useMemo(() => { return stockItems.filter((s) => {
       const matchSearch =
         (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
         (s.productCode || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -268,8 +314,16 @@ export default function SalesStock() {
       const matchVendor =
         vendorFilter === "__ALL__" ||
         (s.ledger || []).some((l) => l.by === vendorFilter);
+      const matchUnit =
+        unitFilter === "__ALL__" ||
+        (s.unit || "").toLowerCase() === unitFilter.toLowerCase();
       return (
-        matchSearch && matchCategory && matchAlert && matchStatus && matchVendor
+        matchSearch &&
+        matchCategory &&
+        matchAlert &&
+        matchStatus &&
+        matchVendor &&
+        matchUnit
       );
     });
   }, [
@@ -279,6 +333,7 @@ export default function SalesStock() {
     categoryFilter,
     statusFilter,
     vendorFilter,
+    unitFilter,
     qcDamageMap,
     soPartialMap,
   ]);
@@ -374,14 +429,27 @@ export default function SalesStock() {
           >
             <option value="__ALL__">All Status</option>
             <option value="shortage">Shortage</option>
-            <option value="damaged">🔴 Damage</option>
-            <option value="shortage_qc">🟠 QC Shortage</option>
-            <option value="quality">🟡 Quality Issue</option>
-            <option value="excess">🟣 Excess</option>
+            <option value="damaged">Damage</option>
+            <option value="shortage_qc">QC Shortage</option>
+            <option value="quality">Quality Issue</option>
+            <option value="excess">Excess</option>
             <option value="partial">SO Partial</option>
             <option value="low">Low Stock</option>
             <option value="reorder">Reorder</option>
             <option value="ok">OK</option>
+          </select>
+
+          <select
+            value={unitFilter}
+            onChange={(e) => setUnitFilter(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[120px]"
+          >
+            <option value="__ALL__">All Units</option>
+            <option value="nos">NOS</option>
+            <option value="kg">KG</option>
+            <option value="pcs">PCS</option>
+            <option value="mtr">MTR</option>
+            <option value="set">SET</option>
           </select>
           <button
             onClick={() => setFilterLow(!filterLow)}
