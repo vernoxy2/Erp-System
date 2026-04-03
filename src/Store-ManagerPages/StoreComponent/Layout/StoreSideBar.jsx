@@ -171,10 +171,10 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       ],
     },
     {
-      title: "AUDITMENU",
+      title: "STOCK AUDIT",
       items: [
         { to: "/store/stock-verification", icon: FiSettings, label: "Stock Verification" },
-        { to: "/store/manual-adjustment",  icon: FiEdit,     label: "Manual Adjustment" },
+        { to: "/store/manual-adjustment",  icon: FiEdit,     label: "Manual Stock Adjustment" },
       ],
     },
   ];

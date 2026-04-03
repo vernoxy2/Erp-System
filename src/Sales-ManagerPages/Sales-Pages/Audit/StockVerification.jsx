@@ -67,9 +67,15 @@ const StockVerification = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Stock Verification</h1>
-        <p className="text-gray-600 mt-1">Physical stock counting and comparison</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-black text-slate-800">
+            Stock Verification
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Physical stock counting and comparison
+          </p>
+        </div>
       </div>
 
       {status === 'not_started' && (

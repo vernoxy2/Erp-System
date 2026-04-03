@@ -288,7 +288,8 @@ export default function SalesStock() {
   //   soPartialMap,
   // ]);
 
-  const filtered = useMemo(() => { return stockItems.filter((s) => {
+  const filtered = useMemo(() => {
+    return stockItems.filter((s) => {
       const matchSearch =
         (s.description || "").toLowerCase().includes(search.toLowerCase()) ||
         (s.productCode || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -970,17 +971,30 @@ export default function SalesStock() {
                     const hasDmg = dmgQty > 0;
                     const isOut = l.type === "OUT";
                     const isReplacementIn = l.type === "replacement-in";
+                    const isManual =
+                      l.ref?.startsWith("MANUAL-") ||
+                      (l.remarks || "").includes("Manual Adjustment");
                     return (
                       <div
                         key={i}
                         className={`flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 ${
-                          hasDmg
-                            ? "border-red-100 bg-red-50/30"
-                            : isOut
-                              ? "border-amber-100 bg-amber-50/20"
-                              : isReplacementIn
-                                ? "border-emerald-100 bg-emerald-50/30"
-                                : "border-slate-100"
+                          //   hasDmg
+                          //     ? "border-red-100 bg-red-50/30"
+                          //     : isOut
+                          //       ? "border-amber-100 bg-amber-50/20"
+                          //       : isReplacementIn
+                          //         ? "border-emerald-100 bg-emerald-50/30"
+                          //         : "border-slate-100"
+                          // }`}
+                          isManual
+                            ? "border-indigo-100 bg-indigo-50/40"
+                            : hasDmg
+                              ? "border-red-100 bg-red-50/30"
+                              : isOut
+                                ? "border-amber-100 bg-amber-50/20"
+                                : isReplacementIn
+                                  ? "border-emerald-100 bg-emerald-50/30"
+                                  : "border-slate-100"
                         }`}
                       >
                         <div
