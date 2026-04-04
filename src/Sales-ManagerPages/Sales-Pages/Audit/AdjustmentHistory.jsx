@@ -621,10 +621,10 @@ const AdjustmentHistory = () => {
       {/* ── Summary Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Adjustments", value: adjustments.length, color: "indigo", icon: "📋" },
-          { label: "This Month", value: thisMonthCount, color: "blue", icon: "🗓️" },
-          { label: "Approved", value: statusCounts.approved, color: "green", icon: "✅" },
-          { label: "Pending", value: statusCounts.pending, color: "yellow", icon: "⏳" },
+          { label: "Total Adjustments", value: adjustments.length, color: "indigo", icon: "" },
+          { label: "This Month", value: thisMonthCount, color: "blue", icon: "" },
+          { label: "Approved", value: statusCounts.approved, color: "green", icon: "" },
+          { label: "Pending", value: statusCounts.pending, color: "yellow", icon: "" },
         ].map((card) => (
           <div
             key={card.label}

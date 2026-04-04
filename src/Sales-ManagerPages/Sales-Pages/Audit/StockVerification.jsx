@@ -14,10 +14,10 @@ const StockVerification = () => {
   });
 
   const verificationTypes = [
-    { id: 'full', name: 'Full Count', description: 'Count all 1,261 products', icon: '📦' },
-    { id: 'category', name: 'Category Count', description: 'Count one category at a time', icon: '📁' },
-    { id: 'random', name: 'Random Sample', description: 'System picks 20% (252 products)', icon: '🎲' },
-    { id: 'specific', name: 'Specific Products', description: 'Manually select products', icon: '🎯' }
+    { id: 'full', name: 'Full Count', description: 'Count all 1,261 products', icon: '' },
+    { id: 'category', name: 'Category Count', description: 'Count one category at a time', icon: '' },
+    { id: 'random', name: 'Random Sample', description: 'System picks 20% (252 products)', icon: '' },
+    { id: 'specific', name: 'Specific Products', description: 'Manually select products', icon: '' }
   ];
 
   const sampleProducts = [
@@ -112,7 +112,7 @@ const StockVerification = () => {
                   <p className="text-2xl font-bold text-gray-800">{products.length}</p>
                 </div>
                 <div className="bg-indigo-100 p-3 rounded-full">
-                  <span className="text-2xl">📦</span>
+                  <span className="text-2xl"></span>
                 </div>
               </div>
             </div>
@@ -126,7 +126,7 @@ const StockVerification = () => {
                   </p>
                 </div>
                 <div className="bg-green-100 p-3 rounded-full">
-                  <span className="text-2xl">✓</span>
+                  <span className="text-2xl"></span>
                 </div>
               </div>
             </div>

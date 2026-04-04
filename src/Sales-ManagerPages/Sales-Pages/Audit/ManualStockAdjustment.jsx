@@ -166,9 +166,9 @@ const ManualStockAdjustment = () => {
       alert("Please enter a valid product code first!");
       return;
     }
-    const adjustment = currentAdjustment.adjustQty;
-    // const newTotal = currentAdjustment.systemStock + adjustment;
     const newTotal = currentAdjustment.adjustQty;
+    const adjustment =
+      currentAdjustment.adjustQty - currentAdjustment.systemStock;
     setAdjustments([
       ...adjustments,
       {
@@ -236,8 +236,10 @@ const ManualStockAdjustment = () => {
           productName: adj.productName,
           systemStock: adj.systemStock,
           physicalStock: adj.systemStock + adj.adjustment,
-          adjustment: adj.adjustment,
-          adjustQty: adj.adjustment,
+          // adjustment: adj.adjustment,
+          adjustment: adj.newTotal - adj.systemStock,
+          adjustQty: adj.newTotal - adj.systemStock,
+          // adjustQty: adj.adjustment,
           newTotal: adj.newTotal,
           unit: adj.unit,
           category: adj.category || "",
@@ -568,7 +570,7 @@ const ManualStockAdjustment = () => {
       {/* Prefill loading */}
       {prefillLoading && (
         <div className="mb-6 text-center py-6 text-indigo-500 text-sm animate-pulse">
-          🔍 Fetching stock data for mismatched products...
+          Fetching stock data for mismatched products...
         </div>
       )}
 
@@ -580,7 +582,7 @@ const ManualStockAdjustment = () => {
             className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-indigo-500 hover:shadow-lg cursor-pointer transition-all"
           >
             <div className="flex items-start space-x-4">
-              <span className="text-4xl">📝</span>
+              <span className="text-4xl"></span>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800">
                   Single Product Mode
@@ -606,7 +608,7 @@ const ManualStockAdjustment = () => {
             className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-indigo-500 hover:shadow-lg cursor-pointer transition-all"
           >
             <div className="flex items-start space-x-4">
-              <span className="text-4xl">📊</span>
+              <span className="text-4xl"></span>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800">
                   Bulk Upload Mode
@@ -642,7 +644,7 @@ const ManualStockAdjustment = () => {
                   </p>
                 </div>
                 <div className="bg-indigo-100 p-3 rounded-full">
-                  <span className="text-2xl">📦</span>
+                  <span className="text-2xl"></span>
                 </div>
               </div>
             </div>
@@ -655,7 +657,7 @@ const ManualStockAdjustment = () => {
                   </p>
                 </div>
                 <div className="bg-green-100 p-3 rounded-full">
-                  <span className="text-2xl">📈</span>
+                  <span className="text-2xl"></span>
                 </div>
               </div>
             </div>
@@ -825,7 +827,7 @@ const ManualStockAdjustment = () => {
                         : "bg-red-50 border-red-200 text-red-800"
                     }`}
                   >
-                    📊 Stock will be SET to:{" "}
+                    Stock will be SET to:{" "}
                     <strong>
                       {currentAdjustment.adjustQty} {currentAdjustment.unit}
                     </strong>
@@ -1028,7 +1030,7 @@ const ManualStockAdjustment = () => {
                   </span>
                   {validBulkCount > 0 && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
-                      ✓ {validBulkCount} matched
+                       {validBulkCount} matched
                     </span>
                   )}
                   {newBulkCount > 0 && (
@@ -1095,7 +1097,7 @@ const ManualStockAdjustment = () => {
                           <td className="px-3 py-2.5">
                             {row.valid ? (
                               <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                ✓ Matched
+                                Matched
                               </span>
                             ) : row.isNew ? (
                               <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -1103,7 +1105,7 @@ const ManualStockAdjustment = () => {
                               </span>
                             ) : (
                               <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                ✗ {row.error}
+                                 {row.error}
                               </span>
                             )}
                           </td>
@@ -1222,8 +1224,8 @@ const ManualStockAdjustment = () => {
           }}
           className="fixed inset-0 z-50"
         >
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 text-center">
-            <div className="text-5xl mb-4">📦</div>
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl mx-4 text-center">
+            <div className="text-5xl mb-4"></div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               Confirm Bulk Stock Update
             </h2>
@@ -1237,7 +1239,7 @@ const ManualStockAdjustment = () => {
             <div className="flex justify-center gap-2 mb-5">
               {validBulkCount > 0 && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">
-                  ✓ {validBulkCount} update existing
+                  {validBulkCount} update existing
                 </span>
               )}
               {newBulkCount > 0 && (
@@ -1315,7 +1317,7 @@ const ManualStockAdjustment = () => {
                 onClick={submitBulk}
                 className="flex-1 bg-green-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors"
               >
-                ✅ Confirm & Update Stock
+                 Confirm & Update Stock
               </button>
             </div>
           </div>

@@ -161,7 +161,7 @@ const ApprovalQueue = () => {
               </p>
             </div>
             <div className="bg-yellow-100 p-3 rounded-full">
-              <span className="text-2xl">⏳</span>
+              <span className="text-2xl"></span>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ const ApprovalQueue = () => {
               </p>
             </div>
             <div className="bg-red-100 p-3 rounded-full">
-              <span className="text-2xl">🔴</span>
+              <span className="text-2xl"></span>
             </div>
           </div>
         </div>
@@ -453,7 +453,7 @@ const ApprovalQueue = () => {
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Approval Decision</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="border-2 border-green-200 bg-green-50 rounded-lg p-5 text-center">
-                <div className="text-4xl mb-3">✓</div>
+                <div className="text-4xl mb-3"></div>
                 <h4 className="font-semibold text-gray-800 mb-2">Approve Request</h4>
                 <p className="text-sm text-gray-600 mb-4">Stock will be updated immediately</p>
                 <button
@@ -466,7 +466,7 @@ const ApprovalQueue = () => {
               </div>
 
               <div className="border-2 border-red-200 bg-red-50 rounded-lg p-5 text-center">
-                <div className="text-4xl mb-3">✗</div>
+                <div className="text-4xl mb-3"></div>
                 <h4 className="font-semibold text-gray-800 mb-2">Reject Request</h4>
                 <p className="text-sm text-gray-600 mb-4">Provide a reason for rejection</p>
                 <button
