@@ -971,9 +971,12 @@ export default function SalesStock() {
                     const hasDmg = dmgQty > 0;
                     const isOut = l.type === "OUT";
                     const isReplacementIn = l.type === "replacement-in";
-                    const isManual =
-                      l.ref?.startsWith("MANUAL-") ||
-                      (l.remarks || "").includes("Manual Adjustment");
+                    // const isManual =
+                    //   l.ref?.startsWith("MANUAL-") ||
+                    //   (l.remarks || "").includes("Manual Adjustment");
+                    const isManualAdj = l.type === "MANUAL_ADJUSTMENT";
+                    const isBulkAdj = l.type === "BULK_ADJUSTMENT";
+                    const isManual = isManualAdj || isBulkAdj;
                     return (
                       <div
                         key={i}
@@ -997,8 +1000,17 @@ export default function SalesStock() {
                                   : "border-slate-100"
                         }`}
                       >
-                        <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" || isReplacementIn ? "bg-emerald-100" : "bg-amber-100"}`}
+                        {/* <div
+                          // className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${l.type === "IN" || isReplacementIn ? "bg-emerald-100" : "bg-amber-100"}`}
+                          className={`w-7 h-7 rounded-full ... ${
+                            isManualAdj
+                              ? "bg-indigo-100"
+                              : isBulkAdj
+                                ? "bg-blue-100"
+                                : l.type === "IN" || isReplacementIn
+                                  ? "bg-emerald-100"
+                                  : "bg-amber-100"
+                          }`}
                         >
                           {l.type === "IN" || isReplacementIn ? (
                             <FiArrowDown
@@ -1007,6 +1019,31 @@ export default function SalesStock() {
                             />
                           ) : (
                             <FiArrowUp size={13} className="text-amber-600" />
+                          )}
+                        </div> */}
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            isManualAdj
+                              ? "bg-indigo-100"
+                              : isBulkAdj
+                                ? "bg-blue-100"
+                                : l.type === "IN" || isReplacementIn
+                                  ? "bg-emerald-100"
+                                  : "bg-amber-100"
+                          }`}
+                        >
+                          {isManualAdj || isBulkAdj ? (
+                            <span className="text-[10px] leading-none">⚙</span>
+                          ) : l.type === "IN" || isReplacementIn ? (
+                            <FiArrowDown
+                              size={13}
+                              className="text-emerald-600 block"
+                            />
+                          ) : (
+                            <FiArrowUp
+                              size={13}
+                              className="text-amber-600 block"
+                            />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1017,9 +1054,19 @@ export default function SalesStock() {
                               {isReplacementIn ? "REPLACEMENT IN" : l.type}{" "}
                               {l.qty} units
                             </span>
-                            {isOut && (
+                            {isOut && !isManualAdj && !isBulkAdj && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
                                 <FiPackage size={8} /> SO Reserved
+                              </span>
+                            )}
+                            {isManualAdj && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded-full">
+                                ✏️ Manual Adjustment
+                              </span>
+                            )}
+                            {isBulkAdj && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                                📊 Bulk Adjustment
                               </span>
                             )}
                             {hasDmg && (
