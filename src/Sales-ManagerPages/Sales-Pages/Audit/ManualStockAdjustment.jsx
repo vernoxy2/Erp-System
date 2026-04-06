@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { useLocation } from "react-router-dom";
-import { db } from "../../../firebase";
+import { db, auth } from "../../../firebase";
 import {
   collection,
   query,
@@ -37,22 +37,50 @@ const ManualStockAdjustment = () => {
   const [stockDocId, setStockDocId] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isManualEntry, setIsManualEntry] = useState(false);
 
   // Bulk states
   const [bulkRows, setBulkRows] = useState([]);
   const [bulkValidating, setBulkValidating] = useState(false);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
   // Verification prefill banner
   const [verificationSource, setVerificationSource] = useState(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
 
-  // ── Replace with your auth context ──
-  const currentUser = {
-    name: "Store Manager",
-    role: "Store Manager",
-  };
+  const [currentUser, setCurrentUser] = useState({
+    name: "",
+    role: "user",
+    department: "",
+    email: "",
+    uid: "",
+  });
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (!firebaseUser) return;
+      try {
+        const q = query(
+          collection(db, "user"),
+          where("email", "==", firebaseUser.email),
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const userData = snap.docs[0].data();
+          setCurrentUser({
+            name: userData.name || "Store Manager",
+            role: userData.role || "user",
+            department: userData.department || "",
+            email: userData.email || firebaseUser.email,
+            uid: firebaseUser.uid,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const categories = [
     "Physical Verification Mismatch",
@@ -65,13 +93,14 @@ const ManualStockAdjustment = () => {
     "Other",
   ];
 
-  const getApprovalLevel = (role) => {
-    if (!role) return "Store Manager";
-    const r = role.toLowerCase();
-    if (r.includes("sales")) return "Store Manager";
+  const getApprovalLevel = (role, department) => {
+    const r = (role || "").toLowerCase();
+    const d = (department || "").toLowerCase();
+    if (d === "warehouse") return "Admin";
     if (r.includes("store")) return "Admin";
+    if (r.includes("sales")) return "Store Manager";
     if (r.includes("admin")) return "Owner";
-    return "Store Manager";
+    return "Admin";
   };
 
   // ── On mount: check if navigated from VerificationReports ──
@@ -126,6 +155,36 @@ const ManualStockAdjustment = () => {
   };
 
   // ── Auto-fill on product code blur ──
+  // const handleProductCodeBlur = async () => {
+  //   const code = currentAdjustment.productCode.trim();
+  //   if (!code) return;
+  //   setLoadingCode(true);
+  //   try {
+  //     const q = query(
+  //       collection(db, "stock"),
+  //       where("productCode", "==", code),
+  //     );
+  //     const snap = await getDocs(q);
+  //     if (!snap.empty) {
+  //       const d = snap.docs[0];
+  //       const item = d.data();
+  //       setStockDocId(d.id);
+  //       setCurrentAdjustment((prev) => ({
+  //         ...prev,
+  //         productName: item.description || item.productName || "",
+  //         systemStock: item.available ?? 0,
+  //         unit: item.unit || "KG",
+  //       }));
+  //     } else {
+  //       alert("Product code not found in stock!");
+  //       setStockDocId(null);
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  //   setLoadingCode(false);
+  // };
+
   const handleProductCodeBlur = async () => {
     const code = currentAdjustment.productCode.trim();
     if (!code) return;
@@ -137,9 +196,11 @@ const ManualStockAdjustment = () => {
       );
       const snap = await getDocs(q);
       if (!snap.empty) {
+        // ✅ Found — auto-fill as before
         const d = snap.docs[0];
         const item = d.data();
         setStockDocId(d.id);
+        setIsManualEntry(false);
         setCurrentAdjustment((prev) => ({
           ...prev,
           productName: item.description || item.productName || "",
@@ -147,23 +208,41 @@ const ManualStockAdjustment = () => {
           unit: item.unit || "KG",
         }));
       } else {
-        alert("Product code not found in stock!");
+        // ✅ Not found — manual entry allow કરો, alert નહીં
         setStockDocId(null);
+        setIsManualEntry(true);
+        setCurrentAdjustment((prev) => ({
+          ...prev,
+          productName: "",
+          systemStock: 0,
+          unit: "",
+        }));
       }
     } catch (err) {
       console.error(err);
     }
     setLoadingCode(false);
   };
-
   // ── Single: Add to list ──
   const addAdjustment = () => {
     if (!currentAdjustment.reason) {
       alert("Reason is mandatory!");
       return;
     }
-    if (!stockDocId) {
-      alert("Please enter a valid product code first!");
+    // if (!stockDocId) {
+    //   alert("Please enter a valid product code first!");
+    //   return;
+    // }
+    if (!stockDocId && !isManualEntry) {
+      alert("Please enter a product code first!");
+      return;
+    }
+    if (isManualEntry && !currentAdjustment.productName) {
+      alert("Product Name is mandatory for new items!");
+      return;
+    }
+    if (isManualEntry && !currentAdjustment.unit) {
+      alert("Unit is mandatory for new items!");
       return;
     }
     const newTotal = currentAdjustment.adjustQty;
@@ -189,6 +268,7 @@ const ManualStockAdjustment = () => {
       reason: "",
     });
     setStockDocId(null);
+    setIsManualEntry(false);
   };
 
   // ── Remove a prefilled or manually added adjustment ──
@@ -204,8 +284,24 @@ const ManualStockAdjustment = () => {
       const docId = generateDocId("ADJ");
       const ref = `MANUAL-${docId}`;
 
+      // for (const adj of adjustments) {
+      //   // const newAvailable = adj.systemStock + adj.adjustment;
+      //   const newAvailable = adj.newTotal;
+      //   const ledgerEntry = {
+      //     type: "MANUAL_ADJUSTMENT",
+      //     qty: Math.abs(adj.adjustment),
+      //     balance: newAvailable,
+      //     by: currentUser.name,
+      //     ref,
+      //     date: new Date().toISOString(),
+      //     remarks: `Manual Adjustment — ${adj.reason}${adj.category ? ` (${adj.category})` : ""}`,
+      //   };
+      //   await updateDoc(doc(db, "stock", adj.stockDocId), {
+      //     available: newAvailable,
+      //     ledger: arrayUnion(ledgerEntry),
+      //   });
+      // }
       for (const adj of adjustments) {
-        // const newAvailable = adj.systemStock + adj.adjustment;
         const newAvailable = adj.newTotal;
         const ledgerEntry = {
           type: "MANUAL_ADJUSTMENT",
@@ -216,10 +312,24 @@ const ManualStockAdjustment = () => {
           date: new Date().toISOString(),
           remarks: `Manual Adjustment — ${adj.reason}${adj.category ? ` (${adj.category})` : ""}`,
         };
-        await updateDoc(doc(db, "stock", adj.stockDocId), {
-          available: newAvailable,
-          ledger: arrayUnion(ledgerEntry),
-        });
+
+        if (adj.stockDocId) {
+          // ✅ Found in stock — update
+          await updateDoc(doc(db, "stock", adj.stockDocId), {
+            available: newAvailable,
+            ledger: arrayUnion(ledgerEntry),
+          });
+        } else {
+          // ✅ Manual entry — create new stock doc
+          await addDoc(collection(db, "stock"), {
+            productCode: adj.productCode,
+            description: adj.productName,
+            available: newAvailable,
+            unit: adj.unit,
+            ledger: [ledgerEntry],
+            createdAt: serverTimestamp(),
+          });
+        }
       }
 
       await addDoc(collection(db, "stockAdjustments"), {
@@ -228,7 +338,11 @@ const ManualStockAdjustment = () => {
         status: "pending",
         requestedBy: currentUser.name,
         requestedByRole: currentUser.role,
-        approvalLevel: getApprovalLevel(currentUser.role),
+        department: currentUser.department,
+        approvalLevel: getApprovalLevel(
+          currentUser.role,
+          currentUser.department,
+        ),
         totalProducts: adjustments.length,
         sourceVerificationId: verificationSource || null,
         products: adjustments.map((adj) => ({
@@ -487,7 +601,11 @@ const ManualStockAdjustment = () => {
         status: "pending",
         requestedBy: currentUser.name,
         requestedByRole: currentUser.role,
-        approvalLevel: getApprovalLevel(currentUser.role),
+        department: currentUser.department,
+        approvalLevel: getApprovalLevel(
+          currentUser.role,
+          currentUser.department,
+        ),
         totalProducts: rowsToProcess.length,
         sourceVerificationId: verificationSource || null,
         products: rowsToProcess.map((row) => ({
@@ -698,12 +816,33 @@ const ManualStockAdjustment = () => {
                   Product Name{" "}
                   <span className="text-xs text-indigo-500">(auto-filled)</span>
                 </label>
-                <input
+                {/* <input
                   type="text"
                   value={currentAdjustment.productName}
                   readOnly
                   placeholder="Auto-filled from product code"
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700"
+                /> */}
+                <input
+                  type="text"
+                  value={currentAdjustment.productName}
+                  readOnly={!isManualEntry}
+                  onChange={(e) =>
+                    setCurrentAdjustment({
+                      ...currentAdjustment,
+                      productName: e.target.value,
+                    })
+                  }
+                  placeholder={
+                    isManualEntry
+                      ? "Type product name..."
+                      : "Auto-filled from product code"
+                  }
+                  className={`w-full px-4 py-2 border rounded-lg ${
+                    isManualEntry
+                      ? "border-orange-400 bg-white text-gray-800 focus:ring-2 focus:ring-orange-400"
+                      : "border-gray-200 bg-gray-50 text-gray-700"
+                  }`}
                 />
               </div>
               <div>
@@ -765,11 +904,28 @@ const ManualStockAdjustment = () => {
                   Unit{" "}
                   <span className="text-xs text-indigo-500">(auto-filled)</span>
                 </label>
-                <input
+                {/* <input
                   type="text"
                   value={currentAdjustment.unit}
                   readOnly
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700"
+                /> */}
+                <input
+                  type="text"
+                  value={currentAdjustment.unit}
+                  readOnly={!isManualEntry}
+                  onChange={(e) =>
+                    setCurrentAdjustment({
+                      ...currentAdjustment,
+                      unit: e.target.value,
+                    })
+                  }
+                  placeholder={isManualEntry ? "e.g. KG, PCS, MTR..." : ""}
+                  className={`w-full px-4 py-2 border rounded-lg ${
+                    isManualEntry
+                      ? "border-orange-400 bg-white text-gray-800 focus:ring-2 focus:ring-orange-400"
+                      : "border-gray-200 bg-gray-50 text-gray-700"
+                  }`}
                 />
               </div>
               <div>
@@ -1030,7 +1186,7 @@ const ManualStockAdjustment = () => {
                   </span>
                   {validBulkCount > 0 && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
-                       {validBulkCount} matched
+                      {validBulkCount} matched
                     </span>
                   )}
                   {newBulkCount > 0 && (
@@ -1105,7 +1261,7 @@ const ManualStockAdjustment = () => {
                               </span>
                             ) : (
                               <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                 {row.error}
+                                {row.error}
                               </span>
                             )}
                           </td>
@@ -1317,7 +1473,7 @@ const ManualStockAdjustment = () => {
                 onClick={submitBulk}
                 className="flex-1 bg-green-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors"
               >
-                 Confirm & Update Stock
+                Confirm & Update Stock
               </button>
             </div>
           </div>
