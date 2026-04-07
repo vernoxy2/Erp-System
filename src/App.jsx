@@ -50,10 +50,12 @@ import ManualStockAdjustment from "./Sales-ManagerPages/Sales-Pages/Audit/Manual
 import ApprovalQueue from "./Sales-ManagerPages/Sales-Pages/Audit/ApprovalQueue";
 import AdjustmentHistory from "./Sales-ManagerPages/Sales-Pages/Audit/AdjustmentHistory";
 import VerificationReports from "./Sales-ManagerPages/Sales-Pages/Audit/VerificationReports";
+import ManageCustomers from "./Sales-ManagerPages/Sales-Pages/ManageCustomers";
 const App = () => {
   return (
     <Routes>
       {/* All for sales */}
+
       <Route path="/" element={<Navigate to="/Login" replace />} />
       <Route path="/Login" element={<Login />} />
       <Route path="/sales/*" element={<SalesLayout />}>
@@ -73,6 +75,8 @@ const App = () => {
         <Route path="sales-orders/create" element={<CreateSalesOrder />} />
         <Route path="sales-orders/list" element={<SalesOrderList />} />
         <Route path="sales-orders/:id" element={<SalesOrderDetails />} />
+      
+
         <Route
           path="purchase-orders/complete/:poId"
           element={<POCompleteDetails />}
@@ -81,7 +85,6 @@ const App = () => {
           path="sales-orders/complete/:soId"
           element={<SOCompleteDetails />}
         />
-
         {/* DISPATCH */}
         {/* <Route path="/sales/dispatch-on-challan"        element={<DispatchOnChallanList />} /> */}
         <Route path="dispatch-on-challan" element={<DispatchOnChallanList />} />
@@ -116,6 +119,7 @@ const App = () => {
           path="vendor-invoice-history"
           element={<VendorInvoiceHistory />}
         />
+
         {/* INVENTORY */}
         <Route path="items-master" element={<ItemsMaster />} />
         <Route path="stock-alerts" element={<StockAlerts />} />
@@ -128,7 +132,7 @@ const App = () => {
         <Route path="approval-queue" element={<ApprovalQueue />} />
         <Route path="adjustment-history" element={<AdjustmentHistory />} />
         <Route path="verification-reports" element={<VerificationReports />} />
-
+        <Route path="customers" element={<ManageCustomers />} />
         <Route path="*" element={<Navigate to="/Login" replace />} />
       </Route>
 
@@ -152,6 +156,7 @@ const App = () => {
           path="store-Received-On-Challan"
           element={<StoreReceivedOnChallan />}
         />
+
         {/* <Route path="store-header" element={<StoreHeader />} /> */}
 
         {/* Audit Routes for Store */}

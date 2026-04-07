@@ -7,7 +7,7 @@ import {
   FiHome, FiFileText, FiBell, FiTruck, FiClock, FiArchive,
   FiShoppingCart, FiUpload, FiBarChart2, FiPackage, FiAlertTriangle,
   FiTrendingUp, FiLayers, FiSettings, FiClipboard, FiInbox,
-  FiRefreshCw, FiMenu, FiChevronLeft, FiEdit, FiCheckSquare
+  FiRefreshCw, FiMenu, FiChevronLeft, FiEdit, FiCheckSquare,FiUsers 
 } from "react-icons/fi";
 import logo from "../../../assets/logo.svg";
 
@@ -149,6 +149,13 @@ useEffect(() => {
         // { to: "/sales/verification-reports", icon: FiFileText, label: "Verification Reports" },
       ],
     },
+    {
+      title: "CUSTOMER",
+      items: [
+        { to: "/sales/customers", icon: FiUsers, label: "Customers" },
+      ],
+    },
+
     {
       title: "REPORTS",
       items: [
