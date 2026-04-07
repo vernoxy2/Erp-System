@@ -1,7 +1,5 @@
-// printUtils.js — call these from Print buttons
+// PrintUtils.jsx — call these from Print buttons
 
-import { printInvoiceDetails } from "./PrintUtils";
-import { printSODetails } from "./PrintUtils";
 export function printInvoiceDetails(inv) {
   const items = inv.items || [];
   const totalQty = items.reduce((s, i) => s + (i.newReceived || i.invoiceQty || 0), 0);
@@ -33,8 +31,16 @@ export function printInvoiceDetails(inv) {
     const inv2 = item.newReceived || item.invoiceQty || 0;
     const ordered = item.orderedQty || item.quantity || 0;
     const total = (item.alreadyReceived || 0) + phys;
-    const status = total === 0 ? "Ordered" : total < ordered ? "Partial" : total === ordered ? "Complete" : "Excess";
-    const statusColor = status === "Complete" ? "#16a34a" : status === "Partial" ? "#ea580c" : status === "Excess" ? "#9333ea" : "#2563eb";
+    const status =
+      total === 0 ? "Ordered"
+      : total < ordered ? "Partial"
+      : total === ordered ? "Complete"
+      : "Excess";
+    const statusColor =
+      status === "Complete" ? "#16a34a"
+      : status === "Partial" ? "#ea580c"
+      : status === "Excess" ? "#9333ea"
+      : "#2563eb";
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
@@ -48,7 +54,9 @@ export function printInvoiceDetails(inv) {
         <td style="padding:8px 10px;text-align:center;">
           <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;background:${statusColor}18;color:${statusColor};border:1px solid ${statusColor}40;">${status}</span>
         </td>
-        ${item.issue ? `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#dc2626;font-weight:700;">${item.issue.replace("_"," ")}${item.damagedQty > 0 ? ` (${item.damagedQty} dmg)` : ""}</td>` : `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#94a3b8;">—</td>`}
+        ${item.issue
+          ? `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#dc2626;font-weight:700;">${item.issue.replace("_", " ")}${item.damagedQty > 0 ? ` (${item.damagedQty} dmg)` : ""}</td>`
+          : `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#94a3b8;">—</td>`}
       </tr>`;
   }).join("");
 
@@ -91,53 +99,24 @@ export function printInvoiceDetails(inv) {
   </div>
 
   <div class="grid">
-    <div>
-      <div class="label">Invoice No</div>
-      <div class="value">${inv.invoiceNo || "—"}</div>
-    </div>
-    <div>
-      <div class="label">Invoice Date</div>
-      <div class="value">${formatDate(inv.invoiceDate)}</div>
-    </div>
-    <div>
-      <div class="label">PO Number</div>
-      <div class="value">${inv.linkedPoNo || "—"}</div>
-    </div>
-    <div>
-      <div class="label">Vendor</div>
-      <div class="value">${inv.vendor || "—"}</div>
-    </div>
-    <div>
-      <div class="label">Total Items</div>
-      <div class="value">${items.length}</div>
-    </div>
-    <div>
-      <div class="label">Total Units</div>
-      <div class="value">${totalQty}</div>
-    </div>
-    <div>
-      <div class="label">QC Status</div>
-      <div class="value" style="color:#16a34a;">${inv.storeQcStatus?.replace(/_/g," ") || "Approved"}</div>
-    </div>
-    <div>
-      <div class="label">Approved On</div>
-      <div class="value">${formatDate(inv.storeQcApprovedAt)}</div>
-    </div>
+    <div><div class="label">Invoice No</div><div class="value">${inv.invoiceNo || "—"}</div></div>
+    <div><div class="label">Invoice Date</div><div class="value">${formatDate(inv.invoiceDate)}</div></div>
+    <div><div class="label">PO Number</div><div class="value">${inv.linkedPoNo || "—"}</div></div>
+    <div><div class="label">Vendor</div><div class="value">${inv.vendor || "—"}</div></div>
+    <div><div class="label">Total Items</div><div class="value">${items.length}</div></div>
+    <div><div class="label">Total Units</div><div class="value">${totalQty}</div></div>
+    <div><div class="label">QC Status</div><div class="value" style="color:#16a34a;">${inv.storeQcStatus?.replace(/_/g, " ") || "Approved"}</div></div>
+    <div><div class="label">Approved On</div><div class="value">${formatDate(inv.storeQcApprovedAt)}</div></div>
   </div>
 
   <div style="font-size:13px;font-weight:700;color:#475569;margin-top:16px;margin-bottom:4px;">📦 Item-wise Receipt Details</div>
   <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Part No</th>
-        <th>Description</th>
-        <th class="center">Unit</th>
-        <th class="center">Ordered</th>
-        <th class="center">Invoice Qty</th>
-        <th class="center">Physical</th>
-        <th class="center">Status</th>
-        <th class="center">Issue</th>
+        <th>#</th><th>Part No</th><th>Description</th>
+        <th class="center">Unit</th><th class="center">Ordered</th>
+        <th class="center">Invoice Qty</th><th class="center">Physical</th>
+        <th class="center">Status</th><th class="center">Issue</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -146,10 +125,10 @@ export function printInvoiceDetails(inv) {
   ${issueItems.length > 0 ? `
   <div class="issue-box">
     <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:8px;">⚠️ Items with Issues (${issueItems.length})</div>
-    ${issueItems.map(i => `
+    ${issueItems.map((i) => `
       <div style="display:flex;gap:12px;font-size:12px;color:#92400e;margin-top:4px;">
         <span style="font-family:monospace;font-weight:700;">${i.productCode}</span>
-        <span style="text-transform:capitalize;">${i.issue?.replace("_"," ")}</span>
+        <span style="text-transform:capitalize;">${i.issue?.replace("_", " ")}</span>
         ${i.damagedQty > 0 ? `<span style="color:#dc2626;font-weight:700;">${i.damagedQty} damaged</span>` : ""}
         ${i.issueDetail ? `<span style="color:#78350f;">— ${i.issueDetail}</span>` : ""}
       </div>`).join("")}
@@ -163,7 +142,7 @@ export function printInvoiceDetails(inv) {
 
   <div class="footer">
     <span>Approved by: ${inv.storeQcApprovedBy || "Store Team"}</span>
-    <span>Quality Check: ${inv.qualityCheck?.replace(/_/g," ") || "Passed"}</span>
+    <span>Quality Check: ${inv.qualityCheck?.replace(/_/g, " ") || "Passed"}</span>
     <span>fib-2-fab ERP · Store Module</span>
   </div>
 </body>
@@ -178,7 +157,9 @@ export function printInvoiceDetails(inv) {
 
 export function printSODetails(so) {
   const header = so.excelHeader || so.invoiceHeader || {};
-  const soNumber = header.reference || so.invoiceNo || so.woNumber || `SO-${so.id?.slice(0,8).toUpperCase()}`;
+  const soNumber =
+    header.reference || so.invoiceNo || so.woNumber ||
+    `SO-${so.id?.slice(0, 8).toUpperCase()}`;
   const customer = so.customer || header.consignee || header.buyer || "—";
   const deliveryDate = so.deliveryDate || header.dated || so.eta || "";
   const items = so.items || [];
@@ -208,7 +189,10 @@ export function printSODetails(so) {
     const ready = item.soQcReadyQty ?? ordered;
     const shortage = Math.max(0, ordered - ready);
     const status = ready === 0 ? "Pending" : ready < ordered ? "Partial" : "Complete";
-    const statusColor = status === "Complete" ? "#16a34a" : status === "Partial" ? "#ea580c" : "#2563eb";
+    const statusColor =
+      status === "Complete" ? "#16a34a"
+      : status === "Partial" ? "#ea580c"
+      : "#2563eb";
 
     return `
       <tr style="border-bottom:1px solid #f1f5f9;">
@@ -222,12 +206,18 @@ export function printSODetails(so) {
         <td style="padding:8px 10px;text-align:center;">
           <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;background:${statusColor}18;color:${statusColor};border:1px solid ${statusColor}40;">${status}</span>
         </td>
-        ${item.soQcIssue ? `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#dc2626;font-weight:700;">${item.soQcIssue.replace("_"," ")}</td>` : `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#94a3b8;">—</td>`}
+        ${item.soQcIssue
+          ? `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#dc2626;font-weight:700;">${item.soQcIssue.replace("_", " ")}</td>`
+          : `<td style="padding:8px 10px;text-align:center;font-size:11px;color:#94a3b8;">—</td>`}
       </tr>`;
   }).join("");
 
-  const totalReady = items.reduce((s, i) => s + (i.soQcReadyQty ?? (i.quantity || i.orderedQty || 0)), 0);
-  const totalShortage = items.reduce((s, i) => s + Math.max(0, (i.quantity || i.orderedQty || 0) - (i.soQcReadyQty ?? (i.quantity || i.orderedQty || 0))), 0);
+  const totalReady = items.reduce(
+    (s, i) => s + (i.soQcReadyQty ?? (i.quantity || i.orderedQty || 0)), 0
+  );
+  const totalShortage = items.reduce(
+    (s, i) => s + Math.max(0, (i.quantity || i.orderedQty || 0) - (i.soQcReadyQty ?? (i.quantity || i.orderedQty || 0))), 0
+  );
 
   const html = `<!DOCTYPE html>
 <html>
@@ -250,8 +240,6 @@ export function printSODetails(so) {
     .value { font-size:13px; font-weight:700; color:#1e293b; }
     .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin:16px 0; }
     .footer { margin-top:24px; border-top:1px solid #e2e8f0; padding-top:12px; color:#94a3b8; font-size:11px; display:flex; justify-content:space-between; }
-    .summary-row { display:flex; gap:24px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-top:12px; }
-    .sum-item { display:flex; flex-direction:column; gap:2px; }
   </style>
 </head>
 <body>
@@ -268,53 +256,24 @@ export function printSODetails(so) {
   </div>
 
   <div class="grid">
-    <div>
-      <div class="label">SO Number</div>
-      <div class="value">${soNumber}</div>
-    </div>
-    <div>
-      <div class="label">Customer</div>
-      <div class="value">${customer}</div>
-    </div>
-    <div>
-      <div class="label">Delivery Date</div>
-      <div class="value">${formatDate(deliveryDate)}</div>
-    </div>
-    <div>
-      <div class="label">SO Status</div>
-      <div class="value" style="color:#16a34a;">${so.soStatus?.replace(/_/g," ") || "Ready for Dispatch"}</div>
-    </div>
-    <div>
-      <div class="label">Total Items</div>
-      <div class="value">${items.length}</div>
-    </div>
-    <div>
-      <div class="label">Total Qty</div>
-      <div class="value">${totalQty}</div>
-    </div>
-    <div>
-      <div class="label">Ready for Dispatch</div>
-      <div class="value" style="color:#16a34a;">${totalReady}</div>
-    </div>
-    <div>
-      <div class="label">Shortage</div>
-      <div class="value" style="color:${totalShortage > 0 ? "#ea580c" : "#16a34a"};">${totalShortage > 0 ? totalShortage : "None"}</div>
-    </div>
+    <div><div class="label">SO Number</div><div class="value">${soNumber}</div></div>
+    <div><div class="label">Customer</div><div class="value">${customer}</div></div>
+    <div><div class="label">Delivery Date</div><div class="value">${formatDate(deliveryDate)}</div></div>
+    <div><div class="label">SO Status</div><div class="value" style="color:#16a34a;">${so.soStatus?.replace(/_/g, " ") || "Ready for Dispatch"}</div></div>
+    <div><div class="label">Total Items</div><div class="value">${items.length}</div></div>
+    <div><div class="label">Total Qty</div><div class="value">${totalQty}</div></div>
+    <div><div class="label">Ready for Dispatch</div><div class="value" style="color:#16a34a;">${totalReady}</div></div>
+    <div><div class="label">Shortage</div><div class="value" style="color:${totalShortage > 0 ? "#ea580c" : "#16a34a"};">${totalShortage > 0 ? totalShortage : "None"}</div></div>
   </div>
 
   <div style="font-size:13px;font-weight:700;color:#475569;margin-top:16px;margin-bottom:4px;">📋 Item-wise Dispatch Readiness</div>
   <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Part No</th>
-        <th>Description</th>
-        <th class="center">Unit</th>
-        <th class="center">Ordered</th>
-        <th class="center">Ready</th>
-        <th class="center">Shortage</th>
-        <th class="center">Status</th>
-        <th class="center">Issue</th>
+        <th>#</th><th>Part No</th><th>Description</th>
+        <th class="center">Unit</th><th class="center">Ordered</th>
+        <th class="center">Ready</th><th class="center">Shortage</th>
+        <th class="center">Status</th><th class="center">Issue</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>

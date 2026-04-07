@@ -1,5 +1,5 @@
 import React from "react";
-import { FiShoppingCart, FiShield, FiClock, FiEye, FiPrinter } from "react-icons/fi";
+import { FiFileText, FiShield, FiClock, FiEye, FiPrinter } from "react-icons/fi";
 import { Card, CardHeader } from "../StoreComponent/ui/index";
 import { printSODetails } from "./PrintUtils";
 
@@ -83,8 +83,11 @@ export default function SalesOrderQCList({
             );
             const deliveryDate = so.deliveryDate || header.dated || so.eta || "";
             const hasQcIssues = so.soQcIssues?.length > 0;
-            const prevShortageItems = (so.soQcIssues || []).filter((i) => i.issue === "shortage");
-            const isComplete = so.soStatus === "ready_for_dispatch" || so.soStatus === "complete";
+            const prevShortageItems = (so.soQcIssues || []).filter(
+              (i) => i.issue === "shortage"
+            );
+            const isComplete =
+              so.soStatus === "ready_for_dispatch" || so.soStatus === "complete";
 
             return (
               <div
@@ -127,7 +130,9 @@ export default function SalesOrderQCList({
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-slate-400">
                       <span>{totalItems} items · {totalQty} units</span>
-                      {deliveryDate && <span>Delivery: {formatDate(deliveryDate)}</span>}
+                      {deliveryDate && (
+                        <span>Delivery: {formatDate(deliveryDate)}</span>
+                      )}
                       <span className="flex items-center gap-1">
                         <FiClock size={10} />
                         {formatDateTime(so.createdAt)}
@@ -137,7 +142,10 @@ export default function SalesOrderQCList({
                     {hasQcIssues && !isComplete && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {(so.soQcIssues || []).map((iss, i) => (
-                          <span key={i} className="px-2 py-0.5 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 rounded-md">
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-white border border-orange-200 text-orange-700 rounded-md"
+                          >
                             {iss.productCode}: {iss.issue?.replace("_", " ")}
                             {iss.shortage > 0 && ` (${iss.shortage} short)`}
                           </span>
@@ -146,9 +154,7 @@ export default function SalesOrderQCList({
                     )}
                   </div>
 
-                  {/* ── Action Buttons ── */}
                   <div className="ml-4 flex items-center gap-2">
-                    {/* Print: opens new window with full SO details */}
                     {isComplete && (
                       <button
                         onClick={(e) => {
@@ -173,7 +179,9 @@ export default function SalesOrderQCList({
                         onClick={() => handleSelectSO(so)}
                         disabled={loadingSO2}
                         className={`px-4 py-2 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 disabled:opacity-60 ${
-                          hasQcIssues ? "bg-orange-500 hover:bg-orange-600" : "bg-violet-600 hover:bg-violet-700"
+                          hasQcIssues
+                            ? "bg-orange-500 hover:bg-orange-600"
+                            : "bg-violet-600 hover:bg-violet-700"
                         }`}
                       >
                         <FiShield size={12} />
