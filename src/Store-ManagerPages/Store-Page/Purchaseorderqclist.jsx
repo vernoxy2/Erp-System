@@ -1,7 +1,7 @@
 import React from "react";
 import { FiShoppingCart, FiShield, FiClock, FiEye, FiPrinter } from "react-icons/fi";
 import { Card, CardHeader } from "../StoreComponent/ui/index";
-import { printInvoiceDetails } from "./printUtils";
+import { printInvoiceDetails } from "./PrintUtils";
 
 function formatDateTime(isoStr) {
   if (!isoStr) return "—";
