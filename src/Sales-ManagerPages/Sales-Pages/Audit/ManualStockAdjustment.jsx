@@ -38,16 +38,18 @@ const ManualStockAdjustment = () => {
   const [loadingCode, setLoadingCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isManualEntry, setIsManualEntry] = useState(false);
-
-  // Bulk states
   const [bulkRows, setBulkRows] = useState([]);
   const [bulkValidating, setBulkValidating] = useState(false);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  // Verification prefill banner
   const [verificationSource, setVerificationSource] = useState(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
-
+  const [bulkPage, setBulkPage] = useState(1);
+  const BULK_PAGE_SIZE = 10;
+  const [nameSuggestions, setNameSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [stockStatus, setStockStatus] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [currentUser, setCurrentUser] = useState({
     name: "",
     role: "user",
@@ -276,6 +278,77 @@ const ManualStockAdjustment = () => {
     setAdjustments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleProductNameSearch = async (value) => {
+    setCurrentAdjustment({ ...currentAdjustment, productName: value });
+    setStockStatus("");
+    if (value.length < 2) {
+      setNameSuggestions([]);
+      return;
+    }
+
+    try {
+      const snap = await getDocs(collection(db, "stockCategories"));
+      const matches = [];
+      snap.docs.forEach((d) => {
+        const cat = d.data();
+        (cat.subcategories || []).forEach((sub) => {
+          if ((sub.name || "").toLowerCase().includes(value.toLowerCase())) {
+            matches.push({ name: sub.name, unit: sub.unit || "" });
+          }
+        });
+      });
+      setNameSuggestions(matches.slice(0, 10));
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleSelectSuggestion = async (suggestion) => {
+    setShowSuggestions(false);
+    setCurrentAdjustment((prev) => ({
+      ...prev,
+      productName: suggestion.name,
+      unit: suggestion.unit || "",
+      productCode: "",
+      systemStock: 0,
+    }));
+
+    // stock collection ma search by description
+    try {
+      const q = query(
+        collection(db, "stock"),
+        where("description", "==", suggestion.name),
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const d = snap.docs[0];
+        const item = d.data();
+        setStockDocId(d.id);
+        setIsManualEntry(false);
+        setStockStatus("found");
+        setCurrentAdjustment((prev) => ({
+          ...prev,
+          productName: suggestion.name,
+          productCode: item.productCode || "",
+          systemStock: item.available ?? 0,
+          unit: item.unit || suggestion.unit || "",
+        }));
+      } else {
+        setStockDocId(null);
+        setIsManualEntry(true);
+        setStockStatus("notfound");
+        setCurrentAdjustment((prev) => ({
+          ...prev,
+          productName: suggestion.name,
+          productCode: "",
+          systemStock: 0,
+          unit: suggestion.unit || "",
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   // ── Single: Submit ──
   const submitForApproval = async () => {
     if (adjustments.length === 0) return;
@@ -335,7 +408,7 @@ const ManualStockAdjustment = () => {
       await addDoc(collection(db, "stockAdjustments"), {
         docId,
         type: "Stock Adjustment",
-        status: "pending",
+        status: "done",
         requestedBy: currentUser.name,
         requestedByRole: currentUser.role,
         department: currentUser.department,
@@ -391,8 +464,9 @@ const ManualStockAdjustment = () => {
         "HSN/SAC",
         "Part No.",
         "Quantity",
+        "Unit",
       ],
-      ["No.", "", "", "", "", "", "", "", "", "", ""],
+      ["No.", "", "", "", "", "", "", "", "", "", "", ""],
       [
         1,
         "PPRCT FR COMPOSITE PIPE PN10- 110MM",
@@ -405,6 +479,7 @@ const ManualStockAdjustment = () => {
         "39173990",
         "PPR-110-10",
         200,
+        "MTR",
       ],
       [
         2,
@@ -418,6 +493,7 @@ const ManualStockAdjustment = () => {
         "39174000",
         "FRC-110-1",
         10,
+        "NOS",
       ],
     ]);
     ws["!cols"] = [
@@ -432,6 +508,7 @@ const ManualStockAdjustment = () => {
       { wch: 12 },
       { wch: 18 },
       { wch: 12 },
+      { wch: 8 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Stock Audit");
@@ -441,6 +518,126 @@ const ManualStockAdjustment = () => {
   // ── Bulk: Upload & validate ──
   // valid=true  → found in stock   → will UPDATE
   // isNew=true  → not found        → will CREATE new stock entry
+  // const handleBulkUpload = async (e) => {
+  //   const file = e.target.files[0];
+  //   if (!file) return;
+  //   setBulkValidating(true);
+  //   setBulkRows([]);
+
+  //   const reader = new FileReader();
+  //   reader.onload = async (evt) => {
+  //     try {
+  //       const wb = XLSX.read(evt.target.result, { type: "binary" });
+  //       const ws = wb.Sheets[wb.SheetNames[0]];
+  //       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+  //       const dataRows = rows
+  //         .slice(2)
+  //         .filter((r) => r[0] !== undefined && r[0] !== null && r[0] !== "");
+
+  //       const validated = [];
+  //       for (const row of dataRows) {
+  //         const sl = row[0];
+  //         const description = String(row[1] || "").trim();
+  //         const hsnSac = String(row[8] || "").trim();
+  //         const partNo = String(row[9] || "").trim();
+  //         // const physicalQty = parseFloat(row[10] ?? 0);
+  //         // const excelUnit = String(row[11] || "").trim().toUpperCase();
+  //         const rawQtyStr = String(row[10] ?? "").trim();
+  //         const physicalQty = parseFloat(rawQtyStr) || 0;
+
+  //         // Extract unit from qty cell (e.g. "1000.000 MTR." → "MTR") if unit column is empty
+  //         const unitFromQtyCell = rawQtyStr
+  //           .replace(/[\d.,\s]/g, "") // remove numbers, dots, spaces
+  //           .replace(/\.$/, "") // remove trailing dot
+  //           .trim()
+  //           .toUpperCase();
+
+  //         const excelUnit =
+  //           String(row[11] || "")
+  //             .trim()
+  //             .toUpperCase() ||
+  //           unitFromQtyCell ||
+  //           "PCS";
+  //         if (!partNo) continue;
+
+  //         try {
+  //           const q = query(
+  //             collection(db, "stock"),
+  //             where("productCode", "==", partNo),
+  //           );
+  //           const snap = await getDocs(q);
+  //           if (!snap.empty) {
+  //             // ── MATCHED: existing stock doc found ──
+  //             const d = snap.docs[0];
+  //             const item = d.data();
+  //             const systemStock = item.available ?? 0;
+  //             const adjustQty = physicalQty - systemStock;
+  //             validated.push({
+  //               sl,
+  //               productCode: partNo,
+  //               productName: item.description || description,
+  //               hsnSac,
+  //               systemStock,
+  //               physicalQty,
+  //               adjustQty,
+  //               newTotal: physicalQty,
+  //               unit: excelUnit || item.unit || "PCS",
+  //               reason: "Physical Verification Mismatch",
+  //               category: "Physical Verification Mismatch",
+  //               stockDocId: d.id,
+  //               isNew: false,
+  //               valid: true,
+  //               error: "",
+  //             });
+  //           } else {
+  //             // ── NOT FOUND: will create new stock entry ──
+  //             validated.push({
+  //               sl,
+  //               productCode: partNo,
+  //               productName: description,
+  //               hsnSac,
+  //               systemStock: 0,
+  //               physicalQty,
+  //               adjustQty: physicalQty,
+  //               newTotal: physicalQty,
+  //               unit: excelUnit || "PCS",
+  //               reason: "Physical Verification — New Item",
+  //               category: "Physical Verification Mismatch",
+  //               stockDocId: null,
+  //               isNew: true,
+  //               valid: false,
+  //               error: "New Item",
+  //             });
+  //           }
+  //         } catch {
+  //           validated.push({
+  //             sl,
+  //             productCode: partNo,
+  //             productName: description,
+  //             hsnSac,
+  //             systemStock: 0,
+  //             physicalQty,
+  //             adjustQty: 0,
+  //             newTotal: 0,
+  //             unit: "PCS",
+  //             reason: "",
+  //             stockDocId: null,
+  //             isNew: false,
+  //             valid: false,
+  //             error: "Firebase error",
+  //           });
+  //         }
+  //       }
+  //       setBulkRows(validated);
+  //     } catch (err) {
+  //       alert("Error reading file. Please check the format.");
+  //       console.error(err);
+  //     }
+  //     setBulkValidating(false);
+  //   };
+  //   reader.readAsBinaryString(file);
+  //   e.target.value = "";
+  // };
   const handleBulkUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -453,17 +650,43 @@ const ManualStockAdjustment = () => {
         const wb = XLSX.read(evt.target.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+        const rowsFormatted = XLSX.utils.sheet_to_json(ws, {
+          header: 1,
+          raw: false,
+        });
+
         const dataRows = rows
+          .slice(2)
+          .filter((r) => r[0] !== undefined && r[0] !== null && r[0] !== "");
+        const dataRowsFormatted = rowsFormatted
           .slice(2)
           .filter((r) => r[0] !== undefined && r[0] !== null && r[0] !== "");
 
         const validated = [];
-        for (const row of dataRows) {
+        for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {
+          const row = dataRows[rowIdx];
+          const fmtRow = dataRowsFormatted[rowIdx] || [];
+
           const sl = row[0];
           const description = String(row[1] || "").trim();
           const hsnSac = String(row[8] || "").trim();
           const partNo = String(row[9] || "").trim();
           const physicalQty = parseFloat(row[10] ?? 0);
+
+          // Extract unit from formatted string e.g. "1000.000 MTR." → "MTR"
+          const fmtQtyStr = String(fmtRow[10] ?? "").trim();
+          const unitFromCell = fmtQtyStr
+            .replace(/[\d.,\s]/g, "")
+            .replace(/\.+$/, "")
+            .trim()
+            .toUpperCase();
+          const excelUnit =
+            String(row[11] || fmtRow[11] || "")
+              .trim()
+              .toUpperCase() ||
+            unitFromCell ||
+            "PCS";
+
           if (!partNo) continue;
 
           try {
@@ -473,7 +696,6 @@ const ManualStockAdjustment = () => {
             );
             const snap = await getDocs(q);
             if (!snap.empty) {
-              // ── MATCHED: existing stock doc found ──
               const d = snap.docs[0];
               const item = d.data();
               const systemStock = item.available ?? 0;
@@ -487,7 +709,7 @@ const ManualStockAdjustment = () => {
                 physicalQty,
                 adjustQty,
                 newTotal: physicalQty,
-                unit: item.unit || "PCS",
+                unit: excelUnit || item.unit || "PCS",
                 reason: "Physical Verification Mismatch",
                 category: "Physical Verification Mismatch",
                 stockDocId: d.id,
@@ -496,7 +718,6 @@ const ManualStockAdjustment = () => {
                 error: "",
               });
             } else {
-              // ── NOT FOUND: will create new stock entry ──
               validated.push({
                 sl,
                 productCode: partNo,
@@ -506,7 +727,7 @@ const ManualStockAdjustment = () => {
                 physicalQty,
                 adjustQty: physicalQty,
                 newTotal: physicalQty,
-                unit: "PCS",
+                unit: excelUnit || "PCS",
                 reason: "Physical Verification — New Item",
                 category: "Physical Verification Mismatch",
                 stockDocId: null,
@@ -535,6 +756,7 @@ const ManualStockAdjustment = () => {
           }
         }
         setBulkRows(validated);
+        setBulkPage(1);
       } catch (err) {
         alert("Error reading file. Please check the format.");
         console.error(err);
@@ -590,6 +812,7 @@ const ManualStockAdjustment = () => {
           };
           await updateDoc(doc(db, "stock", row.stockDocId), {
             available: row.newTotal,
+            unit: row.unit,
             ledger: arrayUnion(ledgerEntry),
           });
         }
@@ -598,7 +821,7 @@ const ManualStockAdjustment = () => {
       await addDoc(collection(db, "stockAdjustments"), {
         docId,
         type: "Stock Adjustment (Bulk)",
-        status: "pending",
+        status: "done",
         requestedBy: currentUser.name,
         requestedByRole: currentUser.role,
         department: currentUser.department,
@@ -630,9 +853,12 @@ const ManualStockAdjustment = () => {
       setBulkRows([]);
       setMode("");
       setVerificationSource(null);
-      alert(
-        `✅ ${rowsToProcess.filter((r) => !r.isNew).length} items updated, ` +
-          `${rowsToProcess.filter((r) => r.isNew).length} new items added to stock. (ID: ${docId})`,
+      // alert(
+      //   `✅ ${rowsToProcess.filter((r) => !r.isNew).length} items updated, ` +
+      //     `${rowsToProcess.filter((r) => r.isNew).length} new items added to stock. (ID: ${docId})`,
+      // );
+      setSuccessMsg(
+        `✅ ${rowsToProcess.filter((r) => !r.isNew).length} items updated, ${rowsToProcess.filter((r) => r.isNew).length} new items added to stock.\n\nID: ${docId}`,
       );
     } catch (err) {
       console.error(err);
@@ -657,7 +883,7 @@ const ManualStockAdjustment = () => {
           Manual Stock Adjustment
         </h1>
         <p className="text-gray-600 mt-1">
-          Stock updates immediately — also logged to Approval Queue
+          Stock updates immediately — logged to Adjustment History
         </p>
       </div>
 
@@ -786,6 +1012,48 @@ const ManualStockAdjustment = () => {
               Add Product Adjustment
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Product Name *
+  </label>
+  <input
+    type="text"
+    value={currentAdjustment.productName}
+    onChange={(e) => handleProductNameSearch(e.target.value)}
+    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+    placeholder="Type product name to search..."
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+  />
+
+  {/* Suggestions Dropdown */}
+  {showSuggestions && nameSuggestions.length > 0 && (
+    <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-52 overflow-y-auto">
+      {nameSuggestions.map((s, i) => (
+        <div
+          key={i}
+          onMouseDown={() => handleSelectSuggestion(s)}
+          className="px-4 py-2.5 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100"
+        >
+          {s.name}
+          {s.unit && (
+            <span className="ml-2 text-xs text-gray-400 font-mono">{s.unit}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+
+  {stockStatus === "found" && (
+    <p className="mt-1 text-xs text-green-600 font-semibold">
+      ✅ Found in stock — details auto-filled
+    </p>
+  )}
+  {stockStatus === "notfound" && (
+    <p className="mt-1 text-xs text-red-500 font-semibold">
+      ⚠ Not Available in Stock — will create new entry
+    </p>
+  )}
+</div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Product Code *
@@ -811,44 +1079,11 @@ const ManualStockAdjustment = () => {
                   )}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name{" "}
-                  <span className="text-xs text-indigo-500">(auto-filled)</span>
-                </label>
-                {/* <input
-                  type="text"
-                  value={currentAdjustment.productName}
-                  readOnly
-                  placeholder="Auto-filled from product code"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700"
-                /> */}
-                <input
-                  type="text"
-                  value={currentAdjustment.productName}
-                  readOnly={!isManualEntry}
-                  onChange={(e) =>
-                    setCurrentAdjustment({
-                      ...currentAdjustment,
-                      productName: e.target.value,
-                    })
-                  }
-                  placeholder={
-                    isManualEntry
-                      ? "Type product name..."
-                      : "Auto-filled from product code"
-                  }
-                  className={`w-full px-4 py-2 border rounded-lg ${
-                    isManualEntry
-                      ? "border-orange-400 bg-white text-gray-800 focus:ring-2 focus:ring-orange-400"
-                      : "border-gray-200 bg-gray-50 text-gray-700"
-                  }`}
-                />
-              </div>
+             
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Current System Stock{" "}
-                  <span className="text-xs text-indigo-500">(auto-filled)</span>
+                  {/* <span className="text-xs text-indigo-500">(auto-filled)</span> */}
                 </label>
                 <input
                   type="number"
@@ -902,7 +1137,7 @@ const ManualStockAdjustment = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Unit{" "}
-                  <span className="text-xs text-indigo-500">(auto-filled)</span>
+                  {/* <span className="text-xs text-indigo-500">(auto-filled)</span> */}
                 </label>
                 {/* <input
                   type="text"
@@ -1223,113 +1458,164 @@ const ManualStockAdjustment = () => {
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">
                           System Stock
                         </th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">
+                          Unit
+                        </th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">
                           Physical Qty
                         </th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">
                           Difference
                         </th>
-                        {/* <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Difference</th> */}
                         <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">
                           New Total
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {bulkRows.map((row, i) => (
-                        <tr
-                          key={i}
-                          className={`border-b border-gray-100 ${
-                            row.valid
-                              ? "bg-white hover:bg-gray-50"
-                              : row.isNew
-                                ? "bg-blue-50 hover:bg-blue-100"
-                                : "bg-red-50"
-                          }`}
-                        >
-                          <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">
-                            {row.sl}
-                          </td>
-                          <td className="px-3 py-2.5">
-                            {row.valid ? (
-                              <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                Matched
-                              </span>
-                            ) : row.isNew ? (
-                              <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                ＋ New Item
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                {row.error}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2.5 font-mono text-xs text-gray-700 font-semibold">
-                            {row.productCode}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[200px] truncate">
-                            {row.productName}
-                          </td>
-                          <td className="px-3 py-2.5 text-center text-xs text-gray-500 font-mono">
-                            {row.hsnSac || "—"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right text-xs text-gray-700">
-                            {row.isNew ? (
-                              <span className="text-blue-400 italic text-[10px]">
-                                new
-                              </span>
-                            ) : (
-                              `${row.systemStock} ${row.unit}`
-                            )}
-                          </td>
-                          <td className="px-3 py-2.5 text-right text-xs font-bold text-gray-800">
-                            {row.physicalQty} {row.unit}
-                          </td>
-                          <td className="px-3 py-2.5 text-right text-xs font-bold">
-                            {row.valid ? (
-                              <span
-                                className={
-                                  row.adjustQty > 0
-                                    ? "text-green-600"
-                                    : row.adjustQty < 0
-                                      ? "text-red-600"
-                                      : "text-gray-400"
-                                }
-                              >
-                                {row.adjustQty > 0 ? "+" : ""}
-                                {row.adjustQty}
-                              </span>
-                            ) : row.isNew ? (
-                              <span className="text-blue-600">
-                                +{row.physicalQty}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          {/* {row.adjustQty !== 0 && (
-                            <span
-                              className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
-                                row.adjustQty > 0
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}
-                            >
-                              {row.adjustQty > 0 ? "+" : ""}
-                              {row.adjustQty}
-                            </span>
-                          )} */}
-                          <td className="px-3 py-2.5 text-right text-xs font-bold text-indigo-700">
-                            {row.valid || row.isNew
-                              ? `${row.newTotal} ${row.unit}`
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
+                      {bulkRows
+                        .slice(
+                          (bulkPage - 1) * BULK_PAGE_SIZE,
+                          bulkPage * BULK_PAGE_SIZE,
+                        )
+                        .map((row, i) => (
+                          <tr
+                            key={i}
+                            className={`border-b border-gray-100 ${
+                              row.valid
+                                ? "bg-white hover:bg-gray-50"
+                                : row.isNew
+                                  ? "bg-blue-50 hover:bg-blue-100"
+                                  : "bg-red-50"
+                            }`}
+                          >
+                            <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">
+                              {row.sl}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              {row.valid ? (
+                                <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                  Matched
+                                </span>
+                              ) : row.isNew ? (
+                                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                  ＋ New Item
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                  {row.error}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 font-mono text-xs text-gray-700 font-semibold">
+                              {row.productCode}
+                            </td>
+                            <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[200px] truncate">
+                              {row.productName}
+                            </td>
+                            <td className="px-3 py-2.5 text-center text-xs text-gray-500 font-mono">
+                              {row.hsnSac || "—"}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs text-gray-700">
+                              {row.isNew ? (
+                                <span className="text-blue-400 italic text-[10px]">
+                                  new
+                                </span>
+                              ) : (
+                                `${row.systemStock}`
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-center text-xs text-gray-700">
+                              {row.unit}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs font-bold text-gray-800">
+                              {row.physicalQty}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs font-bold">
+                              {row.valid ? (
+                                <span
+                                  className={
+                                    row.adjustQty > 0
+                                      ? "text-green-600"
+                                      : row.adjustQty < 0
+                                        ? "text-red-600"
+                                        : "text-gray-400"
+                                  }
+                                >
+                                  {row.adjustQty > 0 ? "+" : ""}
+                                  {row.adjustQty}
+                                </span>
+                              ) : row.isNew ? (
+                                <span className="text-blue-600">
+                                  +{row.physicalQty}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-xs font-bold text-indigo-700">
+                              {row.valid || row.isNew
+                                ? `${row.newTotal} ${row.unit}`
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* ── Pagination ── */}
+                {bulkRows.length > BULK_PAGE_SIZE && (
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      Showing {(bulkPage - 1) * BULK_PAGE_SIZE + 1}–
+                      {Math.min(bulkPage * BULK_PAGE_SIZE, bulkRows.length)} of{" "}
+                      {bulkRows.length} rows
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setBulkPage((p) => Math.max(1, p - 1))}
+                        disabled={bulkPage === 1}
+                        className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        ← Prev
+                      </button>
+                      {Array.from(
+                        { length: Math.ceil(bulkRows.length / BULK_PAGE_SIZE) },
+                        (_, i) => i + 1,
+                      ).map((pg) => (
+                        <button
+                          key={pg}
+                          onClick={() => setBulkPage(pg)}
+                          className={`px-3 py-1.5 text-xs border rounded-lg transition-colors ${
+                            pg === bulkPage
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {pg}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() =>
+                          setBulkPage((p) =>
+                            Math.min(
+                              Math.ceil(bulkRows.length / BULK_PAGE_SIZE),
+                              p + 1,
+                            ),
+                          )
+                        }
+                        disabled={
+                          bulkPage ===
+                          Math.ceil(bulkRows.length / BULK_PAGE_SIZE)
+                        }
+                        className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Next →
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 flex items-center justify-between">
                   <button
@@ -1340,7 +1626,6 @@ const ManualStockAdjustment = () => {
                   </button>
                   <button
                     onClick={() => setShowConfirm(true)}
-                    navigate="/store/stock-alerts"
                     disabled={bulkSubmitting || totalSubmittable === 0}
                     className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm font-semibold"
                   >
@@ -1476,6 +1761,26 @@ const ManualStockAdjustment = () => {
                 Confirm & Update Stock
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ── Success Modal ── */}
+      {successMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 text-center">
+            <div className="text-5xl mb-4">✅</div>
+            <h2 className="text-lg font-bold text-gray-800 mb-3">
+              Stock Updated!
+            </h2>
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {successMsg}
+            </p>
+            <button
+              onClick={() => setSuccessMsg("")}
+              className="mt-6 bg-green-600 text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

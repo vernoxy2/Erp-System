@@ -539,6 +539,7 @@ const AdjustmentHistory = () => {
     approved: adjustments.filter((a) => a.status === "approved").length,
     pending: adjustments.filter((a) => a.status === "pending").length,
     rejected: adjustments.filter((a) => a.status === "rejected").length,
+    done: adjustments.filter((a) => a.status === "done").length,
   };
 
   // ── Filtering ──
@@ -570,7 +571,7 @@ const AdjustmentHistory = () => {
       "Requested By": adj.requestedBy || "—",
       "Requested By Role": adj.requestedByRole || "—",
       Products: adj.totalProducts || 0,
-      Status: (adj.status || "pending").toUpperCase(),
+      Status: (adj.status || "done").toUpperCase(),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
@@ -588,6 +589,7 @@ const AdjustmentHistory = () => {
       approved: "bg-green-100 text-green-700",
       pending: "bg-yellow-100 text-yellow-700",
       rejected: "bg-red-100 text-red-700",
+      done: "bg-green-100 text-green-700",
     };
     return (
       <span
@@ -595,7 +597,7 @@ const AdjustmentHistory = () => {
           map[status] || "bg-gray-100 text-gray-600"
         }`}
       >
-        {status || "pending"}
+        {status || "done"}
       </span>
     );
   };
@@ -624,7 +626,7 @@ const AdjustmentHistory = () => {
           { label: "Total Adjustments", value: adjustments.length, color: "indigo", icon: "" },
           { label: "This Month", value: thisMonthCount, color: "blue", icon: "" },
           { label: "Approved", value: statusCounts.approved, color: "green", icon: "" },
-          { label: "Pending", value: statusCounts.pending, color: "yellow", icon: "" },
+          { label: "Done", value: statusCounts.done, color: "green", icon: "" },
         ].map((card) => (
           <div
             key={card.label}
@@ -655,6 +657,7 @@ const AdjustmentHistory = () => {
             >
               <option value="all">All ({adjustments.length})</option>
               <option value="approved">Approved ({statusCounts.approved})</option>
+              <option value="done">Done ({statusCounts.done})</option>
               <option value="pending">Pending ({statusCounts.pending})</option>
               <option value="rejected">Rejected ({statusCounts.rejected})</option>
             </select>
