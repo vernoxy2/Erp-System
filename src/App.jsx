@@ -24,6 +24,8 @@ import UploadSalesOrder from "./Sales-ManagerPages/Sales-Pages/UploadSalesOrder"
 // import ViewExcelSheetData from "./Sales-ManagerPages/Sales-Pages/ViewExcelSheetData";
 import UploadPurchaseOrder from "./Sales-ManagerPages/Sales-Pages/UploadPurchaseOrder";
 import PurchaseOrders from "./Sales-ManagerPages/Sales-Pages/Purchaseorders";
+import PurchaseOrderListTable from "./Sales-ManagerPages/Sales-Pages/PurchaseOrderListTable";
+import PurchaseOrderDetails from "./Sales-ManagerPages/Sales-Pages/PurchaseOrderDetails";
 import CreateSalesOrder from "./Sales-ManagerPages/Sales-Pages/CreateSalesOrder";
 import SalesOrderList from "./Sales-ManagerPages/Sales-Pages/SalesOrderList";
 import SalesOrderDetails from "./Sales-ManagerPages/Sales-Pages/SalesOrderDetails";
@@ -44,7 +46,6 @@ import ReceivedOnChallan from "./Sales-ManagerPages/Sales-Pages/ReceivedOnChalla
 import VendorInvoiceHistory from "./Sales-ManagerPages/Sales-Pages/VendorInvoiceHistory";
 import StoreDebitNotes from "./Store-ManagerPages/Store-Page/StoreDebitNotes";
 import StoreReceivedOnChallan from "./Store-ManagerPages/Store-Page/StoreReceivedOnChallan";
-
 import StockVerification from "./Sales-ManagerPages/Sales-Pages/Audit/StockVerification";
 import ManualStockAdjustment from "./Sales-ManagerPages/Sales-Pages/Audit/ManualStockAdjustment";
 import ApprovalQueue from "./Sales-ManagerPages/Sales-Pages/Audit/ApprovalQueue";
@@ -111,6 +112,8 @@ const App = () => {
           path="purchase-orders/upload"
           element={<UploadPurchaseOrder />}
         />
+        <Route path="purchase-orders/list" element={<PurchaseOrderListTable />} />
+        <Route path="purchase-orders/details/:id" element={<PurchaseOrderDetails />} />
         <Route path="upload-vendor-invoice" element={<UploadVendorInvoice />} />
         <Route path="upload-sales-invoice" element={<UploadSalesInvoice />} />
         <Route path="debit-credit-notes" element={<SalesDebitNotes />} />
@@ -125,6 +128,7 @@ const App = () => {
         <Route path="stock-alerts" element={<StockAlerts />} />
         {/* REPORTS */}
         <Route path="reports" element={<ReportsAnalytics />} />
+        {/* <Route path="search" element={<GlobalSearch />} /> */}
 
         {/* Audit Routes */}
         <Route path="stock-verification" element={<StockVerification />} />

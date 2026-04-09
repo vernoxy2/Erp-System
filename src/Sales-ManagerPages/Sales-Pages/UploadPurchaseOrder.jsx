@@ -17,6 +17,10 @@ import {
   getDoc,
   updateDoc,
   arrayUnion,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
@@ -645,6 +649,30 @@ export default function UploadPurchaseOrder() {
   const handleCreate = async () => {
     setUploading(true);
     try {
+      const vNo = excelHeader?.voucherNo;
+      if (vNo) {
+        // ── Overwrite Logic ──
+        // 1. Search for existing PO with same voucherNo
+        const q = query(
+          collection(db, "excelupload"),
+          where("type", "==", "PO"),
+          where("excelHeader.voucherNo", "==", vNo)
+        );
+        const snap = await getDocs(q);
+
+        for (const oldDoc of snap.docs) {
+          const data = oldDoc.data();
+          // If storeQcStatus is NOT "approved", we overwrite (delete old)
+          if (data.storeQcStatus !== "approved") {
+            console.log(`Overwriting PO ${vNo}: deleting old record ${oldDoc.id}`);
+            await deleteDoc(doc(db, "excelupload", oldDoc.id));
+          } else {
+            // If it IS "approved", we don't overwrite (per user: "add and not overwrite on QC Approved status")
+            console.log(`PO ${vNo} is already QC Approved. Adding as new entry.`);
+          }
+        }
+      }
+
       await addDoc(collection(db, "excelupload"), {
         excelHeader: excelHeader || {},
         stockAlerts: stockAlerts,

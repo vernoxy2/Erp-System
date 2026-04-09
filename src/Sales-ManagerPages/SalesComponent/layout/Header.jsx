@@ -43,23 +43,22 @@ export default function Header() {
   const handleSearch = (e) => {
     e.preventDefault();
     const trimmed = searchQuery.trim();
-    if (!trimmed) {
-      searchParams.delete("q");
-      setSearchParams(searchParams);
-      return;
-    }
-    setSearchParams({ q: trimmed });
+    if (!trimmed) return;
+    navigate(`/sales/search?q=${encodeURIComponent(trimmed)}`);
   };
 
   const handleInputChange = (e) => setSearchQuery(e.target.value);
 
   const clearSearch = () => {
     setSearchQuery("");
-    searchParams.delete("q");
-    setSearchParams(searchParams);
+    if (location.pathname === "/sales/search") {
+      navigate("/sales/search");
+    }
   };
 
   const getPageTitle = () => {
+    if (location.pathname === "/sales/search") return "Search Results";
+    
     const titles = {
       "/sales/dashboard": "Sales Dashboard",
       "/sales/work-orders": "Work Orders",
@@ -69,7 +68,8 @@ export default function Header() {
       "/sales/unbilled-challans": "Unbilled Challans",
       "/sales/invoice-history": "Invoice History",
       "/sales/purchase-orders": "Purchase Orders",
-      "/sales/sales-orders/List": "Sales Orders List",
+      "/sales/purchase-orders/list": "Purchase Order List",
+      "/sales/sales-orders/list": "Sales Orders List",
       "/sales/upload-vendor-invoice": "Upload Vendor Invoice",
       "/sales/debit-credit-notes": "Debit/Credit Notes",
       "/sales/vendor-invoice-history": "Vendor Invoice History",
