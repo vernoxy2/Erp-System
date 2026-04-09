@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { doc, getDoc, collection, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../firebase";
@@ -96,6 +96,8 @@ useEffect(() => {
     ? userData.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "??";
 
+  const location = useLocation();
+
   const navSections = [
     {
       title: null,
@@ -114,7 +116,13 @@ useEffect(() => {
       title: "OUTWARD",
       items: [
         { to: "/sales/sales-orders",          icon: FiClipboard,   label: "Sales Orders",          end: true },
-        { to: "/sales/sales-orders/List",     icon: FiFileText,    label: "Sales Orders List" },
+        { 
+          to: "/sales/sales-orders/list",     
+          icon: FiFileText,    
+          label: "Sales Orders List",
+          isActive: location.pathname.startsWith("/sales/sales-orders/list") || 
+                   location.pathname.startsWith("/sales/sales-orders/") && !["/sales/sales-orders", "/sales/sales-orders/upload", "/sales/sales-orders/create"].includes(location.pathname)
+        },
         { to: "/sales/upload-sales-invoice",  icon: FiUpload,      label: "Upload Sales Invoice" },
         { to: "/sales/ready-for-dispatch",    icon: FiBell,        label: "Ready for Dispatch",       badgeColor: "emerald" },
         { to: "/sales/dispatch-on-challan",   icon: FiTruck,       label: "Dispatch on Challan" },
@@ -126,7 +134,15 @@ useEffect(() => {
     {
       title: "INWARD",
       items: [
-        { to: "/sales/purchase-orders",        icon: FiShoppingCart, label: "Purchase Orders",     badge: purchaseOrderBadge, badgeColor: "orange" },
+        { to: "/sales/purchase-orders",        icon: FiShoppingCart, label: "Purchase Orders",     badge: purchaseOrderBadge, badgeColor: "orange", end: true },
+        { 
+          to: "/sales/purchase-orders/list",   
+          icon: FiFileText,     
+          label: "Purchase Order List",
+          isActive: location.pathname.startsWith("/sales/purchase-orders/list") || 
+                   location.pathname.startsWith("/sales/purchase-orders/details") ||
+                   location.pathname.startsWith("/sales/purchase-orders/complete")
+        },
         { to: "/sales/upload-vendor-invoice",  icon: FiUpload,       label: "Upload Vendor Invoice" },
         { to: "/sales/recieved-on-challan",    icon: FiInbox,        label: "Received on Challan",  badge: receivedChallanCount || null,   badgeColor: "amber" },
         { to: "/sales/vendor-invoice-history", icon: FiArchive,      label: "Vendor Invoice History" },

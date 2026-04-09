@@ -359,6 +359,74 @@ export const EmptyState = ({ icon: Icon, title, description, action }) => (
   </div>
 );
 
+export function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+  itemsPerPage,
+  label = "items",
+}) {
+  if (totalPages <= 1) return null;
+  const start = (currentPage - 1) * itemsPerPage + 1;
+  const end = Math.min(currentPage * itemsPerPage, totalItems);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter(
+      (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1,
+    )
+    .reduce((acc, p, i, arr) => {
+      if (i > 0 && p - arr[i - 1] > 1) acc.push("…");
+      acc.push(p);
+      return acc;
+    }, []);
+  return (
+    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+      <p className="text-xs text-slate-400">
+        Showing{" "}
+        <span className="font-bold text-slate-600">
+          {start}–{end}
+        </span>{" "}
+        of <span className="font-bold text-slate-600">{totalItems}</span>{" "}
+        {label}
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-all hover:border-indigo-300"
+        >
+          ‹
+        </button>
+        {pageNumbers.map((item, i) =>
+          item === "…" ? (
+            <span
+              key={`e${i}`}
+              className="w-8 h-8 flex items-center justify-center text-xs text-slate-300"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={item}
+              onClick={() => onPageChange(item)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${currentPage === item ? "bg-indigo-600 text-white shadow-sm" : "border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-indigo-300"}`}
+            >
+              {item}
+            </button>
+          ),
+        )}
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-all hover:border-indigo-300"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export const NotificationBadge = ({ type, title, message, time, onClick }) => {
   const types = {
     success: "bg-emerald-50 border-emerald-200",

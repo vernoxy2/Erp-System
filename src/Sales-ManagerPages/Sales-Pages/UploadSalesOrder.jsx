@@ -6,7 +6,8 @@ import {
   Alert, FileUpload,
 } from "../SalesComponent/ui/index";
 import { db } from "../../firebase";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+// import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
 function detectUnit(description = "", productCode = "") {
@@ -264,20 +265,87 @@ export default function UploadSalesOrder() {
       setChecking(false);
     }
   };
+  // const handleCreate = async () => {
+  //   setUploading(true);
+  //   try {
+  //     const hasShortage = stockCheck.some((i) => i.status === "out" || i.status === "partial");
+  //     const customer    = header.consignee || header.buyer || "";
+  //     const soNumber    = header.voucherNo || "";
 
-  // ✅ FIX 1: type = "so" (isSalesOrder filter matches this)
-  // ✅ FIX 2: soStatus = "waiting_for_qc" (store QC list ma show thase)
-  // ✅ FIX 3: NO stock deduction here — deduct only on Sales Invoice upload
+  //     await addDoc(collection(db, "excelupload"), {
+  //       type:         "so",                  // ✅ isSalesOrder() filter match thase
+  //       soStatus:     "waiting_for_qc",      // ✅ Store QC list ma show thase
+  //       excelHeader:  header,
+  //       items: items.map((item) => {
+  //         const sc = stockCheck.find((s) => s.productCode === item.productCode);
+  //         return {
+  //           ...item,
+  //           orderedQty:   item.quantity,
+  //           invoicedQty:  0,
+  //           availableQty: sc?.available || 0,
+  //           stockStatus:  sc?.status    || "unknown",
+  //           itemStatus:   "pending",
+  //         };
+  //       }),
+  //       totalItems:   items.length,
+  //       orderStatus:  "pending",
+  //       hasShortage,
+  //       customer,
+  //       createdAt:    new Date().toISOString(),
+  //       woNumber:     soNumber,
+  //       invoiceCount: 0,
+  //       invoiceNos:   [],
+  //     });
+
+  //     setUploading(false);
+  //     setStep(3);
+  //   } catch (err) {
+  //     alert("Error saving: " + err.message);
+  //     setUploading(false);
+  //   }
+  // };
+
+
   const handleCreate = async () => {
     setUploading(true);
     try {
       const hasShortage = stockCheck.some((i) => i.status === "out" || i.status === "partial");
       const customer    = header.consignee || header.buyer || "";
-      const soNumber    = header.voucherNo || "";
+      const soRef       = header.voucherNo || header.reference || "";
 
+      if (soRef) {
+        // ── Overwrite Logic ──
+        const q = query(
+          collection(db, "excelupload"),
+          where("type", "==", "so"),
+          where("excelHeader.voucherNo", "==", soRef)
+        );
+        const snap = await getDocs(q);
+
+        for (const oldDoc of snap.docs) {
+          const data = oldDoc.data();
+          const existingStatus = data.soStatus || "";
+
+          // If storeQcStatus is NOT "approved" (or equivalent finalized status), we overwrite
+          if (
+            existingStatus !== "approved" &&
+            existingStatus !== "ready_for_dispatch" &&
+            existingStatus !== "complete" &&
+            existingStatus !== "dispatched"
+          ) {
+            console.log(`Overwriting SO ${soRef}: deleting old record ${oldDoc.id}`);
+            await deleteDoc(doc(db, "excelupload", oldDoc.id));
+          } else {
+            // If it IS approved/finalized, we don't overwrite (per user requirement)
+            console.log(`SO ${soRef} is already QC Approved/Processed. Adding as new entry.`);
+          }
+        }
+      }
+
+      // Create new document (fresh or replaced)
       await addDoc(collection(db, "excelupload"), {
-        type:         "so",                  // ✅ isSalesOrder() filter match thase
-        soStatus:     "waiting_for_qc",      // ✅ Store QC list ma show thase
+        type:         "so",
+        soStatus:     "waiting_for_qc",
         excelHeader:  header,
         items: items.map((item) => {
           const sc = stockCheck.find((s) => s.productCode === item.productCode);
@@ -295,7 +363,7 @@ export default function UploadSalesOrder() {
         hasShortage,
         customer,
         createdAt:    new Date().toISOString(),
-        woNumber:     soNumber,
+        woNumber:     soRef,
         invoiceCount: 0,
         invoiceNos:   [],
       });
@@ -307,7 +375,6 @@ export default function UploadSalesOrder() {
       setUploading(false);
     }
   };
-
   const shortageCount = stockCheck.filter((i) => i.status === "out").length;
   const partialCount  = stockCheck.filter((i) => i.status === "partial").length;
 
