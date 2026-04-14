@@ -3874,14 +3874,9 @@ export default function UploadVendorInvoice() {
         const snap = await getDocs(query(collection(db, "excelupload"), orderBy("createdAt", "desc")));
         const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        // ✅ FIX 1: Filter only INVOICE/SALES_ORDER type out — ALL POs stay in list
         const pos = all.filter((d) => {
-          if (d.type === "INVOICE" || d.type === "SALES_ORDER") return false;
-          if (d.type !== "PO") {
-            const b = d.excelHeader?.buyer;
-            if (b && b.trim() !== "") return false;
-          }
-          return true; // ✅ No status-based removal — all POs stay
+          const t = (d.type || "").toUpperCase().replace(/[_\s]/g, "");
+          return (t === "PO" || t === "PURCHASEORDER") && !d.linkedPoId;
         });
 
         setPendingPOs(

@@ -986,7 +986,11 @@ export default function VendorInvoiceHistory(){
         setLoading(true);
         const q=query(collection(db,COLLECTION_NAME),orderBy("invoiceDate","desc"));
         const snap=await getDocs(q);
-        setInvoices(snap.docs.map(mapDoc));
+        const filteredDocs = snap.docs.filter(doc => {
+          const t = (doc.data().type || "").toUpperCase();
+          return t === "INVOICE";
+        });
+        setInvoices(filteredDocs.map(mapDoc));
       }catch(err){
         console.error(err);
         setError("Could not load invoices. "+err.message);
