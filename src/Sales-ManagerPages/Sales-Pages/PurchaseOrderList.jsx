@@ -290,13 +290,8 @@ export default function PurchaseOrders() {
       (snapshot) => {
         const all = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         const pos = all.filter((doc) => {
-          if (doc.type === "INVOICE") return false;
-          if (doc.type === "SALES_ORDER") return false;
-          if (doc.type !== "PO") {
-            const buyer = doc.excelHeader?.buyer;
-            if (buyer && buyer.trim() !== "") return false;
-          }
-          return true;
+          const t = (doc.type || "").toUpperCase().replace(/[_\s]/g, "");
+          return (t === "PO" || t === "PURCHASEORDER") && !doc.linkedPoId;
         });
 
         const mapped = pos.map((po) => {
