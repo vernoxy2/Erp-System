@@ -93,7 +93,7 @@ export default function Header() {
       <div className="flex items-center gap-2 sm:gap-4">
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="relative w-48 sm:w-64 lg:w-72">
+        {/* <form onSubmit={handleSearch} className="relative w-48 sm:w-64 lg:w-72">
           <FiSearch
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             size={18}
@@ -114,7 +114,7 @@ export default function Header() {
               <FiX size={16} />
             </button>
           )}
-        </form>
+        </form> */}
 
         {/* Notification Bell */}
         <NotificationBell />

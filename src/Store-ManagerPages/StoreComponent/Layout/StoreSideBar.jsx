@@ -36,7 +36,7 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
   const [qcPendingCount, setQcPendingCount] = useState(0);
   const [debitNotesCount, setDebitNotesCount] = useState(0); // ✅ dynamic
   const [ReceivedOnChallan, setReceivedOnChallan] = useState(0);
-
+  const [lowStockCount, setLowStockCount] = useState(0);
   // ── QC Pending count ────────────────────────────────────────────────────
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "excelupload"), (snap) => {
@@ -83,7 +83,7 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       (snap) => {
         const pending = snap.docs.filter((d) => {
           const data = d.data();
-          return data.status === "waiting_store_qc"; 
+          return data.status === "waiting_store_qc";
         });
         setReceivedOnChallan(pending.length);
       },
@@ -109,12 +109,75 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
 
   const initials = userData.name
     ? userData.name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "??";
+
+  // const navSections = [
+  //   {
+  //     title: null,
+  //     items: [{ to: "/store/dashboard", icon: FiHome, label: "Dashboard" }],
+  //   },
+  //   {
+  //     title: "STOCK MANAGEMENT",
+  //     items: [
+  //       {
+  //         to: "/store/verify-quality",
+  //         icon: FiShield,
+  //         label: "Quality Verify",
+  //         badge: qcPendingCount > 0 ? qcPendingCount : null,
+  //         badgeColor: "emerald",
+  //       },
+  //       {
+  //         to: "/store/debit-notes",
+  //         icon: FiFileText,
+  //         label: "Debit Notes",
+  //         badge: debitNotesCount > 0 ? debitNotesCount : null,
+  //         badgeColor: "amber",
+  //       },
+  //       {
+  //         to: "/store/store-Received-On-Challan",
+  //         icon: FiInbox,
+  //         label: "Received On Challan",
+  //         badge: ReceivedOnChallan > 0 ? ReceivedOnChallan : null,
+  //         badgeColor: "amber",
+  //       },
+  //       {
+  //         to: "/store/low-stock-management",
+  //         icon: FiAlertTriangle,
+  //         label: "Low Stock Alerts",
+  //         badge: lowStockCount > 0 ? lowStockCount : null, // ✅ dynamic
+  //         badgeColor: "red",
+  //       },
+  //       {
+  //         to: "/store/category-management",
+  //         icon: FiLayers,
+  //         label: "Manage Categories",
+  //       },
+  //       {
+  //         to: "/store/product-management",
+  //         icon: FiSettings,
+  //         label: "Manage Products",
+  //       },
+  //       {
+  //         to: "/store/stock-summary",
+  //         icon: FiBarChart2,
+  //         label: "Stock Summary",
+  //       },
+  //       { to: "/store/stock-alerts", icon: FiActivity, label: "Stock Alerts" },
+  //     ],
+  //   },
+  //   {
+  //     title: "STOCK AUDIT",
+  //     items: [
+  //       { to: "/store/stock-verification", icon: FiSettings, label: "Stock Verification" },
+  //       { to: "/store/manual-adjustment", icon: FiEdit, label: "Manual Stock Adjustment" },
+  //     ],
+  //   },
+  // ];
 
   const navSections = [
     {
@@ -122,21 +185,14 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       items: [{ to: "/store/dashboard", icon: FiHome, label: "Dashboard" }],
     },
     {
-      title: "STOCK MANAGEMENT",
+      title: "GOODS RECEIPT",
       items: [
         {
           to: "/store/verify-quality",
           icon: FiShield,
-          label: "Quality Verify",
+          label: "QC Inspection",
           badge: qcPendingCount > 0 ? qcPendingCount : null,
           badgeColor: "emerald",
-        },
-        {
-          to: "/store/debit-notes",
-          icon: FiFileText,
-          label: "Debit Notes",
-          badge: debitNotesCount > 0 ? debitNotesCount : null,
-          badgeColor: "amber",
         },
         {
           to: "/store/store-Received-On-Challan",
@@ -146,10 +202,36 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
           badgeColor: "amber",
         },
         {
+          to: "/store/debit-notes",
+          icon: FiFileText,
+          label: "Debit Notes",
+          badge: debitNotesCount > 0 ? debitNotesCount : null,
+          badgeColor: "amber",
+        },
+      ],
+    },
+    {
+      title: "STOCK MANAGEMENT",
+      items: [
+        // {
+        //   to: "/store/debit-notes",
+        //   icon: FiFileText,
+        //   label: "Debit Notes",
+        //   badge: debitNotesCount > 0 ? debitNotesCount : null,
+        //   badgeColor: "amber",
+        // },
+        // {
+        //   to: "/store/store-Received-On-Challan",
+        //   icon: FiInbox,
+        //   label: "Received On Challan",
+        //   badge: ReceivedOnChallan > 0 ? ReceivedOnChallan : null,
+        //   badgeColor: "amber",
+        // },
+        {
           to: "/store/low-stock-management",
           icon: FiAlertTriangle,
           label: "Low Stock Alerts",
-          badge: 45,
+          badge: lowStockCount > 0 ? lowStockCount : null,
           badgeColor: "red",
         },
         {
@@ -167,14 +249,25 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
           icon: FiBarChart2,
           label: "Stock Summary",
         },
-        { to: "/store/stock-alerts", icon: FiActivity, label: "Stock Alerts" },
+      ],
+    },
+    {
+      title: "INVENTORY",
+      items: [
+        {
+          to: "/store/stock-alerts",
+          icon: FiActivity,
+          label: "Stock Alerts",
+          badge: null,
+          badgeColor: "red",
+        },
       ],
     },
     {
       title: "STOCK AUDIT",
       items: [
         { to: "/store/stock-verification", icon: FiSettings, label: "Stock Verification" },
-        { to: "/store/manual-adjustment",  icon: FiEdit,     label: "Manual Stock Adjustment" },
+        { to: "/store/manual-adjustment", icon: FiEdit, label: "Manual Stock Adjustment" },
       ],
     },
   ];
@@ -199,7 +292,7 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
           <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-8">
             <img src={logo} alt="Fib2Fab" className="h-9 flex-shrink-0" />
             <div className="min-w-0">
-              <h2 className="text-sm font-black text-indigo-600 whitespace-nowrap">
+              <h2 className="text-sm font-black text-violet-600 whitespace-nowrap">
                 ERP System
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
@@ -222,19 +315,24 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 overflow-y-auto overflow-x-hidden">
+      {/* Nav */}
+      <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden">
         {navSections.map((section, idx) => (
-          <div key={idx} className={idx > 0 ? "mt-5" : ""}>
-            {section.title && !collapsed && (
-              <div className="px-3 mb-2">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  {section.title}
-                </h3>
-              </div>
+          <div key={idx} className={idx > 0 ? "mt-4" : ""}>
+
+            {/* Section label — Sales sidebar jevi style */}
+            {section.title && (
+              collapsed
+                ? <div className="border-t border-slate-100 my-2 mx-1" />
+                : (
+                  <div className="px-2 mb-1.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {section.title}
+                    </p>
+                  </div>
+                )
             )}
-            {section.title && collapsed && idx > 0 && (
-              <div className="border-t border-slate-100 mb-3 mx-1" />
-            )}
+
             <div className="space-y-0.5">
               {section.items.map((item) => (
                 <NavLink
@@ -243,47 +341,37 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
                   end={item.end}
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-2.5 py-2.5 rounded-lg transition-all text-sm group relative
-                    ${collapsed ? "justify-center" : "justify-between"}
-                    ${isActive ? "bg-emerald-50 text-emerald-600 font-bold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`
+                    `relative flex items-center gap-3 rounded-lg transition-all text-sm group
+              ${collapsed ? "justify-center px-0 py-2.5" : "justify-between px-2.5 py-2"}
+              ${isActive
+                      ? "bg-violet-50 text-violet-600 font-bold"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                    }`
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <div
-                        className={`flex items-center gap-3 ${collapsed ? "" : "flex-1 min-w-0"}`}
-                      >
+                      <div className={`flex items-center gap-3 ${collapsed ? "" : "flex-1 min-w-0"}`}>
                         <item.icon
                           size={18}
-                          className={`flex-shrink-0 ${isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"}`}
+                          className={`flex-shrink-0 ${isActive ? "text-violet-600" : "text-slate-400 group-hover:text-slate-600"}`}
                         />
-                        {!collapsed && (
-                          <span className="truncate">{item.label}</span>
-                        )}
+                        {!collapsed && <span className="truncate">{item.label}</span>}
                       </div>
 
                       {/* Badge — expanded */}
                       {!collapsed && item.badge != null && (
-                        <span
-                          className={`flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-full border flex-shrink-0 ${getBadgeClasses(item.badgeColor)}`}
-                        >
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border flex-shrink-0 ${getBadgeClasses(item.badgeColor)}`}>
                           {item.badge}
                         </span>
                       )}
 
                       {/* Badge dot — collapsed */}
                       {collapsed && item.badge != null && (
-                        <span
-                          className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                            item.badgeColor === "red"
-                              ? "bg-red-500"
-                              : item.badgeColor === "emerald"
-                                ? "bg-emerald-500"
-                                : item.badgeColor === "orange"
-                                  ? "bg-orange-500"
-                                  : "bg-amber-500"
-                          }`}
-                        />
+                        <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${{
+                          red: "bg-red-500", emerald: "bg-emerald-500",
+                          orange: "bg-orange-500", amber: "bg-amber-400",
+                        }[item.badgeColor] || "bg-slate-400"}`} />
                       )}
                     </>
                   )}
@@ -301,8 +389,8 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
         <div
           className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
         >
-          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-emerald-600">
+          <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-bold text-violet-600">
               {initials}
             </span>
           </div>
