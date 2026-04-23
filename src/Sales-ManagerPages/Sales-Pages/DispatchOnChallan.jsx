@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
+import logo from "../../assets/logo.svg";
 import {
   collection,
   query,
@@ -12,11 +13,30 @@ import {
 
 // ── localStorage helpers (inline — no external file needed) ──────────────────
 const DRAFT_KEY = "dispatch_challan_draft";
+const DRAFT_VERSION = 2;
+// function loadDraft(initial) {
+//   try {
+//     const saved = localStorage.getItem(DRAFT_KEY);
+//     return saved ? { ...initial, ...JSON.parse(saved) } : initial;
+//   } catch {
+//     return initial;
+//   }
+// }
+
+// function saveDraft(data) {
+//   try {
+//     localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+//   } catch {}
+// }
 
 function loadDraft(initial) {
   try {
     const saved = localStorage.getItem(DRAFT_KEY);
-    return saved ? { ...initial, ...JSON.parse(saved) } : initial;
+    if (!saved) return initial;
+    const parsed = JSON.parse(saved);
+    // If version mismatch, discard old draft
+    if (parsed.__version !== DRAFT_VERSION) return initial;
+    return { ...initial, ...parsed };
   } catch {
     return initial;
   }
@@ -24,7 +44,7 @@ function loadDraft(initial) {
 
 function saveDraft(data) {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, __version: DRAFT_VERSION }));
   } catch {}
 }
 
@@ -60,68 +80,301 @@ async function lookupStock(productCode) {
 
 // ── PDF Export ────────────────────────────────────────────────────────────────
 function exportPDF(header, rows, challanNo) {
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-  <title>Delivery Challan - ${challanNo}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}
-    .hbox{border:2px solid #111;padding:10px}.title{text-align:center;font-size:16px;font-weight:bold;text-decoration:underline;margin-bottom:8px}
-    .g2{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #111}
-    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #111}
-    .cell{padding:5px 8px;border-right:1px solid #111;border-bottom:1px solid #111}.cell:last-child{border-right:none}
-    .cl{font-size:9px;color:#555;font-weight:bold;text-transform:uppercase}.cv{font-size:11px;font-weight:bold;margin-top:2px;word-break:break-word}
-    .stitle{background:#1e293b;color:white;padding:5px 8px;font-size:10px;font-weight:bold;text-transform:uppercase;border:1px solid #111;border-top:none}
-    table{width:100%;border-collapse:collapse}th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:bold;border:1px solid #111;text-transform:uppercase}
-    td{padding:5px 8px;border:1px solid #ccc;font-size:11px}tfoot td{font-weight:bold;background:#f1f5f9;border-top:2px solid #111}
-    .sbox{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #111;border-top:none}
-    .sc{padding:30px 10px 10px;border-right:1px solid #111;text-align:center;font-size:10px;font-weight:bold}.sc:last-child{border-right:none}
-  </style></head><body>
-  <div class="hbox"><div class="title">DELIVERY CHALLAN</div>
-    <div class="g3">
-      <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
-      <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
-      <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
+  const totalQty = rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
+  const logoUrl = logo.startsWith("http")
+    ? logo
+    : window.location.origin + (logo.startsWith("/") ? logo : "/" + logo);
+
+  const makeChallan = (copyLabel) => `
+    <div class="challan">
+
+      <div class="co-header">
+        <div class="co-logo-name">
+          <img src="${logoUrl}" alt="Logo" class="co-logo" onerror="this.style.display='none'" />
+          <div class="co-name-block">
+            <div class="co-name">fib2fab</div>
+            <div class="co-tagline">Quality Piping Solutions</div>
+          </div>
+        </div>
+        <div class="co-address">
+          506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
+          Vapi – 396195, Gujarat – India<br/>
+          +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
+        </div>
+      </div>
+
+      <div class="dc-title">
+        DELIVERY CHALLAN &nbsp;&nbsp;
+        <span class="copy-label">${copyLabel}</span>
+      </div>
+
+      <div class="g3">
+        <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
+        <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
+        <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
+      </div>
+      <div class="g3">
+        <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.customer || ""}</div></div>
+        <div class="cell"><div class="cl">Customer</div><div class="cv">${header.companyName || ""}</div></div>
+        <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
+      </div>
+      <div class="g2">
+        <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || ""}</div></div>
+        <div class="cell"><div class="cl">Email</div><div class="cv">&nbsp;</div></div>
+      </div>
+      <div class="g2">
+        <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || ""}</div></div>
+        <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || ""}</div></div>
+      </div>
+      <div class="g2">
+        <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || ""}</div></div>
+        <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || ""}</div></div>
+      </div>
+      <div class="g2">
+        <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
+        <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || ""}</div></div>
+      </div>
+      <div class="g3">
+        <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
+        <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
+        <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
+      </div>
+
+      <div class="stitle">ITEMS / PRODUCTS</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28px">SL</th>
+            <th>Part No</th>
+            <th>Description</th>
+            <th>HSN/SAC</th>
+            <th style="text-align:right">Qty</th>
+            <th>Unit</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><b>${r.productCode || ""}</b></td>
+              <td>${r.description || ""}</td>
+              <td>${r.hsn || ""}</td>
+              <td style="text-align:right"><b>${r.dispatchQty || 0}</b></td>
+              <td>${r.unit || ""}</td>
+              <td>${r.remarks || ""}</td>
+            </tr>`).join("")}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right">TOTAL</td>
+            <td style="text-align:right">${totalQty}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="sbox">
+        <div class="sc">Prepared By</div>
+        <div class="sc">Checked By</div>
+        <div class="sc">Authorised Signatory</div>
+      </div>
+
     </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Customer</div><div class="cv">${header.customer || ""}</div></div>
-      <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || ""}</div></div>
-    </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || ""}</div></div>
-      <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
-    </div>
-    <div class="g3">
-      <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
-      <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
-      <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
-    </div>
-  </div>
-  <div class="stitle">ITEMS / PRODUCTS</div>
-  <table><thead><tr>
-    <th style="width:30px">SL</th><th>Part No</th><th>Description</th><th>HSN/SAC</th>
-    <th style="text-align:right">Qty</th><th>Unit</th><th>Remarks</th>
-  </tr></thead><tbody>
-    ${rows.map((r, i) => `<tr><td>${i + 1}</td><td><b>${r.productCode || ""}</b></td><td>${r.description || ""}</td><td>${r.hsn || ""}</td><td style="text-align:right"><b>${r.dispatchQty || 0}</b></td><td>${r.unit || ""}</td><td>${r.remarks || ""}</td></tr>`).join("")}
-  </tbody><tfoot><tr>
-    <td colspan="4" style="text-align:right">TOTAL</td>
-    <td style="text-align:right">${rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0)}</td>
-    <td colspan="2"></td>
-  </tr></tfoot></table>
-  <div class="sbox"><div class="sc">Prepared By</div><div class="sc">Checked By</div><div class="sc">Authorised Signatory</div></div>
-  </body></html>`;
-  const w = window.open("", "_blank", "width=900,height=700");
+  `;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Delivery Challan - ${challanNo}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
+
+  .challan {
+    width: 100%;
+    padding: 16px 20px;
+    page-break-after: always;
+  }
+  .challan:last-child {
+    page-break-after: auto;
+  }
+
+  /* ── Company Header ── */
+  .co-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border: 2px solid #111;
+    border-bottom: none;
+    padding: 10px 14px;
+    background: #f8fafc;
+  }
+  .co-logo-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .co-logo {
+    height: 50px;
+    width: auto;
+  }
+  .co-name {
+    font-size: 26px;
+    font-weight: 900;
+    color: #1e3a5f;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .co-tagline {
+    font-size: 9px;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .co-address {
+    text-align: right;
+    font-size: 9.5px;
+    color: #374151;
+    line-height: 1.6;
+  }
+
+  /* ── Title ── */
+  .dc-title {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+    padding: 7px;
+    border: 2px solid #111;
+    border-top: none;
+    border-bottom: none;
+    background: #fff;
+    letter-spacing: 1px;
+  }
+  .copy-label {
+    font-size: 10px;
+    font-weight: normal;
+    text-decoration: none;
+    color: #555;
+    border: 1px solid #999;
+    padding: 1px 6px;
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+
+  /* ── Grid cells ── */
+  .g2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-left: 2px solid #111;
+    border-right: 2px solid #111;
+    border-bottom: 1px solid #111;
+  }
+  .g3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-left: 2px solid #111;
+    border-right: 2px solid #111;
+    border-bottom: 1px solid #111;
+  }
+  .cell {
+    padding: 4px 8px;
+    border-right: 1px solid #111;
+  }
+  .cell:last-child { border-right: none; }
+  .cl { font-size: 8px; color: #555; font-weight: bold; text-transform: uppercase; }
+  .cv { font-size: 10.5px; font-weight: bold; margin-top: 1px; word-break: break-word; }
+
+  /* ── Section title ── */
+  .stitle {
+    background: #1e293b;
+    color: white;
+    padding: 4px 8px;
+    font-size: 9.5px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-left: 2px solid #111;
+    border-right: 2px solid #111;
+  }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-left: 2px solid #111;
+    border-right: 2px solid #111;
+  }
+  th {
+    background: #f1f5f9;
+    padding: 5px 7px;
+    text-align: left;
+    font-size: 9.5px;
+    font-weight: bold;
+    border: 1px solid #111;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 4px 7px;
+    border: 1px solid #ccc;
+    font-size: 10.5px;
+  }
+  tfoot td {
+    font-weight: bold;
+    background: #f1f5f9;
+    border-top: 2px solid #111;
+    border-bottom: 2px solid #111;
+  }
+
+  /* ── Signature box ── */
+  .sbox {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border: 2px solid #111;
+    border-top: none;
+  }
+  .sc {
+    padding: 28px 10px 8px;
+    border-right: 1px solid #111;
+    text-align: center;
+    font-size: 9.5px;
+    font-weight: bold;
+  }
+  .sc:last-child { border-right: none; }
+
+  @media print {
+    .challan { padding: 12px 16px; }
+  }
+</style>
+</head>
+<body>
+  ${makeChallan("ORIGINAL COPY")}
+  ${makeChallan("TRANSPORTER COPY")}
+  ${makeChallan("OFFICE COPY")}
+</body>
+</html>`;
+
+  const w = window.open("", "_blank");
+  if (!w) {
+    alert("❌ Popup blocked! Please allow popups for this site and try again.");
+    return;
+  }
+  w.document.open();
   w.document.write(html);
   w.document.close();
-  w.onload = () => {
+  setTimeout(() => {
     w.focus();
     w.print();
-  };
+  }, 1000);
 }
-
 function exportCSV(header, rows, challanNo) {
   const lines = [
     ["DELIVERY CHALLAN"],
     ["Challan No", challanNo],
     ["Date", header.challanDate],
+    ["E-Way Bill No", header.ewayBillNo],
     [""],
     ["Customer", header.customer],
     ["SO Reference", header.soReference],
@@ -199,6 +452,7 @@ const FORM_DEFAULTS = {
   challanNo: "",
   challanDate: todayISO(),
   soReference: "",
+  ewayBillNo: "",
   customer: "",
   companyName: "",
   address: "",
@@ -252,6 +506,7 @@ export default function DispatchOnChallan() {
     challanNo,
     challanDate,
     soReference,
+    ewayBillNo,
     customer,
     companyName,
     address,
@@ -333,6 +588,7 @@ export default function DispatchOnChallan() {
   const getHeader = () => ({
     challanDate,
     soReference,
+    ewayBillNo,
     customer,
     companyName,
     address,
@@ -412,6 +668,7 @@ export default function DispatchOnChallan() {
                 ["Challan No", challanNo],
                 ["Customer", customer || "—"],
                 ["SO Reference", soReference || "—"],
+                ["E-Way Bill No", ewayBillNo || "—"],
                 ["Approx Invoice Date", approxInvoiceDate],
                 ["Vehicle No", vehicleNo || "—"],
                 ["Driver Contact", driverContact || "—"],
@@ -478,7 +735,7 @@ export default function DispatchOnChallan() {
                 >
                   <span className="text-lg">📄</span>
                   <div>
-                    <p className="font-bold leading-tight">Download PDF</p>
+                    <p className="font-bold leading-tight">Download PDF1</p>
                     <p className="text-xs text-red-200">Print ready</p>
                   </div>
                 </button>
@@ -812,7 +1069,7 @@ export default function DispatchOnChallan() {
       </div>
 
       {/* ── SECTION 3: Transport ── */}
-      <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
+      <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group" open>
         <summary className="px-5 py-3 bg-slate-700 cursor-pointer list-none flex items-center justify-between">
           <h3 className="text-sm font-bold text-white">
             3. Transport Details{" "}
@@ -833,6 +1090,12 @@ export default function DispatchOnChallan() {
             value={vehicleNo}
             onChange={set("vehicleNo")}
             placeholder="GJ-06-AB-1234"
+          />
+          <Field
+            label="E-Way Bill No"
+            value={ewayBillNo}
+            onChange={set("ewayBillNo")}
+            placeholder="e.g. 1234 5678 9012"
           />
           <Field
             label="Driver Name"

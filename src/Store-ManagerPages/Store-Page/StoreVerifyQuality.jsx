@@ -343,15 +343,12 @@ export default function StoreVerifyQuality() {
       '<th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;">Description</th>',
       '<th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;width:80px;">Unit</th>',
       '<th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;width:100px;">Ordered</th>',
-      // '<th style="padding:8px 10px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;width:80px;">Ready</th>',
+      '<th style="width: auto;"></th>',
       "</tr>",
       "</thead>",
       "<tbody>",
       ...soItems.map((item, idx) => {
         const ordered = item.orderedQty || 0;
-        const ready = item.readyQty ?? 0;
-        const shortage = Math.max(0, ordered - ready);
-        const isShort = shortage > 0;
         const bg = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
         return [
           '<tr style="background:' + bg + ';border-bottom:1px solid #e2e8f0;">',
@@ -361,7 +358,7 @@ export default function StoreVerifyQuality() {
           '<td style="padding:7px 10px;font-family:monospace;font-weight:700;font-size:12px;color:#1e293b;">' +
             (item.productCode || "—") +
             "</td>",
-          '<td style="padding:7px 10px;font-size:12px;color:#475569;">' +
+          '<td style="padding:7px 10px;font-size:12px;color:#475569;width:350px;">' +
             (item.description || "—") +
             "</td>",
           '<td style="padding:7px 10px;text-align:left;font-size:12px;color:#64748b;">' +
@@ -370,9 +367,7 @@ export default function StoreVerifyQuality() {
           '<td style="padding:7px 10px;text-align:left;font-size:12px;font-weight:700;color:#1e293b;">' +
             ordered +
             "</td>",
-          // '<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:700;color:#16a34a;">' +
-          //   ready +
-          //   "</td>",
+          '<td style="width: auto;"></td>',
           "</tr>",
         ].join("");
       }),

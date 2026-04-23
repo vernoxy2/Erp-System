@@ -69,7 +69,7 @@ const STATUS_CFG = {
   overdue: {
     label: "Overdue",
     dot: "bg-red-500",
-    tag: "bg-red-700 text-red-700 border-red-200",
+    tag: "bg-red-100 text-red-700 border-red-200",
   },
 };
 

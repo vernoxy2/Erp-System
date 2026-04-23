@@ -241,6 +241,16 @@
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
 }
 
+.page-num {
+  text-align: right;
+  font-size: 9px;
+  color: #64748b;
+  padding: 2px 4px 4px;
+  border-left: 2px solid #111;
+  border-right: 2px solid #111;
+  background: #f8fafc;
+}
+
 /* Factory image — fills remaining space */
 .f2f-right-image {
   flex: 1;
