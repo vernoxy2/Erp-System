@@ -209,10 +209,14 @@ async function exportPDF(header, rows, challanNo) {
     logoSrc = "";
   }
 
+  const copies = ["ORIGINAL COPY", "DUPLICATE COPY", "TRIPLICATE COPY"];
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
   <title>Delivery Challan - ${challanNo}</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}
+    *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:0}
+    .page{padding:20px; page-break-after: always; position: relative; min-height: 100vh;}
+    .page:last-child { page-break-after: auto; }
     .hbox{border:2px solid #111;padding:10px;border-bottom:none}.title{text-align:center;font-size:16px;font-weight:bold;text-decoration:underline;margin-bottom:8px}
     .g2{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #111}
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #111}
@@ -229,66 +233,72 @@ async function exportPDF(header, rows, challanNo) {
     .co-name{font-size:26px;font-weight:900;color:#1e3a5f;letter-spacing:1px;text-transform:uppercase}
     .co-tagline{font-size:9px;color:#64748b;letter-spacing:0.5px;margin-top:2px}
     .co-address{text-align:right;font-size:9.5px;color:#374151;line-height:1.6}
+    .copy-label{position: absolute; top: 10px; right: 20px; font-size: 10px; font-weight: bold; border: 1px solid #111; padding: 2px 8px; border-radius: 4px; background: #fff;}
   </style></head><body>
-  <div class="co-header">
-    <div class="co-logo-name">
-      ${logoSrc ? `<img src="${logoSrc}" alt="Logo" class="co-logo" />` : ""}
-      <div>
-        <div class="co-name">fib2fab</div>
-        <div class="co-tagline">Quality Piping Solutions</div>
+    ${copies.map((copyLabel) => `
+    <div class="page">
+      <div class="copy-label">${copyLabel}</div>
+      <div class="co-header">
+        <div class="co-logo-name">
+          ${logoSrc ? `<img src="${logoSrc}" alt="Logo" class="co-logo" />` : ""}
+          <div>
+            <div class="co-name">fib2fab</div>
+            <div class="co-tagline">Quality Piping Solutions</div>
+          </div>
+        </div>
+        <div class="co-address">
+          506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
+          Vapi – 396195, Gujarat – India<br/>
+          +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
+        </div>
       </div>
+      <div class="hbox"><div class="title">DELIVERY CHALLAN</div>
+        <div class="g3">
+          <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
+          <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
+          <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
+        </div>
+        <div class="g3">
+          <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.partyCode || "—"}</div></div>
+          <div class="cell"><div class="cl">Customer</div><div class="cv">${header.customer || ""}</div></div>
+          <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
+        </div>
+        <div class="g2">
+          <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || "—"}</div></div>
+          <div class="cell"><div class="cl">Email</div><div class="cv">${header.email || "—"}</div></div>
+        </div>
+        <div class="g2">
+          <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || "—"}</div></div>
+          <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || "—"}</div></div>
+        </div>
+        <div class="g2">
+          <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || "—"}</div></div>
+          <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || "—"}</div></div>
+        </div>
+        <div class="g2">
+          <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
+          <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || "—"}</div></div>
+        </div>
+        <div class="g3">
+          <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
+          <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
+          <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
+        </div>
+      </div>
+      <div class="stitle">ITEMS / PRODUCTS</div>
+      <table><thead><tr>
+        <th style="width:30px">SL</th><th>Part No</th><th>Description</th><th>HSN/SAC</th>
+        <th style="text-align:right">Qty</th><th>Unit</th><th>Remarks</th>
+      </tr></thead><tbody>
+        ${rows.map((r, i) => `<tr><td>${i + 1}</td><td><b>${r.productCode || ""}</b></td><td>${r.description || ""}</td><td>${r.hsn || ""}</td><td style="text-align:right"><b>${r.dispatchQty || 0}</b></td><td>${r.unit || ""}</td><td>${r.remarks || ""}</td></tr>`).join("")}
+      </tbody><tfoot><tr>
+        <td colspan="4" style="text-align:right">TOTAL</td>
+        <td style="text-align:right">${totalQty}</td>
+        <td colspan="2"></td>
+      </tr></tfoot></table>
+      <div class="sbox"><div class="sc">Prepared By</div><div class="sc">Checked By</div><div class="sc">Authorised Signatory</div></div>
     </div>
-    <div class="co-address">
-      506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
-      Vapi – 396195, Gujarat – India<br/>
-      +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
-    </div>
-  </div>
-  <div class="hbox"><div class="title">DELIVERY CHALLAN</div>
-    <div class="g3">
-      <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
-      <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
-      <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
-    </div>
-    <div class="g3">
-      <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.partyCode || "—"}</div></div>
-      <div class="cell"><div class="cl">Customer</div><div class="cv">${header.customer || ""}</div></div>
-      <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
-    </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || "—"}</div></div>
-      <div class="cell"><div class="cl">Email</div><div class="cv">${header.email || "—"}</div></div>
-    </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || "—"}</div></div>
-      <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || "—"}</div></div>
-    </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || "—"}</div></div>
-      <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || "—"}</div></div>
-    </div>
-    <div class="g2">
-      <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
-      <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || "—"}</div></div>
-    </div>
-    <div class="g3">
-      <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
-      <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
-      <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
-    </div>
-  </div>
-  <div class="stitle">ITEMS / PRODUCTS</div>
-  <table><thead><tr>
-    <th style="width:30px">SL</th><th>Part No</th><th>Description</th><th>HSN/SAC</th>
-    <th style="text-align:right">Qty</th><th>Unit</th><th>Remarks</th>
-  </tr></thead><tbody>
-    ${rows.map((r, i) => `<tr><td>${i + 1}</td><td><b>${r.productCode || ""}</b></td><td>${r.description || ""}</td><td>${r.hsn || ""}</td><td style="text-align:right"><b>${r.dispatchQty || 0}</b></td><td>${r.unit || ""}</td><td>${r.remarks || ""}</td></tr>`).join("")}
-  </tbody><tfoot><tr>
-    <td colspan="4" style="text-align:right">TOTAL</td>
-    <td style="text-align:right">${totalQty}</td>
-    <td colspan="2"></td>
-  </tr></tfoot></table>
-  <div class="sbox"><div class="sc">Prepared By</div><div class="sc">Checked By</div><div class="sc">Authorised Signatory</div></div>
+    `).join("")}
   </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=700");
@@ -298,6 +308,225 @@ async function exportPDF(header, rows, challanNo) {
     w.focus();
     w.print();
   };
+}
+
+function PreviewModal({ open, onClose, header, rows, challanNo, onSave, saving, onDownloadPDF }) {
+  if (!open) return null;
+  const filledRows = rows.filter((r) => r.description || r.productCode);
+  const totalQty = filledRows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden border border-slate-200">
+        {/* Modal Header */}
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+              <FiFileText size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-800 leading-tight">Challan Preview</h3>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{challanNo || "Draft Challan"}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+            <FiX size={20} />
+          </button>
+        </div>
+
+        {/* PDF Content Area */}
+        <div className="flex-1 overflow-y-auto bg-slate-100 p-8">
+          <div className="bg-white mx-auto shadow-sm border border-slate-200 p-10 min-h-[1000px] w-full max-w-[800px] text-[11px] text-slate-800 font-sans leading-relaxed">
+            {/* Business Header */}
+            <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100">
+                  <img src={logo} alt="Logo" className="max-h-12 w-auto" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black text-indigo-900 tracking-tighter uppercase">fib2fab</h1>
+                  <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">Quality Piping Solutions</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-slate-700">506, 4th Floor, Tirupati Tower</p>
+                <p className="text-slate-500">GIDC Char Rasta, Vapi – 396195</p>
+                <p className="text-slate-500">Gujarat – India</p>
+                <p className="font-bold text-indigo-600 mt-1">+91-7096040970</p>
+              </div>
+            </div>
+
+            <div className="text-center mb-8">
+              <h2 className="text-xl font-black text-slate-800 underline decoration-slate-300 underline-offset-8 uppercase tracking-widest">Delivery Challan</h2>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 border-2 border-slate-800 mb-6">
+              <div className="border-r-2 border-slate-800">
+                <div className="grid grid-cols-2 border-b border-slate-800">
+                  <div className="p-3 border-r border-slate-200">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Challan No</p>
+                    <p className="font-bold text-slate-800">{challanNo || "—"}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Date</p>
+                    <p className="font-bold text-slate-800">{header.challanDate || "—"}</p>
+                  </div>
+                </div>
+                <div className="p-3 border-b border-slate-200">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Customer / Party Code</p>
+                  <p className="font-black text-slate-800 text-sm leading-tight">{header.customer || "—"}</p>
+                  {header.partyCode && <p className="text-[10px] text-indigo-600 font-bold mt-0.5">Code: {header.partyCode}</p>}
+                  {header.companyName && <p className="text-[10px] text-slate-600 font-bold mt-1 uppercase">{header.companyName}</p>}
+                  <p className="text-slate-500 mt-1 whitespace-pre-wrap">{header.address || ""}</p>
+                </div>
+                <div className="grid grid-cols-2 border-b border-slate-200">
+                  <div className="p-3 border-r border-slate-200">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">State</p>
+                    <p className="font-bold text-slate-800">{header.stateName || "—"}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Destination</p>
+                    <p className="font-bold text-slate-800">{header.destination || "—"}</p>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">GST Number</p>
+                  <p className="font-bold text-slate-800 font-mono">{header.gstNo || "—"}</p>
+                </div>
+              </div>
+              <div>
+                <div className="grid grid-cols-2 border-b border-slate-800">
+                  <div className="p-3 border-r border-slate-200">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">SO Reference</p>
+                    <p className="font-bold text-slate-800">{header.soReference || "—"}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Invoice Date</p>
+                    <p className="font-bold text-slate-800">{header.approxInvoiceDate || "—"}</p>
+                  </div>
+                </div>
+                <div className="p-3 border-b border-slate-200">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Consignee (Ship To)</p>
+                  <p className="font-bold text-slate-800">{header.consignee || "Same as Buyer"}</p>
+                </div>
+                <div className="grid grid-cols-2 border-b border-slate-200">
+                  <div className="p-3 border-r border-slate-200">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Vehicle No</p>
+                    <p className="font-bold text-slate-800 font-mono">{header.vehicleNo || "—"}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">E-Way Bill</p>
+                    <p className="font-bold text-slate-800 font-mono">{header.ewayBillNo || "—"}</p>
+                  </div>
+                </div>
+                <div className="p-3 border-b border-slate-200">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Driver Info</p>
+                  <p className="font-bold text-slate-800">{header.driverName || "—"}</p>
+                  {header.driverContact && <p className="text-slate-500 font-mono">{header.driverContact}</p>}
+                </div>
+                <div className="p-3">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Invoice Nos</p>
+                  <p className="font-bold text-slate-800 font-mono">{header.invoiceNos || "—"}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <table className="w-full border-2 border-slate-800 mb-8">
+              <thead>
+                <tr className="bg-slate-50 border-b-2 border-slate-800">
+                  <th className="p-3 border-r border-slate-800 text-left w-10">SL</th>
+                  <th className="p-3 border-r border-slate-800 text-left">Description of Goods</th>
+                  <th className="p-3 border-r border-slate-800 text-left w-24">HSN/SAC</th>
+                  <th className="p-3 border-r border-slate-800 text-right w-20">Qty</th>
+                  <th className="p-3 text-left w-20">Unit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filledRows.length > 0 ? filledRows.map((r, i) => (
+                  <tr key={i}>
+                    <td className="p-3 border-r border-slate-800 text-slate-400">{i + 1}</td>
+                    <td className="p-3 border-r border-slate-800">
+                      <p className="font-black text-slate-800">{r.description}</p>
+                      <p className="text-[9px] text-slate-400 font-mono mt-0.5">{r.productCode}</p>
+                    </td>
+                    <td className="p-3 border-r border-slate-800 font-mono">{r.hsn}</td>
+                    <td className="p-3 border-r border-slate-800 text-right font-black">{r.dispatchQty}</td>
+                    <td className="p-3">{r.unit || "NOS"}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="5" className="p-10 text-center text-slate-400 font-bold italic">No items added to this challan yet.</td>
+                  </tr>
+                )}
+                {/* Empty rows to fill space */}
+                {Array.from({ length: Math.max(0, 8 - filledRows.length) }).map((_, i) => (
+                  <tr key={`empty-${i}`} className="h-10">
+                    <td className="p-3 border-r border-slate-800"></td>
+                    <td className="p-3 border-r border-slate-800"></td>
+                    <td className="p-3 border-r border-slate-800"></td>
+                    <td className="p-3 border-r border-slate-800"></td>
+                    <td className="p-3"></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-50 border-t-2 border-slate-800 font-black">
+                  <td colSpan="3" className="p-3 border-r border-slate-800 text-right uppercase tracking-widest">Total Quantity</td>
+                  <td className="p-3 border-r border-slate-800 text-right text-base text-indigo-700">{totalQty}</td>
+                  <td className="p-3"></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Footer Signatures */}
+            <div className="grid grid-cols-3 gap-0 border-2 border-slate-800 mt-20">
+              <div className="border-r-2 border-slate-800 p-4 h-32 flex flex-col justify-between">
+                <p className="text-[9px] font-black text-slate-400 uppercase text-center">Prepared By</p>
+                <div className="border-t border-slate-200 pt-2 text-center text-[10px] font-bold text-slate-800">Authorized Signatory</div>
+              </div>
+              <div className="border-r-2 border-slate-800 p-4 h-32 flex flex-col justify-between">
+                <p className="text-[9px] font-black text-slate-400 uppercase text-center">Receiver's Signature</p>
+                <div className="border-t border-slate-200 pt-2 text-center text-[10px] font-bold text-slate-800">Name & Designation</div>
+              </div>
+              <div className="p-4 h-32 flex flex-col justify-between bg-slate-50/50">
+                <p className="text-[9px] font-black text-slate-400 uppercase text-center">For fib2fab</p>
+                <div className="border-t border-slate-800 pt-2 text-center text-[10px] font-black text-slate-800">Authorised Signatory</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer Actions */}
+        <div className="px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+          >
+            Back to Edit
+          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onDownloadPDF}
+              className="px-5 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-900 shadow-lg flex items-center gap-2 transition-all active:scale-95"
+            >
+              <FiDownload size={16} /> Download PDF
+            </button>
+            {onSave && (
+              <button
+                onClick={onSave}
+                disabled={saving}
+                className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+              >
+                <FiSave size={16} /> {saving ? "Saving..." : "Confirm & Create"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function exportCSV(header, rows, challanNo) {
@@ -387,6 +616,7 @@ function CustomerSearchInput({ customers, value, onSelect, required }) {
   const [focused, setFocused] = useState(false);
   const wrapRef = useRef(null);
 
+  // ✅ Update query when external value changes (important for auto-fill/edit)
   useEffect(() => {
     setQuery(value || "");
   }, [value]);
@@ -403,10 +633,14 @@ function CustomerSearchInput({ customers, value, onSelect, required }) {
   const handleInput = (e) => {
     const val = e.target.value;
     setQuery(val);
+    
+    // ✅ Update parent state immediately with typed text
+    // We pass an object that has the name so handleCustomerSelect can process it
+    onSelect({ name: val, isManual: true });
+
     if (!val.trim()) {
       setSuggestions([]);
       setShowDrop(false);
-      onSelect(null);
       return;
     }
     const lower = val.toLowerCase();
@@ -427,7 +661,8 @@ function CustomerSearchInput({ customers, value, onSelect, required }) {
   };
 
   const handleSelect = (cust) => {
-    setQuery(cust.name || cust.companyName || "");
+    const name = cust.name || cust.companyName || "";
+    setQuery(name);
     setShowDrop(false);
     setSuggestions([]);
     onSelect(cust);
@@ -843,7 +1078,7 @@ const FORM_DEFAULTS = {
   consignee: "",
   destination: "",
   invoiceNos: "",
-  approxInvoiceDate: "",
+  approxInvoiceDate: todayISO(),
   vehicleNo: "",
   driverName: "",
   driverContact: "",
@@ -862,6 +1097,8 @@ export default function DispatchOnChallan() {
   const [customers, setCustomers] = useState([]);
   const [stockItems, setStockItems] = useState([]);
   const [form, setFormRaw] = useState(() => loadDraft(FORM_DEFAULTS));
+
+  const [showPreview, setShowPreview] = useState(false);
 
   // ✅ Detect Edit Mode from state if passed from list
   const editData = location.state?.editChallan;
@@ -893,8 +1130,8 @@ export default function DispatchOnChallan() {
       // Data passed directly via navigate state
       const mappedRows = (editData.items || []).map((it) => ({
         ...it,
-        stockChecked: it.challanType === "inhouse",
-        stockAvailable: it.challanType === "inhouse",
+        stockChecked: editData.challanType === "inhouse",
+        stockAvailable: editData.challanType === "inhouse",
       }));
       setFormRaw({
         ...FORM_DEFAULTS,
@@ -1105,12 +1342,8 @@ export default function DispatchOnChallan() {
     driverContact,
     deliveryNote,
   });
-
-  const canSave =
-    challanNo.trim() &&
-    challanDate &&
-    approxInvoiceDate &&
-    rows.some((r) => r.description && r.dispatchQty > 0);
+const canPreview = true;
+const canSave = true;
 
   const handleBack = () => {
     clearDraft();
@@ -1168,6 +1401,12 @@ export default function DispatchOnChallan() {
   };
 
   const handleSave = async () => {
+    if (!challanNo.trim()) return alert("Please enter a Challan Number");
+    if (!customer.trim()) return alert("Please select a Customer");
+    if (!rows.some(r => (r.description || r.productCode) && Number(r.dispatchQty) > 0)) {
+      return alert("Please add at least one item with a quantity");
+    }
+
     try {
       setSaving(true);
       const data = {
@@ -1175,7 +1414,7 @@ export default function DispatchOnChallan() {
         challanNo,
         updatedAt: serverTimestamp(),
         header: getHeader(),
-        items: rows.filter((r) => r.description),
+        items: rows.filter((r) => r.description || r.productCode),
         status: "dispatched",
         soReference,
       };
@@ -1349,6 +1588,16 @@ export default function DispatchOnChallan() {
                 Download Challan
               </p>
               <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPreview(true)}
+                  className="flex items-center gap-2.5 px-5 py-3 bg-indigo-100 border border-indigo-200 text-indigo-700 hover:bg-indigo-200 text-sm font-bold rounded-xl shadow-sm transition-all"
+                >
+                  <FiFileText size={18} />
+                  <div>
+                    <p className="font-bold leading-tight">Preview PDF</p>
+                    <p className="text-xs text-indigo-500 text-opacity-70">Review on screen</p>
+                  </div>
+                </button>
                 <button
                   onClick={async () => await exportPDF(header, filledRows, challanNo)}
                   className="flex items-center gap-2.5 px-5 py-3 bg-red-700 hover:bg-red-600 text-white text-sm font-bold rounded-xl shadow"
@@ -1784,20 +2033,43 @@ export default function DispatchOnChallan() {
         >
           <FiArrowLeft size={14} /> Cancel
         </button>
-        <button
-          onClick={handleSave}
-          disabled={!canSave || saving}
-          className={`px-6 py-2.5 text-sm font-bold rounded-lg shadow transition-all flex items-center gap-2
-            ${canSave && !saving ? "bg-green-600 hover:bg-green-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
-        >
-          <FiSave size={14} />
-          {saving
-            ? "Saving..."
-            : id || editData
-              ? "Update Challan"
-              : "Create Challan"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPreview(true)}
+            disabled={!canPreview}
+            className={`px-5 py-2.5 text-sm font-bold rounded-lg flex items-center gap-2 transition-all
+              ${canPreview ? "bg-indigo-100 text-indigo-700 border border-indigo-300 hover:bg-indigo-200 shadow-sm" : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"}`}
+          >
+            👁 Preview Challan
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!canSave || saving}
+            className={`px-6 py-2.5 text-sm font-bold rounded-lg shadow transition-all flex items-center gap-2
+              ${canSave && !saving ? "bg-green-600 hover:bg-green-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
+          >
+            <FiSave size={14} />
+            {saving
+              ? "Saving..."
+              : id || editData
+                ? "Update Challan"
+                : "Create Challan"}
+          </button>
+        </div>
       </div>
+
+      {/* Preview Modal */}
+      <PreviewModal
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        header={getHeader()}
+        rows={rows}
+        challanNo={challanNo}
+        onSave={() => { setShowPreview(false); handleSave(); }}
+        saving={saving}
+        onDownloadPDF={() => exportPDF(getHeader(), rows.filter(r => r.description || r.productCode), challanNo)}
+      />
+
     </div>
   );
 }

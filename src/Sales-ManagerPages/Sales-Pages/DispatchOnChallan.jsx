@@ -14,29 +14,11 @@ import {
 // ── localStorage helpers (inline — no external file needed) ──────────────────
 const DRAFT_KEY = "dispatch_challan_draft";
 const DRAFT_VERSION = 2;
-// function loadDraft(initial) {
-//   try {
-//     const saved = localStorage.getItem(DRAFT_KEY);
-//     return saved ? { ...initial, ...JSON.parse(saved) } : initial;
-//   } catch {
-//     return initial;
-//   }
-// }
-
-// function saveDraft(data) {
-//   try {
-//     localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-//   } catch {}
-// }
 
 function loadDraft(initial) {
   try {
     const saved = localStorage.getItem(DRAFT_KEY);
-    if (!saved) return initial;
-    const parsed = JSON.parse(saved);
-    // If version mismatch, discard old draft
-    if (parsed.__version !== DRAFT_VERSION) return initial;
-    return { ...initial, ...parsed };
+    return saved ? { ...initial, ...JSON.parse(saved) } : initial;
   } catch {
     return initial;
   }
@@ -44,7 +26,7 @@ function loadDraft(initial) {
 
 function saveDraft(data) {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, __version: DRAFT_VERSION }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
   } catch {}
 }
 
@@ -79,295 +61,154 @@ async function lookupStock(productCode) {
 }
 
 // ── PDF Export ────────────────────────────────────────────────────────────────
+// ── PDF Export ────────────────────────────────────────────────────────────────
 function exportPDF(header, rows, challanNo) {
   const totalQty = rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
-  const logoUrl = logo.startsWith("http")
-    ? logo
-    : window.location.origin + (logo.startsWith("/") ? logo : "/" + logo);
+  const logoUrl = window.location.origin + logo;
 
-  const makeChallan = (copyLabel) => `
-    <div class="challan">
-
-      <div class="co-header">
-        <div class="co-logo-name">
-          <img src="${logoUrl}" alt="Logo" class="co-logo" onerror="this.style.display='none'" />
-          <div class="co-name-block">
-            <div class="co-name">fib2fab</div>
-            <div class="co-tagline">Quality Piping Solutions</div>
-          </div>
-        </div>
-        <div class="co-address">
-          506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
-          Vapi – 396195, Gujarat – India<br/>
-          +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
-        </div>
-      </div>
-
-      <div class="dc-title">
-        DELIVERY CHALLAN &nbsp;&nbsp;
-        <span class="copy-label">${copyLabel}</span>
-      </div>
-
-      <div class="g3">
-        <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
-        <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
-        <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
-      </div>
-      <div class="g3">
-        <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.customer || ""}</div></div>
-        <div class="cell"><div class="cl">Customer</div><div class="cv">${header.companyName || ""}</div></div>
-        <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
-      </div>
-      <div class="g2">
-        <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || ""}</div></div>
-        <div class="cell"><div class="cl">Email</div><div class="cv">&nbsp;</div></div>
-      </div>
-      <div class="g2">
-        <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || ""}</div></div>
-        <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || ""}</div></div>
-      </div>
-      <div class="g2">
-        <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || ""}</div></div>
-        <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || ""}</div></div>
-      </div>
-      <div class="g2">
-        <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
-        <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || ""}</div></div>
-      </div>
-      <div class="g3">
-        <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
-        <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
-        <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
-      </div>
-
-      <div class="stitle">ITEMS / PRODUCTS</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:28px">SL</th>
-            <th>Part No</th>
-            <th>Description</th>
-            <th>HSN/SAC</th>
-            <th style="text-align:right">Qty</th>
-            <th>Unit</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map((r, i) => `
-            <tr>
-              <td>${i + 1}</td>
-              <td><b>${r.productCode || ""}</b></td>
-              <td>${r.description || ""}</td>
-              <td>${r.hsn || ""}</td>
-              <td style="text-align:right"><b>${r.dispatchQty || 0}</b></td>
-              <td>${r.unit || ""}</td>
-              <td>${r.remarks || ""}</td>
-            </tr>`).join("")}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="4" style="text-align:right">TOTAL</td>
-            <td style="text-align:right">${totalQty}</td>
-            <td colspan="2"></td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <div class="sbox">
-        <div class="sc">Prepared By</div>
-        <div class="sc">Checked By</div>
-        <div class="sc">Authorised Signatory</div>
-      </div>
-
-    </div>
-  `;
-
-  const html = `<!DOCTYPE html>
+  const makeFullHTML = (copyLabel) => `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Delivery Challan - ${challanNo}</title>
+<title>Delivery Challan - ${challanNo} - ${copyLabel}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; }
-
-  .challan {
-    width: 100%;
-    padding: 16px 20px;
-    page-break-after: always;
-  }
-  .challan:last-child {
-    page-break-after: auto;
-  }
-
-  /* ── Company Header ── */
-  .co-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    border: 2px solid #111;
-    border-bottom: none;
-    padding: 10px 14px;
-    background: #f8fafc;
-  }
-  .co-logo-name {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .co-logo {
-    height: 50px;
-    width: auto;
-  }
-  .co-name {
-    font-size: 26px;
-    font-weight: 900;
-    color: #1e3a5f;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  .co-tagline {
-    font-size: 9px;
-    color: #64748b;
-    letter-spacing: 0.5px;
-    margin-top: 2px;
-  }
-  .co-address {
-    text-align: right;
-    font-size: 9.5px;
-    color: #374151;
-    line-height: 1.6;
-  }
-
-  /* ── Title ── */
-  .dc-title {
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-    text-decoration: underline;
-    padding: 7px;
-    border: 2px solid #111;
-    border-top: none;
-    border-bottom: none;
-    background: #fff;
-    letter-spacing: 1px;
-  }
-  .copy-label {
-    font-size: 10px;
-    font-weight: normal;
-    text-decoration: none;
-    color: #555;
-    border: 1px solid #999;
-    padding: 1px 6px;
-    border-radius: 3px;
-    vertical-align: middle;
-  }
-
-  /* ── Grid cells ── */
-  .g2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-left: 2px solid #111;
-    border-right: 2px solid #111;
-    border-bottom: 1px solid #111;
-  }
-  .g3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border-left: 2px solid #111;
-    border-right: 2px solid #111;
-    border-bottom: 1px solid #111;
-  }
-  .cell {
-    padding: 4px 8px;
-    border-right: 1px solid #111;
-  }
+  .challan { width: 100%; padding: 16px 20px; }
+  .co-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 2px solid #111; border-bottom: none; padding: 10px 14px; background: #f8fafc; }
+  .co-logo-name { display: flex; align-items: center; gap: 12px; }
+  .co-logo { height: 50px; width: auto; }
+  .co-name { font-size: 26px; font-weight: 900; color: #1e3a5f; letter-spacing: 1px; text-transform: uppercase; }
+  .co-tagline { font-size: 9px; color: #64748b; letter-spacing: 0.5px; margin-top: 2px; }
+  .co-address { text-align: right; font-size: 9.5px; color: #374151; line-height: 1.6; }
+  .dc-title { text-align: center; font-size: 14px; font-weight: bold; text-decoration: underline; padding: 7px; border: 2px solid #111; border-top: none; border-bottom: none; background: #fff; letter-spacing: 1px; }
+  .copy-label { font-size: 10px; font-weight: normal; text-decoration: none; color: #555; border: 1px solid #999; padding: 1px 6px; border-radius: 3px; vertical-align: middle; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid #111; border-right: 2px solid #111; border-bottom: 1px solid #111; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; border-left: 2px solid #111; border-right: 2px solid #111; border-bottom: 1px solid #111; }
+  .cell { padding: 4px 8px; border-right: 1px solid #111; }
   .cell:last-child { border-right: none; }
   .cl { font-size: 8px; color: #555; font-weight: bold; text-transform: uppercase; }
   .cv { font-size: 10.5px; font-weight: bold; margin-top: 1px; word-break: break-word; }
-
-  /* ── Section title ── */
-  .stitle {
-    background: #1e293b;
-    color: white;
-    padding: 4px 8px;
-    font-size: 9.5px;
-    font-weight: bold;
-    text-transform: uppercase;
-    border-left: 2px solid #111;
-    border-right: 2px solid #111;
-  }
-
-  /* ── Table ── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    border-left: 2px solid #111;
-    border-right: 2px solid #111;
-  }
-  th {
-    background: #f1f5f9;
-    padding: 5px 7px;
-    text-align: left;
-    font-size: 9.5px;
-    font-weight: bold;
-    border: 1px solid #111;
-    text-transform: uppercase;
-  }
-  td {
-    padding: 4px 7px;
-    border: 1px solid #ccc;
-    font-size: 10.5px;
-  }
-  tfoot td {
-    font-weight: bold;
-    background: #f1f5f9;
-    border-top: 2px solid #111;
-    border-bottom: 2px solid #111;
-  }
-
-  /* ── Signature box ── */
-  .sbox {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border: 2px solid #111;
-    border-top: none;
-  }
-  .sc {
-    padding: 28px 10px 8px;
-    border-right: 1px solid #111;
-    text-align: center;
-    font-size: 9.5px;
-    font-weight: bold;
-  }
+  .stitle { background: #1e293b; color: white; padding: 4px 8px; font-size: 9.5px; font-weight: bold; text-transform: uppercase; border-left: 2px solid #111; border-right: 2px solid #111; }
+  table { width: 100%; border-collapse: collapse; border-left: 2px solid #111; border-right: 2px solid #111; }
+  th { background: #f1f5f9; padding: 5px 7px; text-align: left; font-size: 9.5px; font-weight: bold; border: 1px solid #111; text-transform: uppercase; }
+  td { padding: 4px 7px; border: 1px solid #ccc; font-size: 10.5px; }
+  tfoot td { font-weight: bold; background: #f1f5f9; border-top: 2px solid #111; border-bottom: 2px solid #111; }
+  .sbox { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 2px solid #111; border-top: none; }
+  .sc { padding: 28px 10px 8px; border-right: 1px solid #111; text-align: center; font-size: 9.5px; font-weight: bold; }
   .sc:last-child { border-right: none; }
-
-  @media print {
-    .challan { padding: 12px 16px; }
-  }
 </style>
 </head>
 <body>
-  ${makeChallan("ORIGINAL COPY")}
-  ${makeChallan("TRANSPORTER COPY")}
-  ${makeChallan("OFFICE COPY")}
+<div class="challan">
+  <div class="co-header">
+    <div class="co-logo-name">
+      <img src="${logoUrl}" alt="Logo" class="co-logo" onerror="this.style.display='none'" />
+      <div class="co-name-block">
+        <div class="co-name">fib2fab</div>
+        <div class="co-tagline">Quality Piping Solutions</div>
+      </div>
+    </div>
+    <div class="co-address">
+      506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
+      Vapi – 396195, Gujarat – India<br/>
+      +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
+    </div>
+  </div>
+  <div class="dc-title">DELIVERY CHALLAN &nbsp;&nbsp;<span class="copy-label">${copyLabel}</span></div>
+  <div class="g3">
+    <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
+    <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
+    <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
+  </div>
+  <div class="g3">
+    <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.customer || ""}</div></div>
+    <div class="cell"><div class="cl">Customer</div><div class="cv">${header.companyName || ""}</div></div>
+    <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
+  </div>
+  <div class="g2">
+    <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || ""}</div></div>
+    <div class="cell"><div class="cl">Email</div><div class="cv">&nbsp;</div></div>
+  </div>
+  <div class="g2">
+    <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || ""}</div></div>
+    <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || ""}</div></div>
+  </div>
+  <div class="g2">
+    <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || ""}</div></div>
+    <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || ""}</div></div>
+  </div>
+  <div class="g2">
+    <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
+    <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || ""}</div></div>
+  </div>
+  <div class="g3">
+    <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
+    <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
+    <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
+  </div>
+  <div class="stitle">ITEMS / PRODUCTS</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28px">SL</th>
+        <th>Part No</th>
+        <th>Description</th>
+        <th>HSN/SAC</th>
+        <th style="text-align:right">Qty</th>
+        <th>Unit</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><b>${r.productCode || ""}</b></td>
+          <td>${r.description || ""}</td>
+          <td>${r.hsn || ""}</td>
+          <td style="text-align:right"><b>${r.dispatchQty || 0}</b></td>
+          <td>${r.unit || ""}</td>
+          <td>${r.remarks || ""}</td>
+        </tr>`).join("")}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" style="text-align:right">TOTAL</td>
+        <td style="text-align:right">${totalQty}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
+  </table>
+  <div class="sbox">
+    <div class="sc">Prepared By</div>
+    <div class="sc">Checked By</div>
+    <div class="sc">Authorised Signatory</div>
+  </div>
+</div>
 </body>
 </html>`;
 
-  const w = window.open("", "_blank");
-  if (!w) {
-    alert("❌ Popup blocked! Please allow popups for this site and try again.");
-    return;
-  }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  setTimeout(() => {
-    w.focus();
-    w.print();
-  }, 1000);
+  // ── 3 અલગ tabs ખોલો — દરેકમાં 1 copy ──
+  const copies = ["ORIGINAL COPY", "TRANSPORTER COPY", "OFFICE COPY"];
+  copies.forEach((label, index) => {
+    setTimeout(() => {
+      const w = window.open("", "_blank");
+      if (!w) {
+        alert("❌ Popup blocked! Please allow popups for this site.");
+        return;
+      }
+      w.document.open();
+      w.document.write(makeFullHTML(label));
+      w.document.close();
+      w.onload = () => {
+        setTimeout(() => {
+          w.focus();
+          w.print();
+        }, 400);
+      };
+    }, index * 600);
+  });
 }
 function exportCSV(header, rows, challanNo) {
   const lines = [
@@ -411,8 +252,6 @@ function exportCSV(header, rows, challanNo) {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-// ── Field Component ───────────────────────────────────────────────────────────
 function Field({
   label,
   value,
@@ -442,12 +281,10 @@ function Field({
   );
 }
 
-// ── Today's date in YYYY-MM-DD for date input default ────────────────────────
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-// ── Initial form state ────────────────────────────────────────────────────────
 const FORM_DEFAULTS = {
   challanNo: "",
   challanDate: todayISO(),
@@ -480,10 +317,534 @@ const FORM_DEFAULTS = {
   ],
 };
 
+function PreviewModal({
+  open,
+  onClose,
+  header,
+  rows,
+  challanNo,
+  onSave,
+  saving,
+  onDownloadPDF,
+}) {
+  if (!open) return null;
+  const totalQty = rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
+  const filledRows = rows.filter((r) => r.description || r.productCode);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        overflowY: "auto",
+        padding: "24px 16px",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          background: "white",
+          borderRadius: "16px",
+          width: "100%",
+          maxWidth: "860px",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Modal Header */}
+        <div
+          style={{
+            background: "#1e293b",
+            padding: "16px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <p
+              style={{
+                color: "white",
+                fontWeight: 800,
+                fontSize: "16px",
+                margin: 0,
+              }}
+            >
+              📋 Challan Preview
+            </p>
+            <p
+              style={{ color: "#94a3b8", fontSize: "12px", margin: "2px 0 0" }}
+            >
+              Review before creating — exactly how PDF will look
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              border: "none",
+              color: "white",
+              borderRadius: "8px",
+              padding: "6px 14px",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        {/* Challan Preview Body */}
+        <div style={{ padding: "24px", background: "#f8fafc" }}>
+          <div
+            style={{
+              background: "white",
+              border: "2px solid #111",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "11px",
+              color: "#111",
+            }}
+          >
+            {/* Company Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 14px",
+                background: "#f8fafc",
+                borderBottom: "1px solid #e2e8f0",
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 900,
+                    color: "#1e3a5f",
+                    letterSpacing: "1px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  FIB2FAB
+                </div>
+                <div style={{ fontSize: "9px", color: "#64748b" }}>
+                  Quality Piping Solutions
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: "right",
+                  fontSize: "9px",
+                  color: "#374151",
+                  lineHeight: "1.6",
+                }}
+              >
+                506, 4th Floor, Tirupati Tower, GIDC Char Rasta
+                <br />
+                Vapi – 396195, Gujarat – India
+                <br />
+                +91-7096040970 | gujarat@fib2fabindia.com
+              </div>
+            </div>
+
+            {/* Title */}
+            <div
+              style={{
+                textAlign: "center",
+                fontSize: "13px",
+                fontWeight: "bold",
+                textDecoration: "underline",
+                padding: "7px",
+                borderBottom: "1px solid #111",
+                letterSpacing: "1px",
+              }}
+            >
+              DELIVERY CHALLAN &nbsp;
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: "normal",
+                  textDecoration: "none",
+                  color: "#555",
+                  border: "1px solid #999",
+                  padding: "1px 6px",
+                  borderRadius: "3px",
+                }}
+              >
+                ORIGINAL COPY
+              </span>
+            </div>
+
+            {/* Grid Rows */}
+            {[
+              [
+                ["Challan No", challanNo || "—"],
+                ["Date", header.challanDate || "—"],
+                ["SO Reference", header.soReference || "—"],
+              ],
+              [
+                ["Party Code", header.partyCode || "—"],
+                ["Customer", header.customer || "—"],
+                ["E-Way Bill No", header.ewayBillNo || "—"],
+              ],
+              [
+                ["Company", header.companyName || "—"],
+                ["Email", header.email || "—"],
+              ],
+              [
+                ["Address", header.address || "—"],
+                ["State", header.stateName || "—"],
+              ],
+              [
+                ["Consignee", header.consignee || "—"],
+                ["Destination", header.destination || "—"],
+              ],
+              [
+                ["Approx Invoice Date", header.approxInvoiceDate || "—"],
+                ["Invoice Nos", header.invoiceNos || "—"],
+              ],
+              [
+                ["Vehicle No", header.vehicleNo || "—"],
+                ["Driver", header.driverName || "—"],
+                ["Driver Contact", header.driverContact || "—"],
+              ],
+            ].map((cells, ri) => (
+              <div
+                key={ri}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    cells.length === 3 ? "1fr 1fr 1fr" : "1fr 1fr",
+                  borderBottom: "1px solid #ccc",
+                }}
+              >
+                {cells.map(([label, val], ci) => (
+                  <div
+                    key={ci}
+                    style={{
+                      padding: "4px 8px",
+                      borderRight:
+                        ci < cells.length - 1 ? "1px solid #ccc" : "none",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "8px",
+                        color: "#555",
+                        fontWeight: "bold",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: "bold",
+                        marginTop: "1px",
+                        wordBreak: "break-word",
+                        color: val === "—" ? "#bbb" : "#111",
+                      }}
+                    >
+                      {val}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Items Table */}
+            <div
+              style={{
+                background: "#1e293b",
+                color: "white",
+                padding: "4px 8px",
+                fontSize: "9px",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+              }}
+            >
+              ITEMS / PRODUCTS
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f1f5f9" }}>
+                  {[
+                    "SL",
+                    "Part No",
+                    "Description",
+                    "HSN/SAC",
+                    "Qty",
+                    "Unit",
+                    "Remarks",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: "5px 7px",
+                        textAlign: h === "Qty" ? "right" : "left",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        border: "1px solid #ccc",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filledRows.length > 0 ? (
+                  filledRows.map((r, i) => (
+                    <tr key={i}>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                        }}
+                      >
+                        {i + 1}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          color: "#4f46e5",
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {r.productCode || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                        }}
+                      >
+                        {r.description || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {r.hsn || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          textAlign: "right",
+                        }}
+                      >
+                        {r.dispatchQty || 0}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                        }}
+                      >
+                        {r.unit || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "4px 7px",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "10px",
+                          color: "#888",
+                        }}
+                      >
+                        {r.remarks || ""}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        padding: "12px",
+                        textAlign: "center",
+                        color: "#94a3b8",
+                        fontSize: "11px",
+                      }}
+                    >
+                      No items added yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: "#f1f5f9" }}>
+                  <td
+                    colSpan={4}
+                    style={{
+                      padding: "5px 7px",
+                      textAlign: "right",
+                      fontWeight: "bold",
+                      fontSize: "10px",
+                      border: "2px solid #111",
+                      borderRight: "1px solid #ccc",
+                    }}
+                  >
+                    TOTAL
+                  </td>
+                  <td
+                    style={{
+                      padding: "5px 7px",
+                      fontWeight: "bold",
+                      fontSize: "11px",
+                      textAlign: "right",
+                      border: "2px solid #111",
+                      borderLeft: "none",
+                    }}
+                  >
+                    {totalQty}
+                  </td>
+                  <td
+                    colSpan={2}
+                    style={{
+                      border: "2px solid #111",
+                      borderLeft: "1px solid #ccc",
+                    }}
+                  ></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Signature */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                borderTop: "1px solid #111",
+              }}
+            >
+              {["Prepared By", "Checked By", "Authorised Signatory"].map(
+                (label, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "28px 10px 8px",
+                      borderRight: i < 2 ? "1px solid #111" : "none",
+                      textAlign: "center",
+                      fontSize: "9px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {label}
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+
+          {/* Copies note */}
+          <p
+            style={{
+              textAlign: "center",
+              fontSize: "11px",
+              color: "#64748b",
+              marginTop: "12px",
+            }}
+          >
+            📌 PDF download કરવાથી <strong>3 copies</strong> print થશે: Original
+            · Transporter · Office
+          </p>
+        </div>
+
+        {/* Modal Footer Actions */}
+        <div
+          style={{
+            padding: "16px 24px",
+            borderTop: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "white",
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              border: "1px solid #cbd5e1",
+              borderRadius: "8px",
+              background: "white",
+              color: "#64748b",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ← Edit Form
+          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={onDownloadPDF}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "8px",
+                background: "#b91c1c",
+                border: "none",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              📄 Download PDF
+            </button>
+            <button
+              onClick={onSave}
+              disabled={saving}
+              style={{
+                padding: "10px 24px",
+                borderRadius: "8px",
+                background: saving ? "#94a3b8" : "#16a34a",
+                border: "none",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: saving ? "not-allowed" : "pointer",
+              }}
+            >
+              {saving ? "⏳ Saving..." : "✅ Create Challan"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function DispatchOnChallan() {
   const navigate = useNavigate();
-
+  const [showPreview, setShowPreview] = useState(false);
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -603,8 +964,17 @@ export default function DispatchOnChallan() {
     deliveryNote,
   });
 
+  // const canSave =
+  //   challanNo.trim() &&
+  //   challanDate &&
+  //   approxInvoiceDate &&
+  //   rows.some((r) => r.productCode && r.dispatchQty > 0);
+
+  // Replace with:
+  const canPreview = challanNo.trim() && customer.trim();
+
   const canSave =
-    challanNo.trim() &&
+    canPreview &&
     challanDate &&
     approxInvoiceDate &&
     rows.some((r) => r.productCode && r.dispatchQty > 0);
@@ -730,6 +1100,18 @@ export default function DispatchOnChallan() {
               </p>
               <div className="flex gap-3">
                 <button
+                  onClick={() => setShowPreview(true)}
+                  className="flex items-center gap-2.5 px-5 py-3 bg-indigo-100 border border-indigo-200 text-indigo-700 hover:bg-indigo-200 text-sm font-bold rounded-xl shadow-sm transition-all"
+                >
+                  <span className="text-lg">👁</span>
+                  <div>
+                    <p className="font-bold leading-tight">Preview PDF</p>
+                    <p className="text-xs text-indigo-500 text-opacity-70">
+                      Review on screen
+                    </p>
+                  </div>
+                </button>
+                <button
                   onClick={() => exportPDF(header, filledRows, challanNo)}
                   className="flex items-center gap-2.5 px-5 py-3 bg-red-700 hover:bg-red-600 text-white text-sm font-bold rounded-xl shadow"
                 >
@@ -767,6 +1149,27 @@ export default function DispatchOnChallan() {
             </div>
           </div>
         </div>
+
+        {/* Preview Modal for Step 2 */}
+        <PreviewModal
+          open={showPreview}
+          onClose={() => setShowPreview(false)}
+          header={getHeader()}
+          rows={rows}
+          challanNo={challanNo}
+          onSave={() => {
+            setShowPreview(false);
+            handleSave();
+          }}
+          saving={saving}
+          onDownloadPDF={() =>
+            exportPDF(
+              getHeader(),
+              rows.filter((r) => r.productCode),
+              challanNo,
+            )
+          }
+        />
       </div>
     );
   }
@@ -1069,7 +1472,10 @@ export default function DispatchOnChallan() {
       </div>
 
       {/* ── SECTION 3: Transport ── */}
-      <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group" open>
+      <details
+        className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group"
+        open
+      >
         <summary className="px-5 py-3 bg-slate-700 cursor-pointer list-none flex items-center justify-between">
           <h3 className="text-sm font-bold text-white">
             3. Transport Details{" "}
@@ -1148,21 +1554,14 @@ export default function DispatchOnChallan() {
           Cancel
         </button>
         <div className="flex items-center gap-3">
-          {/* {!challanNo.trim() && (
-            <p className="text-xs text-amber-600 font-semibold">
-              ⚠ Enter Challan No
-            </p>
-          )}
-          {!approxInvoiceDate && (
-            <p className="text-xs text-amber-600 font-semibold">
-              ⚠ Set Approx. Invoice Date
-            </p>
-          )}
-          {!rows.some((r) => r.productCode && r.dispatchQty > 0) && (
-            <p className="text-xs text-amber-600 font-semibold">
-              ⚠ Add at least 1 item
-            </p>
-          )} */}
+          <button
+            onClick={() => setShowPreview(true)}
+            disabled={!canPreview}
+            className={`px-5 py-2.5 text-sm font-bold rounded-lg flex items-center gap-2 transition-all
+              ${canPreview ? "bg-indigo-100 text-indigo-700 border border-indigo-300 hover:bg-indigo-200 shadow-sm" : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"}`}
+          >
+            👁 Preview Challan
+          </button>
           <button
             onClick={handleSave}
             disabled={!canSave || saving}
@@ -1173,6 +1572,27 @@ export default function DispatchOnChallan() {
           </button>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <PreviewModal
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        header={getHeader()}
+        rows={rows}
+        challanNo={challanNo}
+        onSave={() => {
+          setShowPreview(false);
+          handleSave();
+        }}
+        saving={saving}
+        onDownloadPDF={() =>
+          exportPDF(
+            getHeader(),
+            rows.filter((r) => r.description || r.productCode),
+            challanNo,
+          )
+        }
+      />
     </div>
   );
 }
