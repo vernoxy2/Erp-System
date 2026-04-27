@@ -105,14 +105,14 @@ function exportPDF(header, rows, challanNo) {
     <div class="co-logo-name">
       <img src="${logoUrl}" alt="Logo" class="co-logo" onerror="this.style.display='none'" />
       <div class="co-name-block">
-        <div class="co-name">fib2fab</div>
+        <div class="co-name">VERNOXY ERP</div>
         <div class="co-tagline">Quality Piping Solutions</div>
       </div>
     </div>
     <div class="co-address">
-      506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
-      Vapi – 396195, Gujarat – India<br/>
-      +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
+      513, KBC Complex , Dharampur Chokdi, <br/>
+     Valsad- 396001 , Gujarat – India<br/>
+      +91-96241 50967 &nbsp;|&nbsp; vernoxy2@gmail.com
     </div>
   </div>
   <div class="dc-title">DELIVERY CHALLAN &nbsp;&nbsp;<span class="copy-label">${copyLabel}</span></div>
@@ -436,7 +436,7 @@ function PreviewModal({
                     textTransform: "uppercase",
                   }}
                 >
-                  FIB2FAB
+                  VERNOXY ERP DEMO
                 </div>
                 <div style={{ fontSize: "9px", color: "#64748b" }}>
                   Quality Piping Solutions
@@ -450,11 +450,11 @@ function PreviewModal({
                   lineHeight: "1.6",
                 }}
               >
-                506, 4th Floor, Tirupati Tower, GIDC Char Rasta
+                KBC Complex, 513, Dharampur Rd, Chokdi, Abrama Village, 
                 <br />
-                Vapi – 396195, Gujarat – India
+               Valsad, Gujarat 396001 -India
                 <br />
-                +91-7096040970 | gujarat@fib2fabindia.com
+                +91-96241 50967 | vernoxy2@gmail.com
               </div>
             </div>
 

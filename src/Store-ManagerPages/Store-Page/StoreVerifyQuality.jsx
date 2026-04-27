@@ -312,7 +312,7 @@ export default function StoreVerifyQuality() {
       '<button onclick="window.print()" style="background:#16a34a;color:white;border:none;padding:8px 20px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">🖨️ Print</button>',
       "</div>",
       '<div class="header"><div>',
-      '<div class="company">FIB-2-FAB ERP</div>',
+      '<div class="company">VERNOXY ERP DEMO</div>',
       '<div class="subtitle">Store Quality Check · Dispatch Verification</div>',
       '</div><div style="text-align:right;">',
       '<div style="font-size:11px;color:#64748b;">Print Date</div>',
@@ -439,7 +439,7 @@ export default function StoreVerifyQuality() {
       '<button onclick="window.print()" style="background:#16a34a;color:white;border:none;padding:8px 20px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">🖨️ Print</button>',
       "</div>",
       '<div class="header"><div>',
-      '<div class="company">FIB-2-FAB ERP</div>',
+      '<div class="company">VERNOXY ERP DEMO</div>',
       '<div class="subtitle">Store Quality Check · Purchase Order Receipt</div>',
       '</div><div style="text-align:right;">',
       '<div style="font-size:11px;color:#64748b;">Print Date</div>',
@@ -532,7 +532,7 @@ export default function StoreVerifyQuality() {
         livePoStatus.toUpperCase() +
         "</div></div>",
       "</div>",
-      '<div class="footer"><span>FIB-2-FAB ERP · Store QC Module</span><span>PO: ' +
+      '<div class="footer"><span>VERNOXY ERP DEMO· Store QC Module</span><span>PO: ' +
         poNum +
         " · " +
         printDate +

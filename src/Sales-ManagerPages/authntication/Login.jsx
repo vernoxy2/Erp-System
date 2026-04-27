@@ -6,10 +6,8 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import logotext from "../../assets/logotext.svg";
-import logocrown from "../../assets/logocrown.svg";
 import factoryImg from "../../assets/image.png";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaCube } from "react-icons/fa";
 
 // Inject keyframes into the document head once
 const injectStyles = () => {
@@ -19,16 +17,33 @@ const injectStyles = () => {
   style.textContent = `
     @keyframes zoomInOut {
       0%   { transform: scale(1); }
-      50%  { transform: scale(1.12); }
+      50%  { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
-    @keyframes rotateCW {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
     }
   `;
   document.head.appendChild(style);
 };
+
+const Logo = ({ className = "", light = false }) => (
+  <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`${light ? 'bg-white/20' : 'bg-gradient-to-br from-[#311F85] to-[#4c35b5]'} p-2.5 rounded-xl shadow-lg flex items-center justify-center border border-white/10`}>
+      <FaCube className={`${light ? 'text-white' : 'text-amber-400'} text-2xl`} />
+    </div>
+    <div className="flex flex-col">
+      <h1 className={`${light ? 'text-white' : 'text-[#311F85]'} font-black text-2xl tracking-tight leading-none`}>
+        VERNOXY
+      </h1>
+      <span className={`${light ? 'text-white/80' : 'text-amber-600'} text-[10px] font-bold tracking-[0.15em] uppercase mt-1 leading-none`}>
+        ERP Demo System
+      </span>
+    </div>
+  </div>
+);
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -133,35 +148,39 @@ export default function Login() {
             >
               <path
                 d="M0 140 L60 140 L60 100 L120 100 L120 140 L200 140"
-                stroke="#6366f1"
+                stroke="#311F85"
                 strokeWidth="1.5"
               />
               <path
                 d="M100 180 L100 120 L160 120 L160 80 L240 80"
-                stroke="#f97316"
+                stroke="#f59e0b"
                 strokeWidth="1.5"
               />
               <path
                 d="M200 160 L260 160 L260 110 L320 110 L320 150 L400 150"
-                stroke="#6366f1"
+                stroke="#311F85"
                 strokeWidth="1.5"
               />
-              <circle cx="60" cy="140" r="3" fill="#6366f1" />
-              <circle cx="120" cy="100" r="3" fill="#6366f1" />
-              <circle cx="160" cy="120" r="3" fill="#f97316" />
-              <circle cx="260" cy="160" r="3" fill="#6366f1" />
-              <circle cx="320" cy="110" r="3" fill="#6366f1" />
+              <circle cx="60" cy="140" r="3" fill="#311F85" />
+              <circle cx="120" cy="100" r="3" fill="#311F85" />
+              <circle cx="160" cy="120" r="3" fill="#f59e0b" />
+              <circle cx="260" cy="160" r="3" fill="#311F85" />
+              <circle cx="320" cy="110" r="3" fill="#311F85" />
             </svg>
 
             {!forgotMode ? (
               <>
+                <div className="flex justify-between items-center mb-8">
+                  <Logo />
+                </div>
+                
                 <h2 className="text-[#311F85] font-extrabold text-5xl leading-tight">
                   Log In
                 </h2>
 
                 <p className="text-lg text-gray-500 mt-3 max-w-md">
-                  Secure industrial portal login for managing products,
-                  services, and operations.
+                  Access the Vernoxy ERP Demo portal for managing industrial
+                  operations and supply chain logistics.
                 </p>
 
                 {error && (
@@ -175,9 +194,9 @@ export default function Login() {
                     User ID
                   </label>
                   <input
-                    className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-orange-500 outline-none"
+                    className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-amber-500 outline-none"
                     type="email"
-                    placeholder="user@fit2feb.com"
+                    placeholder="demo@vernoxy.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -190,7 +209,7 @@ export default function Login() {
                   </label>
                   <div className="relative">
                     <input
-                      className="w-full rounded-xl border border-gray-300 bg-[#F2F2F2] px-4 py-3 pr-12 text-base focus:ring-1 focus:ring-orange-500 outline-none"
+                      className="w-full rounded-xl border border-gray-300 bg-[#F2F2F2] px-4 py-3 pr-12 text-base focus:ring-1 focus:ring-amber-500 outline-none"
                       type={showPass ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
@@ -272,9 +291,9 @@ export default function Login() {
                         Email Address
                       </label>
                       <input
-                        className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-orange-500 outline-none"
+                        className="w-full rounded-xl bg-[#F2F2F2] border border-gray-300 px-4 py-3 text-base focus:ring-1 focus:ring-amber-500 outline-none"
                         type="email"
-                        placeholder="user@fit2fab.com"
+                        placeholder="demo@vernoxy.com"
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleReset()}
@@ -295,39 +314,32 @@ export default function Login() {
           </div>
 
           {/* ══ RIGHT — Image Panel (7/12) ══ */}
-          <div className="col-span-7 relative bg-gradient-to-br flex flex-col overflow-hidden">
-            {/* Logo — clockwise rotation, positioned at top-center */}
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
-              <img
-             src={logocrown}
-                alt="Fib2Fab"
-                className="h-30"
-                style={{
-                  // animation: "rotateCW 8s linear infinite",
-                  transformOrigin: "center center",
-                }}
-              />
-              <img
-             src={logotext}
-                alt="Fib2Fab"
-                className="h-30 -mt-7"
-                style={{
-                  // animation: "rotateCW 8s linear infinite",
-                  transformOrigin: "center center",
-                }}
-              />
+          <div className="col-span-7 relative bg-[#311F85] flex flex-col items-center justify-center overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+            
+            {/* Logo — centered, premium style */}
+            <div className="relative z-10 flex flex-col items-center">
+              <div 
+                className="bg-white/10 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/20 shadow-2xl mb-6"
+                style={{ animation: 'float 6s ease-in-out infinite' }}
+              >
+                <FaCube className="text-amber-400 text-8xl" />
+              </div>
+              <h1 className="text-white text-5xl font-black tracking-tighter">VERNOXY</h1>
+              <p className="text-amber-400 font-bold tracking-[0.3em] uppercase text-sm mt-2">ERP Demo System</p>
             </div>
 
-            {/* Factory Image — zoom in/out, clipped inside panel */}
-            <div className="mt-auto h-full overflow-hidden">
+            {/* Decorative background blobs */}
+            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px]"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[80px]"></div>
+
+            {/* Subtle factory image overlay at bottom */}
+            <div className="absolute bottom-0 w-full h-1/3 opacity-20 pointer-events-none">
               <img
                 src={factoryImg}
-                alt="Industrial Factory"
-                className="w-full h-full object-cover"
-                style={{
-                  animation: "zoomInOut 15s ease-in-out infinite",
-                  transformOrigin: "center center",
-                }}
+                alt=""
+                className="w-full h-full object-cover mix-blend-overlay"
               />
             </div>
           </div>
