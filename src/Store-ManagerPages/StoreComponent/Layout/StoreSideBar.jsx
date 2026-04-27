@@ -22,7 +22,7 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../firebase";
-import logo from "../../../assets/logo.svg";
+import { FaCube } from "react-icons/fa";
 
 export default function StoreSidebar({ collapsed, setCollapsed }) {
   const [userData, setUserData] = useState({
@@ -288,20 +288,24 @@ export default function StoreSidebar({ collapsed, setCollapsed }) {
       <div className="h-16 border-b border-slate-200 flex items-center flex-shrink-0 relative px-3">
         {!collapsed && (
           <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-8">
-            <img src={logo} alt="Fib2Fab" className="h-9 flex-shrink-0" />
+            <div className="bg-violet-600 p-1.5 rounded-lg flex-shrink-0">
+              <FaCube className="text-white text-xl" />
+            </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-black text-violet-600 whitespace-nowrap">
-                ERP System
+              <h2 className="text-sm font-black text-violet-600 whitespace-nowrap tracking-tight">
+                VERNOXY
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                Sales & Distribution
+                ERP System
               </p>
             </div>
           </div>
         )}
         {collapsed && (
           <div className="flex-1 flex justify-center">
-            <img src={logo} alt="Fib2Fab" className="h-8" />
+            <div className="bg-violet-600 p-1.5 rounded-lg">
+              <FaCube className="text-white text-lg" />
+            </div>
           </div>
         )}
         <button

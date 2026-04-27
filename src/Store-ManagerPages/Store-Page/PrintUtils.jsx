@@ -143,7 +143,7 @@ export function printInvoiceDetails(inv) {
   <div class="footer">
     <span>Approved by: ${inv.storeQcApprovedBy || "Store Team"}</span>
     <span>Quality Check: ${inv.qualityCheck?.replace(/_/g, " ") || "Passed"}</span>
-    <span>fib-2-fab ERP · Store Module</span>
+    <span>Vernoxy ERP DEMO · Store Module</span>
   </div>
 </body>
 </html>`;
@@ -288,7 +288,7 @@ export function printSODetails(so) {
   <div class="footer">
     <span>Approved by: ${so.soQcApprovedBy || "Store Team"}</span>
     <span>QC Date: ${formatDate(so.soQcApprovedAt)}</span>
-    <span>fib-2-fab ERP · Store Module</span>
+    <span>Vernoxy ERP DEMO · Store Module</span>
   </div>
 </body>
 </html>`;

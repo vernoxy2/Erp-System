@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { db } from "../../firebase";
-import logo from "../../assets/logo.svg";
+import logo from "../../assets/logocrown.svg";
 import {
   collection,
   addDoc,
@@ -95,109 +95,13 @@ async function generateChallanNo() {
   }
 }
 
-// function exportPDF(header, rows, challanNo) {
-//   const totalQty = rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
-//   const logoUrl = logo.startsWith("http")
-//     ? logo
-//     : window.location.origin + (logo.startsWith("/") ? logo : "/" + logo);
-
-//   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-//   <title>Delivery Challan - ${challanNo}</title>
-//   <style>
-//     *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:20px}
-//     .hbox{border:2px solid #111;padding:10px;border-bottom:none}.title{text-align:center;font-size:16px;font-weight:bold;text-decoration:underline;margin-bottom:8px}
-//     .g2{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #111}
-//     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #111}
-//     .cell{padding:5px 8px;border-right:1px solid #111;border-bottom:1px solid #111}.cell:last-child{border-right:none}
-//     .cl{font-size:9px;color:#555;font-weight:bold;text-transform:uppercase}.cv{font-size:11px;font-weight:bold;margin-top:2px;word-break:break-word}
-//     .stitle{background:#1e293b;color:white;padding:5px 8px;font-size:10px;font-weight:bold;text-transform:uppercase;border:1px solid #111;border-top:none}
-//     table{width:100%;border-collapse:collapse}th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;font-weight:bold;border:1px solid #111;text-transform:uppercase}
-//     td{padding:5px 8px;border:1px solid #ccc;font-size:11px}tfoot td{font-weight:bold;background:#f1f5f9;border-top:2px solid #111}
-//     .sbox{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #111;border-top:none}
-//     .sc{padding:30px 10px 10px;border-right:1px solid #111;text-align:center;font-size:10px;font-weight:bold}.sc:last-child{border-right:none}
-//     .co-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 2px solid #111; border-bottom: none; padding: 10px 14px; background: #f8fafc; }
-//     .co-logo-name { display: flex; align-items: center; gap: 12px; }
-//     .co-logo { height: 50px; width: auto; }
-//     .co-name { font-size: 26px; font-weight: 900; color: #1e3a5f; letter-spacing: 1px; text-transform: uppercase; }
-//     .co-tagline { font-size: 9px; color: #64748b; letter-spacing: 0.5px; margin-top: 2px; }
-//     .co-address { text-align: right; font-size: 9.5px; color: #374151; line-height: 1.6; }
-//   </style></head><body>
-//   <div class="co-header">
-//     <div class="co-logo-name">
-//       <img src="${logoUrl}" alt="Logo" class="co-logo" onerror="this.style.display='none'" />
-//       <div class="co-name-block">
-//         <div class="co-name">fib2fab</div>
-//         <div class="co-tagline">Quality Piping Solutions</div>
-//       </div>
-//     </div>
-//     <div class="co-address">
-//       506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
-//       Vapi – 396195, Gujarat – India<br/>
-//       +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
-//     </div>
-//   </div>
-//   <div class="hbox"><div class="title">DELIVERY CHALLAN</div>
-//     <div class="g3">
-//       <div class="cell"><div class="cl">Challan No</div><div class="cv">${challanNo}</div></div>
-//       <div class="cell"><div class="cl">Date</div><div class="cv">${header.challanDate || ""}</div></div>
-//       <div class="cell"><div class="cl">SO Reference</div><div class="cv">${header.soReference || ""}</div></div>
-//     </div>
-//     <div class="g3">
-//       <div class="cell"><div class="cl">Party Code</div><div class="cv">${header.partyCode || "—"}</div></div>
-//       <div class="cell"><div class="cl">Customer</div><div class="cv">${header.customer || ""}</div></div>
-//       <div class="cell"><div class="cl">E-Way Bill No</div><div class="cv">${header.ewayBillNo || "—"}</div></div>
-//     </div>
-//     <div class="g2">
-//       <div class="cell"><div class="cl">Company</div><div class="cv">${header.companyName || "—"}</div></div>
-//       <div class="cell"><div class="cl">Email</div><div class="cv">${header.email || "—"}</div></div>
-//     </div>
-//     <div class="g2">
-//       <div class="cell"><div class="cl">Address</div><div class="cv">${header.address || "—"}</div></div>
-//       <div class="cell"><div class="cl">State</div><div class="cv">${header.stateName || "—"}</div></div>
-//     </div>
-//     <div class="g2">
-//       <div class="cell"><div class="cl">Consignee</div><div class="cv">${header.consignee || "—"}</div></div>
-//       <div class="cell"><div class="cl">Destination</div><div class="cv">${header.destination || "—"}</div></div>
-//     </div>
-//     <div class="g2">
-//       <div class="cell"><div class="cl">Approx Invoice Date</div><div class="cv">${header.approxInvoiceDate || ""}</div></div>
-//       <div class="cell"><div class="cl">Invoice Nos</div><div class="cv">${header.invoiceNos || "—"}</div></div>
-//     </div>
-//     <div class="g3">
-//       <div class="cell"><div class="cl">Vehicle No</div><div class="cv">${header.vehicleNo || "—"}</div></div>
-//       <div class="cell"><div class="cl">Driver</div><div class="cv">${header.driverName || "—"}</div></div>
-//       <div class="cell"><div class="cl">Driver Contact</div><div class="cv">${header.driverContact || "—"}</div></div>
-//     </div>
-//   </div>
-//   <div class="stitle">ITEMS / PRODUCTS</div>
-//   <table><thead><tr>
-//     <th style="width:30px">SL</th><th>Part No</th><th>Description</th><th>HSN/SAC</th>
-//     <th style="text-align:right">Qty</th><th>Unit</th><th>Remarks</th>
-//   </tr></thead><tbody>
-//     ${rows.map((r, i) => `<tr><td>${i + 1}</td><td><b>${r.productCode || ""}</b></td><td>${r.description || ""}</td><td>${r.hsn || ""}</td><td style="text-align:right"><b>${r.dispatchQty || 0}</b></td><td>${r.unit || ""}</td><td>${r.remarks || ""}</td></tr>`).join("")}
-//   </tbody><tfoot><tr>
-//     <td colspan="4" style="text-align:right">TOTAL</td>
-//     <td style="text-align:right">${totalQty}</td>
-//     <td colspan="2"></td>
-//   </tr></tfoot></table>
-//   <div class="sbox"><div class="sc">Prepared By</div><div class="sc">Checked By</div><div class="sc">Authorised Signatory</div></div>
-//   </body></html>`;
-//   const w = window.open("", "_blank", "width=900,height=700");
-//   w.document.write(html);
-//   w.document.close();
-//   w.onload = () => {
-//     w.focus();
-//     w.print();
-//   };
-// }
-
 async function exportPDF(header, rows, challanNo) {
   const totalQty = rows.reduce((s, r) => s + (Number(r.dispatchQty) || 0), 0);
 
   // ✅ Logo to base64 so it works in print window
   let logoSrc = "";
   try {
-    const res = await fetch(logo);
+    // const res = await fetch(logo);
     const blob = await res.blob();
     logoSrc = await new Promise((resolve) => {
       const reader = new FileReader();
@@ -242,15 +146,16 @@ async function exportPDF(header, rows, challanNo) {
         <div class="co-logo-name">
           ${logoSrc ? `<img src="${logoSrc}" alt="Logo" class="co-logo" />` : ""}
           <div>
-            <div class="co-name">fib2fab</div>
+            <div class="co-name">VERNOXY ERP DEMO</div>
             <div class="co-tagline">Quality Piping Solutions</div>
           </div>
         </div>
-        <div class="co-address">
-          506, 4th Floor, Tirupati Tower, GIDC Char Rasta<br/>
-          Vapi – 396195, Gujarat – India<br/>
-          +91-7096040970 &nbsp;|&nbsp; gujarat@fib2fabindia.com
+        <div className="co-address">
+          513, KBC Complex, Dharampur Chokdi<br/>
+          Valsad – 396001, Gujarat – India<br/>
+          +91-96241 50967 &nbsp;|&nbsp; vernoxy2@gmail.com
         </div>
+
       </div>
       <div class="hbox"><div class="title">DELIVERY CHALLAN</div>
         <div class="g3">
@@ -340,19 +245,17 @@ function PreviewModal({ open, onClose, header, rows, challanNo, onSave, saving, 
             {/* Business Header */}
             <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100">
-                  <img src={logo} alt="Logo" className="max-h-12 w-auto" />
-                </div>
                 <div>
-                  <h1 className="text-3xl font-black text-indigo-900 tracking-tighter uppercase">fib2fab</h1>
+                  <h1 className="text-3xl font-black text-indigo-900 tracking-tighter uppercase">VERNOXY ERP </h1>
                   <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">Quality Piping Solutions</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-slate-700">506, 4th Floor, Tirupati Tower</p>
-                <p className="text-slate-500">GIDC Char Rasta, Vapi – 396195</p>
+                <p className="font-bold text-slate-700">513, KBC Complex</p>
+                <p className="text-slate-500">Dharampur Chokdi</p>
+                <p className="text-slate-500">Valsad – 396001</p>
                 <p className="text-slate-500">Gujarat – India</p>
-                <p className="font-bold text-indigo-600 mt-1">+91-7096040970</p>
+                <p className="font-bold text-indigo-600 mt-1">+91-96241 50967</p>
               </div>
             </div>
 
@@ -491,7 +394,7 @@ function PreviewModal({ open, onClose, header, rows, challanNo, onSave, saving, 
                 <div className="border-t border-slate-200 pt-2 text-center text-[10px] font-bold text-slate-800">Name & Designation</div>
               </div>
               <div className="p-4 h-32 flex flex-col justify-between bg-slate-50/50">
-                <p className="text-[9px] font-black text-slate-400 uppercase text-center">For fib2fab</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase text-center">For VERNOXY ERP DEMO</p>
                 <div className="border-t border-slate-800 pt-2 text-center text-[10px] font-black text-slate-800">Authorised Signatory</div>
               </div>
             </div>

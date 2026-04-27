@@ -193,7 +193,7 @@ export default function UploadSalesOrder() {
         if (parsedItems.length === 0) throw new Error("No items found in Excel. Please check the format.");
 
         const address = [getCell(raw, 3, 0), getCell(raw, 4, 0), getCell(raw, 5, 0)]
-          .filter((v) => v && !v.toUpperCase().includes("MSME") && !v.includes("FIB 2 FAB")).join(", ");
+          .filter((v) => v && !v.toUpperCase().includes("MSME") && !v.includes("VERNOXY ERP DEMO")).join(", ");
 
         let state = "";
         for (let i = 0; i < raw.length; i++) {

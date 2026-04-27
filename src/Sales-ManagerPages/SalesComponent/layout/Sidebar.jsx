@@ -7,9 +7,9 @@ import {
   FiHome, FiFileText, FiBell, FiTruck, FiClock, FiArchive,
   FiShoppingCart, FiUpload, FiBarChart2, FiPackage, FiAlertTriangle,
   FiTrendingUp, FiLayers, FiSettings, FiClipboard, FiInbox,
-  FiRefreshCw, FiMenu, FiChevronLeft, FiEdit, FiCheckSquare,FiUsers 
+  FiRefreshCw, FiMenu, FiChevronLeft, FiEdit, FiCheckSquare, FiUsers 
 } from "react-icons/fi";
-import logo from "../../../assets/logo.svg";
+import { FaCube } from "react-icons/fa";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const [userData, setUserData] = useState({ name: "Loading...", email: "" });
@@ -201,11 +201,13 @@ useEffect(() => {
         {/* Expanded: logo + title */}
         {!collapsed && (
           <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-8">
-            <img src={logo} alt="Fib2Fab" className="h-9 flex-shrink-0" />
+            <div className="bg-indigo-600 p-1.5 rounded-lg flex-shrink-0">
+              <FaCube className="text-white text-xl" />
+            </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-black text-indigo-600 whitespace-nowrap">ERP System</h2>
+              <h2 className="text-sm font-black text-indigo-600 whitespace-nowrap tracking-tight">VERNOXY</h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                Sales & Distribution
+                ERP System
               </p>
             </div>
           </div>
@@ -214,7 +216,9 @@ useEffect(() => {
         {/* Collapsed: centred logo */}
         {collapsed && (
           <div className="flex-1 flex justify-center">
-            <img src={logo} alt="Fib2Fab" className="h-8" />
+            <div className="bg-indigo-600 p-1.5 rounded-lg">
+              <FaCube className="text-white text-lg" />
+            </div>
           </div>
         )}
 
